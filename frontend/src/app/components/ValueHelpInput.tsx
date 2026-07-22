@@ -28,7 +28,7 @@ const F = {
 };
 
 export function ValueHelpInput({
-  value, onChange, options, placeholder = "Search or press F4…",
+  value, onChange, options, placeholder = "Search or select…",
   error, disabled, emptyMessage = "No matching entries found.", inputStyle,
 }: ValueHelpInputProps) {
   const [open, setOpen] = useState(false);
@@ -117,10 +117,10 @@ export function ValueHelpInput({
             background: open ? "#e8f2ff" : F.bg,
             color: open ? F.primary : F.muted,
           }}
-          title="Open value help (F4)"
+          title="Open suggestions"
           disabled={disabled}
         >
-          <span className="text-xs" style={{ fontWeight: 600 }}>F4</span>
+          <Search size={12} />
           <ChevronDown size={11} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
         </button>
       </div>

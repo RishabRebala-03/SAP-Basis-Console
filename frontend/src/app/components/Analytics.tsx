@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAppContext, AuditModule, AuditStatus } from "../contexts/AppContext";
 import { DashNav } from "./Dashboard";
+import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000",
@@ -202,19 +203,25 @@ export function Analytics({ onNavigate }: Props) {
                 ))}
               </div>
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs" style={{ color: F.muted }}>System</label>
-              <select value={systemFilter} onChange={(e) => setSystemFilter(e.target.value)} className="px-3 py-1.5 rounded text-sm outline-none"
-                style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text, minWidth: "140px" }}>
-                {uniqueSystems.map((s) => <option key={s} value={s}>{s === "All" ? "All Systems" : s}</option>)}
-              </select>
+            <div className="flex flex-col gap-1.5 min-w-[150px]">
+              <SearchableFilterDropdown
+                label="System"
+                value={systemFilter === "All" ? "" : systemFilter}
+                onChange={(v) => setSystemFilter(v || "All")}
+                options={uniqueSystems.map((s) => s === "All" ? "" : s)}
+                allLabel="All Systems"
+                placeholder="Search system…"
+              />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs" style={{ color: F.muted }}>Status</label>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-1.5 rounded text-sm outline-none"
-                style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text, minWidth: "140px" }}>
-                {["All", "Success", "Warning", "Failed"].map((s) => <option key={s} value={s}>{s === "All" ? "All Statuses" : s}</option>)}
-              </select>
+            <div className="flex flex-col gap-1.5 min-w-[150px]">
+              <SearchableFilterDropdown
+                label="Status"
+                value={statusFilter === "All" ? "" : statusFilter}
+                onChange={(v) => setStatusFilter(v || "All")}
+                options={["", "Success", "Warning", "Failed"]}
+                allLabel="All Statuses"
+                placeholder="Search status…"
+              />
             </div>
             {filtersActive && (
               <button onClick={() => { setRange("30d"); setSystemFilter("All"); setStatusFilter("All"); }}
