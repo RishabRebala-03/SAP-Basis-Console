@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Database, Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle, ChevronUp, ChevronDown, Save, ServerCrash, Server } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Database, Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle, ChevronUp, ChevronDown, Save, ServerCrash, Server, Filter, Play, Search } from "lucide-react";
 import { useAppContext, SapSystem } from "../contexts/AppContext";
 import { ValueHelpInput } from "./ValueHelpInput";
+import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000",
@@ -221,12 +222,34 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
   const [search, setSearch] = useState("");
   const [envFilter, setEnvFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [clientFilter, setClientFilter] = useState("All");
+  const [creatorFilter, setCreatorFilter] = useState("All");
   const [sortField, setSortField] = useState<SortField>("createdAt");
-  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [drawerMode, setDrawerMode] = useState<"add" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<SapSystem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SapSystem | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
+
+  // Submitted filter state
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [appliedEnv, setAppliedEnv] = useState("All");
+  const [appliedStatus, setAppliedStatus] = useState("All");
+  const [appliedClient, setAppliedClient] = useState("All");
+  const [appliedCreator, setAppliedCreator] = useState("All");
+
+  const handleSubmit = () => {
+    setAppliedSearch(search);
+    setAppliedEnv(envFilter);
+    setAppliedStatus(statusFilter);
+    setAppliedClient(clientFilter);
+    setAppliedCreator(creatorFilter);
+    setHasSubmitted(true);
+  };
+
+  const uniqueClients = useMemo(() => ["All", ...Array.from(new Set(systems.map((s) => s.client).filter(Boolean)))], [systems]);
+  const uniqueCreators = useMemo(() => ["All", ...Array.from(new Set(systems.map((s) => s.createdBy).filter(Boolean)))], [systems]);
 
   const showToast = (msg: string, type: "success" | "error") => {
     setToast({ msg, type });
@@ -238,20 +261,25 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
     else { setSortField(field); setSortDir("asc"); }
   };
 
-  const filtered = systems
-    .filter((s) => {
-      const q = search.toLowerCase();
-      return (
-        (s.systemId.toLowerCase().includes(q) || s.systemName.toLowerCase().includes(q) || s.host.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)) &&
-        (envFilter === "All" || s.environment === envFilter) &&
-        (statusFilter === "All" || s.status === statusFilter)
-      );
-    })
-    .sort((a, b) => {
-      const va = a[sortField] ?? "";
-      const vb = b[sortField] ?? "";
-      return sortDir === "asc" ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
-    });
+  const filtered = useMemo(() => {
+    if (!hasSubmitted) return [];
+    return systems
+      .filter((s) => {
+        const q = appliedSearch.toLowerCase();
+        return (
+          (s.systemId.toLowerCase().includes(q) || s.systemName.toLowerCase().includes(q) || s.host.toLowerCase().includes(q) || s.description.toLowerCase().includes(q)) &&
+          (appliedEnv === "All" || s.environment === appliedEnv) &&
+          (appliedStatus === "All" || s.status === appliedStatus) &&
+          (appliedClient === "All" || s.client === appliedClient) &&
+          (appliedCreator === "All" || s.createdBy === appliedCreator)
+        );
+      })
+      .sort((a, b) => {
+        const va = a[sortField] ?? "";
+        const vb = b[sortField] ?? "";
+        return sortDir === "asc" ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+      });
+  }, [systems, appliedSearch, appliedEnv, appliedStatus, appliedClient, appliedCreator, sortField, sortDir, hasSubmitted]);
 
   const handleAdd = (form: FormState) => {
     addSystem(form as Omit<SapSystem, "id" | "createdAt" | "createdBy">);
@@ -350,8 +378,9 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
       </div>
 
       {/* Filters */}
-      <div className="rounded mb-4 flex flex-wrap items-center gap-3 p-3" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-        <div className="flex-1 min-w-52">
+      <div className="rounded mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-3 items-end" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+        <div className="lg:col-span-1 min-w-44">
+          <p className="text-xs mb-1" style={{ color: F.muted }}>Search</p>
           <ValueHelpInput
             value={search}
             onChange={setSearch}
@@ -363,147 +392,194 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
               badgeColor: s.status === "Active" ? "#107e3e" : "#74777a",
               badgeBg: s.status === "Active" ? "#f1fdf6" : "#f5f6f7",
             }))}
-            placeholder="Search systems… (F4 for value help)"
+            placeholder="Search systems…"
             emptyMessage="No matching systems found."
           />
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-xs" style={{ color: F.muted }}>Environment:</label>
-          <select value={envFilter} onChange={(e) => setEnvFilter(e.target.value)} className="text-sm px-2 py-1.5 rounded outline-none" style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}>
-            {["All", "Production", "Quality", "Development", "Sandbox"].map((e) => <option key={e}>{e}</option>)}
-          </select>
+        <div>
+          <SearchableFilterDropdown
+            label="Environment"
+            value={envFilter === "All" ? "" : envFilter}
+            onChange={(v) => setEnvFilter(v || "All")}
+            options={["", "Production", "Quality", "Development", "Sandbox"]}
+            allLabel="All Environments"
+            placeholder="Search environment…"
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <label className="text-xs" style={{ color: F.muted }}>Status:</label>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="text-sm px-2 py-1.5 rounded outline-none" style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}>
-            {["All", "Active", "Inactive"].map((s) => <option key={s}>{s}</option>)}
-          </select>
+        <div>
+          <SearchableFilterDropdown
+            label="Status"
+            value={statusFilter === "All" ? "" : statusFilter}
+            onChange={(v) => setStatusFilter(v || "All")}
+            options={["", "Active", "Inactive"]}
+            allLabel="All Statuses"
+            placeholder="Search status…"
+          />
         </div>
-        <span className="text-xs ml-auto" style={{ color: F.muted }}>{filtered.length} of {systems.length} systems</span>
+        <div>
+          <SearchableFilterDropdown
+            label="Client"
+            value={clientFilter === "All" ? "" : clientFilter}
+            onChange={(v) => setClientFilter(v || "All")}
+            options={uniqueClients.map((c) => c === "All" ? "" : c)}
+            allLabel="All Clients"
+            placeholder="Search client…"
+          />
+        </div>
+        <div>
+          <SearchableFilterDropdown
+            label="Created By"
+            value={creatorFilter === "All" ? "" : creatorFilter}
+            onChange={(v) => setCreatorFilter(v || "All")}
+            options={uniqueCreators.map((c) => c === "All" ? "" : c)}
+            allLabel="All Creators"
+            placeholder="Search creator…"
+          />
+        </div>
+        <div className="lg:col-span-5 flex justify-between items-center pt-2" style={{ borderTop: `1px solid ${F.border}` }}>
+          <button
+            onClick={handleSubmit}
+            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded text-white shadow-sm transition-all"
+            style={{ background: F.primary }}
+          >
+            <Play size={12} fill="currentColor" /> Go
+          </button>
+          <span className="text-xs" style={{ color: F.muted }}>{hasSubmitted ? `${filtered.length} of ${systems.length} systems` : "0 systems displayed"}</span>
+        </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr style={{ background: "#f5f6f7", borderBottom: `1px solid ${F.border}` }}>
-                {([
-                  ["systemId", "System ID"],
-                  ["systemName", "System Name"],
-                  ["client", "Client"],
-                  ["environment", "Environment"],
-                  ["host", "Host / Server"],
-                  ["status", "Status"],
-                  ["createdAt", "Created"],
-                ] as [SortField, string][]).map(([field, label]) => (
-                  <th
-                    key={field}
-                    onClick={() => handleSort(field)}
-                    className="px-4 py-3 text-left text-xs cursor-pointer select-none"
-                    style={{ color: sortField === field ? F.primary : F.muted, fontWeight: 600 }}
-                  >
-                    <span className="flex items-center gap-1">{label}<SortIcon field={field} /></span>
-                  </th>
-                ))}
-                <th className="px-4 py-3 text-left text-xs" style={{ color: F.muted, fontWeight: 600 }}>Description</th>
-                <th className="px-4 py-3 text-right text-xs" style={{ color: F.muted, fontWeight: 600 }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="px-4 py-12 text-center text-sm" style={{ color: F.muted }}>
-                    No systems found. Adjust filters or add a new system.
-                  </td>
+      {/* Results / Blank State */}
+      {!hasSubmitted ? (
+        <div className="flex flex-col items-center justify-center py-16 gap-3 rounded" style={{ background: F.white, border: `1px solid ${F.border}`, color: F.muted }}>
+          <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "#e8f2ff", color: F.primary }}>
+            <Filter size={24} />
+          </div>
+          <p className="text-sm font-medium" style={{ color: F.text }}>No Data Displayed Yet</p>
+          <p className="text-xs">Select your system search criteria above, then click <strong>Go</strong> to load system entries.</p>
+        </div>
+      ) : (
+        <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ background: "#f5f6f7", borderBottom: `1px solid ${F.border}` }}>
+                  {([
+                    ["systemId", "System ID"],
+                    ["systemName", "System Name"],
+                    ["client", "Client"],
+                    ["environment", "Environment"],
+                    ["host", "Host / Server"],
+                    ["status", "Status"],
+                    ["createdAt", "Created"],
+                  ] as [SortField, string][]).map(([field, label]) => (
+                    <th
+                      key={field}
+                      onClick={() => handleSort(field)}
+                      className="px-4 py-3 text-left text-xs cursor-pointer select-none"
+                      style={{ color: sortField === field ? F.primary : F.muted, fontWeight: 600 }}
+                    >
+                      <span className="flex items-center gap-1">{label}<SortIcon field={field} /></span>
+                    </th>
+                  ))}
+                  <th className="px-4 py-3 text-left text-xs" style={{ color: F.muted, fontWeight: 600 }}>Description</th>
+                  <th className="px-4 py-3 text-right text-xs" style={{ color: F.muted, fontWeight: 600 }}>Actions</th>
                 </tr>
-              )}
-              {filtered.map((sys, i) => {
-                const env = ENV_META[sys.environment];
-                return (
-                  <tr
-                    key={sys.id}
-                    onClick={() => onViewDetail?.(sys)}
-                    style={{ borderBottom: `1px solid ${F.border}`, background: i % 2 === 0 ? F.white : "#fafafa", cursor: onViewDetail ? "pointer" : "default" }}
-                    onMouseEnter={(e) => { if (onViewDetail) e.currentTarget.style.background = "#f0f6ff"; }}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? F.white : "#fafafa")}
-                  >
-                    {/* System ID */}
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-1 rounded text-xs" style={{ background: "#e8f2ff", color: F.primary, fontWeight: 600 }}>
-                        {sys.systemId}
-                      </span>
-                    </td>
-                    {/* System Name */}
-                    <td className="px-4 py-3" style={{ color: F.text }}>{sys.systemName}</td>
-                    {/* Client */}
-                    <td className="px-4 py-3" style={{ color: F.muted }}>{sys.client}</td>
-                    {/* Environment */}
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded text-xs" style={{ background: env.bg, color: env.color }}>
-                        {sys.environment}
-                      </span>
-                    </td>
-                    {/* Host */}
-                    <td className="px-4 py-3 text-xs font-mono" style={{ color: F.muted }}>{sys.host}</td>
-                    {/* Status */}
-                    <td className="px-4 py-3">
-                      <span className="flex items-center gap-1.5 w-fit">
-                        <span className="w-2 h-2 rounded-full" style={{ background: sys.status === "Active" ? F.success : F.muted }} />
-                        <span className="text-xs" style={{ color: sys.status === "Active" ? F.success : F.muted }}>{sys.status}</span>
-                      </span>
-                    </td>
-                    {/* Created */}
-                    <td className="px-4 py-3">
-                      <p className="text-xs" style={{ color: F.text }}>{new Date(sys.createdAt).toLocaleDateString()}</p>
-                      <p className="text-xs" style={{ color: F.muted }}>by {sys.createdBy}</p>
-                    </td>
-                    {/* Description */}
-                    <td className="px-4 py-3 max-w-xs">
-                      <p className="text-xs truncate" style={{ color: F.muted, maxWidth: "200px" }} title={sys.description}>
-                        {sys.description || "—"}
-                      </p>
-                    </td>
-                    {/* Actions */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1 justify-end">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setEditTarget(sys); setDrawerMode("edit"); }}
-                          className="p-1.5 rounded hover:bg-gray-100 transition-colors"
-                          title="Edit"
-                          style={{ color: F.muted }}
-                        >
-                          <Pencil size={14} />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setDeleteTarget(sys); }}
-                          className="p-1.5 rounded transition-colors"
-                          title="Delete"
-                          style={{ color: F.muted }}
-                          onMouseEnter={(e) => (e.currentTarget.style.color = F.error)}
-                          onMouseLeave={(e) => (e.currentTarget.style.color = F.muted)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {filtered.length === 0 && (
+                  <tr>
+                    <td colSpan={9} className="px-4 py-12 text-center text-sm" style={{ color: F.muted }}>
+                      No systems found. Adjust filters or add a new system.
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                )}
+                {filtered.map((sys, i) => {
+                  const env = ENV_META[sys.environment];
+                  return (
+                    <tr
+                      key={sys.id}
+                      onClick={() => onViewDetail?.(sys)}
+                      style={{ borderBottom: `1px solid ${F.border}`, background: i % 2 === 0 ? F.white : "#fafafa", cursor: onViewDetail ? "pointer" : "default" }}
+                      onMouseEnter={(e) => { if (onViewDetail) e.currentTarget.style.background = "#f0f6ff"; }}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? F.white : "#fafafa")}
+                    >
+                      {/* System ID */}
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-1 rounded text-xs" style={{ background: "#e8f2ff", color: F.primary, fontWeight: 600 }}>
+                          {sys.systemId}
+                        </span>
+                      </td>
+                      {/* System Name */}
+                      <td className="px-4 py-3" style={{ color: F.text }}>{sys.systemName}</td>
+                      {/* Client */}
+                      <td className="px-4 py-3" style={{ color: F.muted }}>{sys.client}</td>
+                      {/* Environment */}
+                      <td className="px-4 py-3">
+                        <span className="px-2 py-0.5 rounded text-xs" style={{ background: env.bg, color: env.color }}>
+                          {sys.environment}
+                        </span>
+                      </td>
+                      {/* Host */}
+                      <td className="px-4 py-3 text-xs font-mono" style={{ color: F.muted }}>{sys.host}</td>
+                      {/* Status */}
+                      <td className="px-4 py-3">
+                        <span className="flex items-center gap-1.5 w-fit">
+                          <span className="w-2 h-2 rounded-full" style={{ background: sys.status === "Active" ? F.success : F.muted }} />
+                          <span className="text-xs" style={{ color: sys.status === "Active" ? F.success : F.muted }}>{sys.status}</span>
+                        </span>
+                      </td>
+                      {/* Created */}
+                      <td className="px-4 py-3">
+                        <p className="text-xs" style={{ color: F.text }}>{new Date(sys.createdAt).toLocaleDateString()}</p>
+                        <p className="text-xs" style={{ color: F.muted }}>by {sys.createdBy}</p>
+                      </td>
+                      {/* Description */}
+                      <td className="px-4 py-3 max-w-xs">
+                        <p className="text-xs truncate" style={{ color: F.muted, maxWidth: "200px" }} title={sys.description}>
+                          {sys.description || "—"}
+                        </p>
+                      </td>
+                      {/* Actions */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1 justify-end">
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setEditTarget(sys); setDrawerMode("edit"); }}
+                            className="p-1.5 rounded hover:bg-gray-100 transition-colors"
+                            title="Edit"
+                            style={{ color: F.muted }}
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setDeleteTarget(sys); }}
+                            className="p-1.5 rounded transition-colors"
+                            title="Delete"
+                            style={{ color: F.muted }}
+                            onMouseEnter={(e) => (e.currentTarget.style.color = F.error)}
+                            onMouseLeave={(e) => (e.currentTarget.style.color = F.muted)}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-        {/* Table Footer */}
-        <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: `1px solid ${F.border}`, background: "#fafafa" }}>
-          <p className="text-xs" style={{ color: F.muted }}>
-            Showing <strong>{filtered.length}</strong> of <strong>{systems.length}</strong> registered systems
-          </p>
-          <p className="text-xs" style={{ color: F.muted }}>
-            System registry is shared across all provisioning modules
-          </p>
+          {/* Table Footer */}
+          <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: `1px solid ${F.border}`, background: "#fafafa" }}>
+            <p className="text-xs" style={{ color: F.muted }}>
+              Showing <strong>{filtered.length}</strong> of <strong>{systems.length}</strong> registered systems
+            </p>
+            <p className="text-xs" style={{ color: F.muted }}>
+              System registry is shared across all provisioning modules
+            </p>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
