@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Database Service
+  mongodb:
+    image: mongo:6.0
+    container_name: sap_console_db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+
+  # Backend REST API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sap_console_backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/sap_basis_console
+      - MONGO_DB=sap_basis_console
+      - SECRET_KEY=prod-secret-key-123456789
+      - JWT_SECRET_KEY=prod-jwt-secret-key-123456789
+      - SAP_MOCK=true
+    depends_on:
+      - mongodb
+    restart: unless-stopped
+
+  # Frontend Web Client Service
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sap_console_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  mongo_data:

@@ -15,6 +15,7 @@ import { SystemDetailPage } from "./components/pages/SystemDetailPage";
 import { SignInPage } from "./components/pages/SignInPage";
 import { Dashboard } from "./components/Dashboard";
 import { Analytics } from "./components/Analytics";
+import { logoutApi, getCurrentUser, User as AuthUser } from "../api/authApi";
 
 type ActiveView = "dashboard" | "analytics" | "single-user" | "bulk-user" | "password-reset" | "lock-unlock" | "data-management" | "audit-logs";
 type PageView =
@@ -124,17 +125,23 @@ function NotificationsPanel({ notifs, onRead, onReadAll, onClose }: { notifs: No
 }
 
 /* ── Profile Menu Dropdown ── */
-function ProfileMenu({ onProfile, onLogout }: { onProfile: () => void; onLogout: () => void }) {
+function ProfileMenu({ user, onProfile, onLogout }: { user: AuthUser | null; onProfile: () => void; onLogout: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useOutsideClick(ref, () => {/* handled by parent toggle */});
+  const uname = user?.username || "ADMIN";
+  const email = user?.email || "admin@corp.local";
+  const role = user?.role || "Super Admin";
+  const initials = uname.substring(0, 2).toUpperCase();
+
   return (
-    <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ top: "48px", width: "200px", background: "#fff", border: "1px solid #d9d9d9" }}>
+    <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ top: "48px", width: "220px", background: "#fff", border: "1px solid #d9d9d9" }}>
       <div className="px-4 py-3" style={{ background: "linear-gradient(135deg, #1d2d3e 0%, #0d1e2e 100%)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0" style={{ background: "#0070f2" }}>AD</div>
-          <div>
-            <p className="text-sm text-white">ADMIN</p>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>admin@corp.local</p>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0 font-semibold" style={{ background: "#0070f2" }}>{initials}</div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-white truncate">{uname}</p>
+            <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.6)" }}>{email}</p>
+            <span className="inline-block text-[10px] px-1.5 py-0.2 rounded mt-0.5 text-white/90" style={{ background: "rgba(0,112,242,0.4)" }}>{role}</span>
           </div>
         </div>
       </div>
@@ -177,7 +184,7 @@ function LiveClock() {
 }
 
 /* ── Shell ── */
-function Shell({ onLogout }: { onLogout: () => void }) {
+function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void }) {
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
   const [pageView, setPageView] = useState<PageView>({ type: "main" });
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -198,6 +205,8 @@ function Shell({ onLogout }: { onLogout: () => void }) {
   const goMain = () => setPageView({ type: "main" });
 
   const isSubPage = pageView.type !== "main";
+  const displayUser = user?.username || "ADMIN";
+  const initials = displayUser.substring(0, 2).toUpperCase();
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "#f5f6f7", fontFamily: "'72', '72full', Arial, Helvetica, sans-serif" }}>
@@ -221,43 +230,38 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {/* Notifications */}
           <div className="relative">
             <button
-              onClick={() => { setNotifOpen((o) => !o); }}
-              className="p-2 rounded hover:bg-white/10 transition-colors relative"
-              style={{ color: notifOpen ? "#fff" : "rgba(255,255,255,0.7)" }}
+              onClick={() => setNotifOpen((o) => !o)}
+              className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-white transition-colors relative"
             >
               <Bell size={16} />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-white" style={{ background: "#bb0000", fontSize: "9px" }}>
-                  {unreadCount}
-                </span>
-              )}
+              {unreadCount > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: "#0070f2" }} />}
             </button>
-            {notifOpen && <NotificationsPanel notifs={notifs} onRead={readNotif} onReadAll={readAll} onClose={() => setNotifOpen(false)} />}
+            {notifOpen && (
+              <NotificationsPanel
+                notifs={notifs}
+                onRead={readNotif}
+                onReadAll={readAll}
+                onClose={() => setNotifOpen(false)}
+              />
+            )}
           </div>
 
-          {/* Settings — full page */}
-          <button
-            onClick={() => setPageView({ type: "settings" })}
-            className="p-2 rounded hover:bg-white/10 transition-colors"
-            style={{ color: pageView.type === "settings" ? "#fff" : "rgba(255,255,255,0.7)" }}
-          >
+          <button onClick={() => setPageView({ type: "settings" })} className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-white transition-colors">
             <Settings size={16} />
           </button>
 
-          <div className="h-5 w-px bg-white/20 mx-1" />
-
-          {/* Profile dropdown */}
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setProfileOpen((o) => !o)}
               className="flex items-center gap-2 pl-1 pr-2 py-1 rounded hover:bg-white/10 transition-colors"
               style={{ background: profileOpen ? "rgba(255,255,255,0.1)" : "transparent" }}
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs" style={{ background: "#0070f2" }}>AD</div>
-              <span className="text-white/80 text-sm hidden sm:block">Admin</span>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold" style={{ background: "#0070f2" }}>{initials}</div>
+              <span className="text-white/80 text-sm hidden sm:block">{displayUser}</span>
             </button>
             {profileOpen && (
               <ProfileMenu
+                user={user}
                 onProfile={() => { setProfileOpen(false); setPageView({ type: "profile" }); }}
                 onLogout={() => { setProfileOpen(false); onLogout(); }}
               />
@@ -301,8 +305,8 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           >
             <div style={{ minWidth: "260px", overflowY: "auto" }}>
               <div className="px-4 py-3" style={{ borderBottom: "1px solid #e4e4e4", background: "#f5f6f7" }}>
-                <p className="text-xs" style={{ color: "#74777a" }}>Current Session</p>
-                <p className="text-sm" style={{ color: "#32363a" }}>ADMIN · 10.42.8.201</p>
+                <p className="text-xs" style={{ color: "#74777a" }}>Active User Session</p>
+                <p className="text-sm font-semibold" style={{ color: "#32363a" }}>{displayUser} · {user?.role || "Super Admin"}</p>
               </div>
               <div className="px-3 py-3 flex flex-col gap-5">
                 {NAV_GROUPS.map((group) => (
@@ -371,13 +375,27 @@ function Shell({ onLogout }: { onLogout: () => void }) {
 }
 
 function AppRoot() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getCurrentUser());
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    return !!localStorage.getItem("token");
+  });
+
+  const handleSignIn = (user?: AuthUser) => {
+    if (user) setCurrentUser(user);
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = async () => {
+    await logoutApi();
+    setCurrentUser(null);
+    setIsLoggedIn(false);
+  };
 
   if (!isLoggedIn) {
-    return <SignInPage onSignIn={() => setIsLoggedIn(true)} />;
+    return <SignInPage onSignIn={handleSignIn} />;
   }
 
-  return <Shell onLogout={() => setIsLoggedIn(false)} />;
+  return <Shell user={currentUser} onLogout={handleLogout} />;
 }
 
 export default function App() {

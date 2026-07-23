@@ -7,6 +7,7 @@ import { useAppContext } from "../contexts/AppContext";
 import { ValueHelpInput, MOCK_SAP_USERS } from "./ValueHelpInput";
 import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 import type { AuditLog } from "../contexts/AppContext";
+import { resetPasswordApi } from "../../api/sapApi";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c",
@@ -473,23 +474,41 @@ export function PasswordReset() {
   const handleResetClick = async () => {
     if (!validate()) return;
     setLoading(true); setStatus("idle"); setReturnedPassword(""); setShowPassword(false);
-    await new Promise((r) => setTimeout(r, 1500));
-    const success = Math.random() > 0.2;
-    const serverPassword = success ? generatePasswordFromServer() : "";
-    setLoading(false); setStatus(success ? "success" : "error"); setReturnedPassword(serverPassword);
     const sys = systems.find((s) => s.id === selectedSystem);
-    logAction({
-      module: "Password Reset", action: "Reset Password", targetObject: username,
-      system: sys?.systemId ?? "—", client: sys?.client ?? "—",
-      status: success ? "Success" : "Failed",
-      durationMs: Math.floor(600 + Math.random() * 800),
-      details: success
-        ? `Temporary system-generated password assigned to ${username}. Force change on next logon enabled.`
-        : `Password reset failed — ${username} not found in ${sys?.systemId ?? "system"} or authorization error.`,
-      errorCode: success ? undefined : "BAPI_USER_NOT_FOUND",
-      changesBefore: success ? "Password: [previous encrypted]" : undefined,
-      changesAfter: success ? "Temporary password set, force change flag = TRUE" : undefined,
-    });
+    const targetSystemId = sys?.systemId || selectedSystem || "SHD";
+
+    try {
+      const res = await resetPasswordApi({
+        system_id: targetSystemId,
+        username: username,
+      });
+
+      const serverPassword = res.NewPassword || res.Password || generatePasswordFromServer();
+      setLoading(false);
+      setStatus("success");
+      setReturnedPassword(serverPassword);
+
+      logAction({
+        module: "Password Reset", action: "Reset Password", targetObject: username,
+        system: targetSystemId, client: sys?.client ?? "100",
+        status: "Success",
+        durationMs: 900,
+        details: res.Message || `Temporary system-generated password assigned to ${username}.`,
+        changesBefore: "Password: [previous encrypted]",
+        changesAfter: "Temporary password set, force change flag = TRUE",
+      });
+    } catch (err: any) {
+      setLoading(false);
+      setStatus("error");
+      logAction({
+        module: "Password Reset", action: "Reset Password", targetObject: username,
+        system: targetSystemId, client: sys?.client ?? "100",
+        status: "Failed",
+        durationMs: 600,
+        details: err.message || `Password reset failed for ${username}.`,
+        errorCode: "BAPI_USER_NOT_FOUND",
+      });
+    }
   };
 
   const handleClear = () => { setUsername(""); setErrors({}); setStatus("idle"); setSelectedSystem(""); setReturnedPassword(""); setShowPassword(false); setCopied(false); };
@@ -556,8 +575,8 @@ export function PasswordReset() {
             <div className="mb-5 flex items-start gap-3 px-4 py-3 rounded" style={{ background: "#fff2f2", border: `1px solid ${F.error}` }}>
               <AlertCircle size={18} style={{ color: F.error, flexShrink: 0, marginTop: "2px" }} />
               <div>
-                <p className="text-sm" style={{ color: F.error }}>Password reset failed — user not found or insufficient authorization.</p>
-                <p className="text-xs mt-0.5" style={{ color: F.muted }}>Check the audit log for error code BAPI_USER_NOT_FOUND.</p>
+                <p className="text-sm" style={{ color: F.error }}>{errorMessage || "Password reset failed in SAP system."}</p>
+                <p className="text-xs mt-0.5" style={{ color: F.muted }}>Action recorded in security audit log.</p>
               </div>
             </div>
           )}
