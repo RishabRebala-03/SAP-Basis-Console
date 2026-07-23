@@ -51,11 +51,10 @@ const ADMIN_USER = "ADMIN";
 const ADMIN_IP = "10.42.8.201";
 
 const INITIAL_SYSTEMS: SapSystem[] = [
-  { id: "sys-1", systemId: "PRD", systemName: "Production", client: "100", environment: "Production", host: "sap-prd.corp.local", description: "Live production environment — handle with care", status: "Active", createdAt: "2026-01-10T08:00:00Z", createdBy: "ADMIN" },
-  { id: "sys-2", systemId: "QAS", systemName: "Quality Assurance", client: "200", environment: "Quality", host: "sap-qas.corp.local", description: "Pre-production testing and UAT environment", status: "Active", createdAt: "2026-01-10T08:05:00Z", createdBy: "ADMIN" },
-  { id: "sys-3", systemId: "DEV", systemName: "Development", client: "300", environment: "Development", host: "sap-dev.corp.local", description: "Developer sandbox for customizations and transports", status: "Active", createdAt: "2026-01-10T08:10:00Z", createdBy: "ADMIN" },
-  { id: "sys-4", systemId: "SBX", systemName: "Sandbox", client: "400", environment: "Sandbox", host: "sap-sbx.corp.local", description: "Free-form exploration and training environment", status: "Inactive", createdAt: "2026-02-14T11:30:00Z", createdBy: "BASIS01" },
-  { id: "sys-5", systemId: "BW1", systemName: "BW Production", client: "100", environment: "Production", host: "sap-bw1.corp.local", description: "SAP BW/BI reporting production system", status: "Active", createdAt: "2026-03-01T09:00:00Z", createdBy: "ADMIN" },
+  { id: "sys-shd", systemId: "SHD", systemName: "SAP S/4HANA Development", client: "100", environment: "Development", host: "183.82.103.80:8011", description: "SAP Gateway SHD - Development System (Client 100)", status: "Active", createdAt: "2026-01-10T08:00:00Z", createdBy: "ADMIN" },
+  { id: "sys-emq", systemId: "EMQ", systemName: "SAP ERP Quality Assurance", client: "300", environment: "Quality", host: "49.206.197.17:44333", description: "SAP Gateway EMQ - Quality System (Client 300)", status: "Active", createdAt: "2026-01-10T08:05:00Z", createdBy: "ADMIN" },
+  { id: "sys-emp", systemId: "EMP", systemName: "SAP ERP Production", client: "200", environment: "Production", host: "49.206.197.17:8031", description: "SAP Gateway EMP - Production System (Client 200)", status: "Active", createdAt: "2026-01-10T08:10:00Z", createdBy: "ADMIN" },
+  { id: "sys-emd", systemId: "EMD", systemName: "SAP ERP Development", client: "400", environment: "Development", host: "49.206.197.17:8006", description: "SAP Gateway EMD - Development System (Client 400)", status: "Active", createdAt: "2026-02-14T11:30:00Z", createdBy: "ADMIN" },
 ];
 
 const INITIAL_LOGS: AuditLog[] = [

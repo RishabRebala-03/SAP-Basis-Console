@@ -7,6 +7,7 @@ import { useAppContext } from "../contexts/AppContext";
 import { ValueHelpInput, MOCK_SAP_USERS } from "./ValueHelpInput";
 import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 import type { AuditLog } from "../contexts/AppContext";
+import { lockUserApi, unlockUserApi } from "../../api/sapApi";
 
 const F = { primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c", text: "#32363a", muted: "#74777a", border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff" };
 type Action = "lock" | "unlock";
@@ -392,33 +393,54 @@ export function LockUnlockUser() {
   const [selectedSystem, setSelectedSystem] = useState("");
   const [username, setUsername] = useState("");
   const [action, setAction] = useState<Action>("lock");
+  const [unlockReason, setUnlockReason] = useState("Wrong Password Attempts");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [lastAction, setLastAction] = useState<{ username: string; action: Action; system: string } | null>(null);
 
   const validate = (): boolean => { const e: Record<string, string> = {}; if (!selectedSystem) e.system = "Please select a target SAP system"; if (!username.trim()) e.username = "Username is required"; setErrors(e); return Object.keys(e).length === 0; };
   const handleSubmitClick = () => { if (validate()) setShowConfirmDialog(true); };
   const handleConfirm = async () => {
-    setShowConfirmDialog(false); setLoading(true);
-    await new Promise((r) => setTimeout(r, 1800));
-    const success = Math.random() > 0.15;
-    setLoading(false); setStatus(success ? "success" : "error");
+    setShowConfirmDialog(false); setLoading(true); setStatus("idle"); setErrorMessage("");
     const sys = systems.find((s) => s.id === selectedSystem);
-    if (success) setLastAction({ username, action, system: sys?.systemId ?? "—" });
-    logAction({
-      module: "Lock/Unlock", action: action === "lock" ? "Lock User" : "Unlock User",
-      targetObject: username, system: sys?.systemId ?? "—", client: sys?.client ?? "—",
-      status: success ? "Success" : "Failed",
-      durationMs: Math.floor(500 + Math.random() * 700),
-      details: success ? (action === "lock" ? `User ${username} locked in ${sys?.systemId}/${sys?.client}. All active sessions terminated.` : `User ${username} unlocked in ${sys?.systemId}/${sys?.client}. Logon access restored.`) : `${action === "lock" ? "Lock" : "Unlock"} failed — ${username} not found or insufficient authorization (S_USR_ADM).`,
-      errorCode: success ? undefined : "AUTH_FAILURE_S_USR_ADM",
-      changesBefore: success ? `Status: ${action === "lock" ? "Active" : "Locked"}` : undefined,
-      changesAfter: success ? `Status: ${action === "lock" ? "Locked" : "Active"}` : undefined,
-    });
+    const targetSystemId = sys?.systemId || selectedSystem || "SHD";
+
+    try {
+      const res = action === "lock"
+        ? await lockUserApi({ system_id: targetSystemId, username })
+        : await unlockUserApi({ system_id: targetSystemId, username, reason: unlockReason });
+
+      setLoading(false);
+      setStatus("success");
+      setLastAction({ username, action, system: targetSystemId });
+
+      logAction({
+        module: "Lock/Unlock", action: action === "lock" ? "Lock User" : "Unlock User",
+        targetObject: username, system: targetSystemId, client: sys?.client ?? "100",
+        status: "Success",
+        durationMs: 850,
+        details: res.Message || (action === "lock" ? `User ${username} Locked Successfully in ${targetSystemId}` : `User ${username} UnLocked Successfully in ${targetSystemId} (Reason: ${unlockReason})`),
+        changesBefore: `Status: ${action === "lock" ? "Active" : "Locked"}`,
+        changesAfter: `Status: ${action === "lock" ? "Locked" : "Active"}`,
+      });
+    } catch (err: any) {
+      setLoading(false);
+      setStatus("error");
+      setErrorMessage(err.message || `${action === "lock" ? "Lock" : "Unlock"} failed in SAP system.`);
+      logAction({
+        module: "Lock/Unlock", action: action === "lock" ? "Lock User" : "Unlock User",
+        targetObject: username, system: targetSystemId, client: sys?.client ?? "100",
+        status: "Failed",
+        durationMs: 550,
+        details: err.message || `${action === "lock" ? "Lock" : "Unlock"} failed in SAP system.`,
+        errorCode: "SAP_SYSTEM_ERROR",
+      });
+    }
   };
-  const handleReset = () => { setUsername(""); setAction("lock"); setErrors({}); setStatus("idle"); setSelectedSystem(""); };
+  const handleReset = () => { setUsername(""); setAction("lock"); setUnlockReason("Wrong Password Attempts"); setErrors({}); setStatus("idle"); setErrorMessage(""); setSelectedSystem(""); };
   const sys = systems.find((s) => s.id === selectedSystem);
   const tabBtn = (active: boolean) => ({ color: active ? F.primary : F.muted, fontWeight: active ? "600" : "400", borderBottom: active ? `2px solid ${F.primary}` : "2px solid transparent", marginBottom: "-2px", background: "transparent", outline: "none" } as React.CSSProperties);
 
@@ -447,7 +469,7 @@ export function LockUnlockUser() {
           {status === "error" && (
             <div className="mb-5 flex items-start gap-3 px-4 py-3 rounded" style={{ background: "#fff2f2", border: `1px solid ${F.error}` }}>
               <AlertCircle size={18} style={{ color: F.error, flexShrink: 0, marginTop: "2px" }} />
-              <div><p className="text-sm" style={{ color: F.error }}>Operation failed. User not found or insufficient authorization.</p><p className="text-xs mt-0.5" style={{ color: F.muted }}>Check audit log for error code AUTH_FAILURE_S_USR_ADM.</p></div>
+              <div><p className="text-sm" style={{ color: F.error }}>{errorMessage || "Operation failed in SAP system."}</p><p className="text-xs mt-0.5" style={{ color: F.muted }}>Action recorded in security audit log.</p></div>
             </div>
           )}
 
@@ -477,6 +499,50 @@ export function LockUnlockUser() {
                       </button>
                     </div>
                   </div>
+
+                  {action === "unlock" && (
+                    <div className="mb-6 p-4 rounded" style={{ background: "#f8fbff", border: `1px solid #0070f230` }}>
+                      <label className="block text-sm font-semibold mb-2" style={{ color: F.text }}>Unlock Scope / Reason <span style={{ color: F.error }}>*</span></label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setUnlockReason("Wrong Password Attempts")}
+                          className="p-3 rounded text-left text-xs transition-all"
+                          style={{
+                            border: `2px solid ${unlockReason === "Wrong Password Attempts" ? F.success : F.border}`,
+                            background: unlockReason === "Wrong Password Attempts" ? "#f1fdf6" : F.white,
+                          }}
+                        >
+                          <p className="font-semibold mb-0.5" style={{ color: unlockReason === "Wrong Password Attempts" ? F.success : F.text }}>Wrong Password Attempts</p>
+                          <p style={{ color: F.muted }}>Unlock incorrect logon lock</p>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUnlockReason("Administrator Lock")}
+                          className="p-3 rounded text-left text-xs transition-all"
+                          style={{
+                            border: `2px solid ${unlockReason === "Administrator Lock" ? F.primary : F.border}`,
+                            background: unlockReason === "Administrator Lock" ? "#e8f2ff" : F.white,
+                          }}
+                        >
+                          <p className="font-semibold mb-0.5" style={{ color: unlockReason === "Administrator Lock" ? F.primary : F.text }}>Administrator Lock</p>
+                          <p style={{ color: F.muted }}>Unlock admin lock</p>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUnlockReason("All Lock Types")}
+                          className="p-3 rounded text-left text-xs transition-all"
+                          style={{
+                            border: `2px solid ${unlockReason === "All Lock Types" ? F.warning : F.border}`,
+                            background: unlockReason === "All Lock Types" ? "#fff8f0" : F.white,
+                          }}
+                        >
+                          <p className="font-semibold mb-0.5" style={{ color: unlockReason === "All Lock Types" ? F.warning : F.text }}>All Lock Types</p>
+                          <p style={{ color: F.muted }}>Clear all user locks</p>
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <div className="flex items-start gap-3 p-3 rounded" style={{ background: "#f0f6ff", border: `1px solid #0070f230` }}>
                     <AlertCircle size={15} style={{ color: F.primary, flexShrink: 0, marginTop: "2px" }} />
                     <p className="text-xs" style={{ color: F.muted }}>{action === "lock" ? "Locking a user will immediately terminate active sessions and prevent further logon. The user remains locked until manually unlocked." : "Unlocking a user restores logon access. Ensure the user's validity period is still active and roles are correctly assigned."}</p>
