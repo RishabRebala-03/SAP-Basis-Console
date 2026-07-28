@@ -202,11 +202,5 @@ export function ValueHelpInput({
 }
 
 /* ─── Shared user/system data used across modules ─── */
-export const MOCK_SAP_USERS: VHOption[] = [
-  { value: "RISHAB",    label: "Rishab Rebala",       secondary: "SAP User · SHD / Client 100",     badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "AITEST1",   label: "AI Test User 1",      secondary: "Basis Admin · SHD / Client 100", badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "DEV02",     label: "Development User 02", secondary: "Developer · EMD / Client 400",    badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "BULK1",     label: "Bulk User 1",         secondary: "Operations · EMQ / Client 300",  badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "BULK2",     label: "Bulk User 2",         secondary: "Operations · EMQ / Client 300",  badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "TESTUSR1",  label: "Test User 1",         secondary: "Basis Admin · SHD / Client 100", badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-];
+export const MOCK_SAP_USERS: VHOption[] = [];
+

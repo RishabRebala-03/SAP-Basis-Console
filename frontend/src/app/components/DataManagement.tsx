@@ -26,8 +26,22 @@ interface FormState {
 }
 
 const EMPTY_FORM: FormState = {
-  systemId: "", systemName: "", client: "", environment: "Development", host: "", description: "", status: "Active",
+  systemId: "", systemName: "", client: "100", environment: "Development", host: "", description: "", status: "Active",
 };
+
+const ALLOWED_SYSTEM_IDS = ["SHD", "EMP", "EMQ", "EMD"];
+
+function normalizeSystemForm(form: FormState): FormState {
+  const systemId = form.systemId.trim().toUpperCase();
+  return {
+    ...form,
+    systemId,
+    systemName: systemId,
+    client: "100",
+    environment: "Development",
+    description: form.description.trim() || `${systemId} Development`,
+  };
+}
 
 function FioriInput({ label, value, onChange, placeholder, error, required, maxLength }: {
   label: string; value: string; onChange: (v: string) => void;
@@ -91,17 +105,21 @@ function SystemFormDrawer({
   const [saved, setSaved] = useState(false);
 
   const set = (k: keyof FormState) => (v: string) => {
-    setForm((f) => ({ ...f, [k]: v }));
+    setForm((f) => {
+      if (k === "systemId") {
+        const systemId = v.toUpperCase();
+        return { ...f, systemId, systemName: systemId, client: "100", environment: "Development" };
+      }
+      return { ...f, [k]: v };
+    });
     setErrors((e) => { const n = { ...e }; delete n[k]; return n; });
   };
 
   const validate = () => {
     const e: Partial<FormState> = {};
-    if (!form.systemId.trim()) e.systemId = "Required";
-    else if (!/^[A-Z0-9]{2,10}$/.test(form.systemId)) e.systemId = "2–10 uppercase alphanumeric chars";
-    if (!form.systemName.trim()) e.systemName = "Required";
-    if (!form.client.trim()) e.client = "Required";
-    else if (!/^\d{3}$/.test(form.client)) e.client = "Must be a 3-digit number (e.g. 100)";
+    const systemId = form.systemId.trim().toUpperCase();
+    if (!systemId) e.systemId = "Required";
+    else if (!ALLOWED_SYSTEM_IDS.includes(systemId)) e.systemId = "Use SHD, EMP, EMQ, or EMD";
     if (!form.host.trim()) e.host = "Required";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -109,8 +127,9 @@ function SystemFormDrawer({
 
   const handleSave = () => {
     if (!validate()) return;
+    const normalized = normalizeSystemForm(form);
     setSaved(true);
-    setTimeout(() => { onSave(form); onClose(); }, 600);
+    setTimeout(() => { onSave(normalized); onClose(); }, 600);
   };
 
   return (
@@ -131,18 +150,18 @@ function SystemFormDrawer({
               <p className="text-xs" style={{ color: F.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>System Identity</p>
             </div>
             <div className="p-4 grid grid-cols-2 gap-4">
-              <FioriInput label="System ID" value={form.systemId} onChange={(v) => set("systemId")(v.toUpperCase())} placeholder="e.g. PRD" error={errors.systemId} required maxLength={10} />
-              <FioriInput label="System Name" value={form.systemName} onChange={set("systemName")} placeholder="e.g. Production" error={errors.systemName} required />
-              <FioriInput label="Client Number" value={form.client} onChange={set("client")} placeholder="e.g. 100" error={errors.client} required maxLength={3} />
+              <FioriInput label="System ID" value={form.systemId} onChange={(v) => set("systemId")(v.toUpperCase())} placeholder="e.g. SHD" error={errors.systemId} required maxLength={3} />
+              <FioriInput label="System Name" value={form.systemName} onChange={set("systemName")} placeholder="SHD, EMP, EMQ, or EMD" error={errors.systemName} required />
+              <FioriInput label="Client Number" value="100" onChange={() => {}} placeholder="100" error={errors.client} required maxLength={3} />
               <div>
                 <label className="block text-xs mb-1" style={{ color: F.muted }}>Environment <span style={{ color: F.error }}>*</span></label>
                 <select
-                  value={form.environment}
-                  onChange={(e) => set("environment")(e.target.value)}
+                  value="Development"
+                  onChange={() => {}}
                   className="w-full px-3 py-2 text-sm outline-none rounded"
                   style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}
                 >
-                  {["Production", "Quality", "Development", "Sandbox"].map((e) => <option key={e}>{e}</option>)}
+                  <option>Development</option>
                 </select>
               </div>
             </div>
@@ -282,18 +301,20 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
   }, [systems, appliedSearch, appliedEnv, appliedStatus, appliedClient, appliedCreator, sortField, sortDir, hasSubmitted]);
 
   const handleAdd = (form: FormState) => {
-    addSystem(form as Omit<SapSystem, "id" | "createdAt" | "createdBy">);
-    logAction({ module: "Data Management", action: "Add System", targetObject: form.systemId, system: "—", client: "—", status: "Success", durationMs: 210, details: `System ${form.systemId} (${form.systemName}) registered. Host: ${form.host}`, changesAfter: `System ${form.systemId} added with status ${form.status}` });
-    showToast(`System ${form.systemId} added successfully.`, "success");
+    const normalized = normalizeSystemForm(form);
+    addSystem(normalized as Omit<SapSystem, "id" | "createdAt" | "createdBy">);
+    logAction({ module: "Data Management", action: "Add System", targetObject: normalized.systemId, system: "—", client: "—", status: "Success", durationMs: 210, details: `System ${normalized.systemId} registered. Host: ${normalized.host}`, changesAfter: `System ${normalized.systemId} added with status ${normalized.status}` });
+    showToast(`System ${normalized.systemId} added successfully.`, "success");
   };
 
   const handleEdit = (form: FormState) => {
     if (!editTarget) return;
+    const normalized = normalizeSystemForm(form);
     const before = `${editTarget.systemId} | ${editTarget.environment} | ${editTarget.status}`;
-    const after = `${form.systemId} | ${form.environment} | ${form.status}`;
-    updateSystem(editTarget.id, form);
-    logAction({ module: "Data Management", action: "Edit System", targetObject: form.systemId, system: "—", client: "—", status: "Success", durationMs: 190, details: `System ${form.systemId} updated.`, changesBefore: before, changesAfter: after });
-    showToast(`System ${form.systemId} updated.`, "success");
+    const after = `${normalized.systemId} | ${normalized.environment} | ${normalized.status}`;
+    updateSystem(editTarget.id, normalized);
+    logAction({ module: "Data Management", action: "Edit System", targetObject: normalized.systemId, system: "—", client: "—", status: "Success", durationMs: 190, details: `System ${normalized.systemId} updated.`, changesBefore: before, changesAfter: after });
+    showToast(`System ${normalized.systemId} updated.`, "success");
     setEditTarget(null);
   };
 
@@ -313,7 +334,7 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
   const stats = {
     total: systems.length,
     active: systems.filter((s) => s.status === "Active").length,
-    production: systems.filter((s) => s.environment === "Production").length,
+    development: systems.filter((s) => s.environment === "Development").length,
     inactive: systems.filter((s) => s.status === "Inactive").length,
   };
 
@@ -367,7 +388,7 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
         {[
           { label: "Total Systems", value: stats.total, color: F.primary, bg: "#e8f2ff" },
           { label: "Active", value: stats.active, color: F.success, bg: "#f1fdf6" },
-          { label: "Production", value: stats.production, color: "#bb0000", bg: "#fff2f2" },
+          { label: "Development", value: stats.development, color: F.primary, bg: "#e8f2ff" },
           { label: "Inactive", value: stats.inactive, color: F.muted, bg: "#f5f6f7" },
         ].map((c) => (
           <div key={c.label} className="rounded px-4 py-3" style={{ background: c.bg, border: `1px solid ${c.color}25` }}>
@@ -401,7 +422,7 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
             label="Environment"
             value={envFilter === "All" ? "" : envFilter}
             onChange={(v) => setEnvFilter(v || "All")}
-            options={["", "Production", "Quality", "Development", "Sandbox"]}
+            options={["", "Development"]}
             allLabel="All Environments"
             placeholder="Search environment…"
           />

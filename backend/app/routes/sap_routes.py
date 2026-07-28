@@ -21,6 +21,31 @@ from marshmallow import ValidationError
 sap_bp = Blueprint("sap", __name__)
 sap_service = SAPService()
 
+SAP_SYSTEM_NAMES = {
+    "SHD": "SHD",
+    "EMP": "EMP",
+    "EMQ": "EMQ",
+    "EMD": "EMD",
+}
+
+SAP_SYSTEM_URLS = {
+    "SHD": "http://183.82.103.80:8011/sap/opu/odata/SAP/ZBSUSERODATA_SRV",
+    "EMP": "http://49.206.197.17:8031/sap/opu/odata/SAP/ZBSUSERODATA_SRV",
+    "EMQ": "http://49.206.197.17:8033/sap/opu/odata/SAP/ZBSUSERODATA_SRV",
+    "EMD": "http://49.206.197.17:8006/sap/opu/odata/SAP/ZBSUSERODATA_SRV",
+}
+
+def _normalized_system(doc):
+    system_id = (doc.get("system_id") or "").upper()
+    return {
+        "system_id": system_id,
+        "name": SAP_SYSTEM_NAMES.get(system_id, system_id),
+        "description": f"{system_id} Development" if system_id else doc.get("description", ""),
+        "client": current_app.config.get("SAP_CLIENT", "100"),
+        "environment": "Development",
+        "url": doc.get("url") or SAP_SYSTEM_URLS.get(system_id, "")
+    }
+
 @sap_bp.route("/systems", methods=["GET"])
 @jwt_required()
 def list_systems():
@@ -29,20 +54,10 @@ def list_systems():
     cursor = db.sap_systems.find({"is_active": True})
     systems = []
     for doc in cursor:
-        systems.append({
-            "system_id": doc.get("system_id"),
-            "name": doc.get("name"),
-            "description": doc.get("description"),
-            "client": doc.get("client"),
-            "url": doc.get("url")
-        })
+        if doc.get("system_id") in SAP_SYSTEM_NAMES:
+            systems.append(_normalized_system(doc))
     if not systems:
-        systems = [
-            {"system_id": "SHD", "name": "SAP SHD S/4HANA Dev", "description": "SAP Gateway SHD", "client": "100", "url": "http://183.82.103.80:8011/sap/opu/odata/SAP/ZBSUSERODATA_SRV"},
-            {"system_id": "EMQ", "name": "SAP EMQ ERP Quality", "description": "SAP Gateway EMQ QA", "client": "300", "url": "https://49.206.197.17:44333/sap/opu/odata/SAP/ZBSUSERODATA_SRV"},
-            {"system_id": "EMP", "name": "SAP EMP ERP Production", "description": "SAP Gateway EMP Prod", "client": "200", "url": "http://49.206.197.17:8031/sap/opu/odata/SAP/ZBSUSERODATA_SRV"},
-            {"system_id": "EMD", "name": "SAP EMD ERP Development", "description": "SAP Gateway EMD Dev", "client": "400", "url": "http://49.206.197.17:8006/sap/opu/odata/SAP/ZBSUSERODATA_SRV"}
-        ]
+        systems = [_normalized_system({"system_id": sid, "url": url}) for sid, url in SAP_SYSTEM_URLS.items()]
     return jsonify(systems), 200
 
 @sap_bp.route("/user-search", methods=["GET"])
@@ -72,21 +87,31 @@ def create_user():
     json_data = request.get_json() or {}
     system_id = json_data.get("system_id") or json_data.get("systemId") or request.headers.get("X-SAP-System", "SHD")
     username = (json_data.get("username") or json_data.get("Username") or "").strip()
+    last_name = (json_data.get("last_name") or json_data.get("LastName") or "").strip()
+    init_password = json_data.get("init_password") or json_data.get("Password") or ""
+    valid_from = json_data.get("valid_from") or json_data.get("ValidFrom")
+    valid_to = json_data.get("valid_to") or json_data.get("ValidTo")
     
     if not username:
         return jsonify({"error": "Validation Error", "message": "SAP Username is required"}), 400
+    if not last_name:
+        return jsonify({"error": "Validation Error", "message": "Last Name is required"}), 400
+    if not init_password:
+        return jsonify({"error": "Validation Error", "message": "Temporary Password is required"}), 400
+    if not valid_from or not valid_to:
+        return jsonify({"error": "Validation Error", "message": "Valid From and Valid To dates are required"}), 400
 
     data = {
         "system_id": system_id,
         "username": username,
         "first_name": json_data.get("first_name") or json_data.get("FirstName", ""),
-        "last_name": json_data.get("last_name") or json_data.get("LastName", username),
-        "init_password": json_data.get("init_password") or json_data.get("Password", ""),
+        "last_name": last_name,
+        "init_password": init_password,
         "user_type": json_data.get("user_type") or json_data.get("UserType", "Dialog"),
         "email": json_data.get("email") or json_data.get("Email", ""),
         "phone": json_data.get("phone") or json_data.get("MobileNo", ""),
-        "valid_from": json_data.get("valid_from") or json_data.get("ValidFrom"),
-        "valid_to": json_data.get("valid_to") or json_data.get("ValidTo"),
+        "valid_from": valid_from,
+        "valid_to": valid_to,
         "roles": json_data.get("roles") or json_data.get("Roles") or [],
         "profiles": json_data.get("profiles") or json_data.get("Profiles") or []
     }
@@ -164,18 +189,16 @@ def unlock_user():
 def assign_roles():
     """Assigns list of roles to SAP user."""
     json_data = request.get_json() or {}
-    if not json_data.get("system_id"):
-        json_data["system_id"] = request.headers.get("X-SAP-System", "SHD")
+    system_id = json_data.get("system_id") or json_data.get("systemId") or request.headers.get("X-SAP-System", "SHD")
+    username = (json_data.get("username") or json_data.get("Username") or "").strip()
+    roles = json_data.get("roles") or json_data.get("Roles") or []
+    if isinstance(roles, str):
+        roles = [r.strip() for r in roles.split(",") if r.strip()]
 
-    schema = AssignRolesSchema()
-    errors = schema.validate(json_data)
-    if errors:
-        msg_str = "; ".join([f"{k}: {', '.join(v) if isinstance(v, list) else v}" for k, v in errors.items()])
-        return jsonify({"error": "Validation Error", "message": msg_str, "messages": errors}), 400
-
-    system_id = json_data["system_id"]
-    username = json_data["username"]
-    roles = json_data["roles"]
+    if not username:
+        return jsonify({"error": "Validation Error", "message": "SAP Username is required"}), 400
+    if not roles:
+        return jsonify({"error": "Validation Error", "message": "At least one SAP role is required"}), 400
 
     try:
         result = sap_service.assign_roles(system_id, username, roles)
@@ -190,18 +213,16 @@ def assign_roles():
 def assign_profiles():
     """Assigns list of profiles to SAP user."""
     json_data = request.get_json() or {}
-    if not json_data.get("system_id"):
-        json_data["system_id"] = request.headers.get("X-SAP-System", "SHD")
+    system_id = json_data.get("system_id") or json_data.get("systemId") or request.headers.get("X-SAP-System", "SHD")
+    username = (json_data.get("username") or json_data.get("Username") or "").strip()
+    profiles = json_data.get("profiles") or json_data.get("Profiles") or []
+    if isinstance(profiles, str):
+        profiles = [p.strip() for p in profiles.split(",") if p.strip()]
 
-    schema = AssignProfilesSchema()
-    errors = schema.validate(json_data)
-    if errors:
-        msg_str = "; ".join([f"{k}: {', '.join(v) if isinstance(v, list) else v}" for k, v in errors.items()])
-        return jsonify({"error": "Validation Error", "message": msg_str, "messages": errors}), 400
-
-    system_id = json_data["system_id"]
-    username = json_data["username"]
-    profiles = json_data["profiles"]
+    if not username:
+        return jsonify({"error": "Validation Error", "message": "SAP Username is required"}), 400
+    if not profiles:
+        return jsonify({"error": "Validation Error", "message": "At least one SAP profile is required"}), 400
 
     try:
         result = sap_service.assign_profiles(system_id, username, profiles)
@@ -216,20 +237,15 @@ def assign_profiles():
 def extend_validity():
     """Extends validity date of SAP user."""
     json_data = request.get_json() or {}
-    if not json_data.get("system_id"):
-        json_data["system_id"] = request.headers.get("X-SAP-System", "SHD")
+    system_id = json_data.get("system_id") or json_data.get("systemId") or request.headers.get("X-SAP-System", "SHD")
+    username = (json_data.get("username") or json_data.get("Username") or "").strip()
+    valid_to = json_data.get("valid_to") or json_data.get("ValidTo") or ""
+    reason = json_data.get("reason") or json_data.get("Reason") or "Validity Extended via BASIS Console"
 
-    schema = ExtendValiditySchema()
-    try:
-        data = schema.load(json_data)
-    except ValidationError as err:
-        msg_str = "; ".join([f"{k}: {', '.join(v) if isinstance(v, list) else v}" for k, v in err.messages.items()])
-        return jsonify({"error": "Validation Error", "message": msg_str, "messages": err.messages}), 400
-
-    system_id = data["system_id"]
-    username = data["username"]
-    valid_to = data["valid_to"].isoformat()
-    reason = data.get("reason") or "Validity Extended via BASIS Console"
+    if not username:
+        return jsonify({"error": "Validation Error", "message": "SAP Username is required"}), 400
+    if not valid_to:
+        return jsonify({"error": "Validation Error", "message": "Valid To date is required"}), 400
 
     try:
         result = sap_service.extend_validity(system_id, username, valid_to, reason)

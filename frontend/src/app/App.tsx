@@ -55,13 +55,7 @@ const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 /* ── Notification data ── */
 interface Notification { id: string; type: "warning" | "info" | "success" | "error"; title: string; body: string; time: string; read: boolean; }
-const INITIAL_NOTIFS: Notification[] = [
-  { id: "n1", type: "warning", title: "3 users pending activation", body: "Users provisioned today are awaiting role assignment in PRD/100.", time: "2 min ago", read: false },
-  { id: "n2", type: "error",   title: "Failed bulk import detected", body: "2 records failed in the last bulk user creation job (QAS/200).", time: "1 hr ago", read: false },
-  { id: "n3", type: "info",    title: "System SBX: Scheduled maintenance", body: "SBX environment will be unavailable Sat 02:00–06:00 UTC.", time: "3 hrs ago", read: false },
-  { id: "n4", type: "success", title: "Password policy updated", body: "Minimum length increased to 10 characters effective today.", time: "Yesterday", read: true },
-  { id: "n5", type: "info",    title: "New system BW1 registered", body: "SAP BW Production system was added to the system registry.", time: "2 days ago", read: true },
-];
+const INITIAL_NOTIFS: Notification[] = [];
 const notifIcon = (type: Notification["type"]) => {
   if (type === "warning") return <AlertCircle size={14} style={{ color: "#e9730c" }} />;
   if (type === "error")   return <AlertCircle size={14} style={{ color: "#bb0000" }} />;
@@ -98,7 +92,12 @@ function NotificationsPanel({ notifs, onRead, onReadAll, onClose }: { notifs: No
         </div>
       </div>
       <div className="overflow-y-auto" style={{ maxHeight: "360px" }}>
-        {notifs.map((n) => (
+        {notifs.length === 0 ? (
+          <div className="px-4 py-8 text-center">
+            <p className="text-sm" style={{ color: "#32363a" }}>No notifications</p>
+            <p className="text-xs mt-1" style={{ color: "#74777a" }}>Real system events will appear here.</p>
+          </div>
+        ) : notifs.map((n) => (
           <button
             key={n.id}
             onClick={() => onRead(n.id)}
@@ -379,6 +378,16 @@ function AppRoot() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
     return !!localStorage.getItem("token");
   });
+
+  useEffect(() => {
+    const handleSessionExpired = async () => {
+      await logoutApi();
+      setCurrentUser(null);
+      setIsLoggedIn(false);
+    };
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () => window.removeEventListener("auth:session-expired", handleSessionExpired);
+  }, []);
 
   const handleSignIn = (user?: AuthUser) => {
     if (user) setCurrentUser(user);

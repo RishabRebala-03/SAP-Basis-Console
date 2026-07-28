@@ -53,15 +53,34 @@ export interface BulkCreatePayload {
   }>;
 }
 
+import { refreshTokenApi } from "./authApi";
+
 const BASE_URL = "/api/sap";
 
-function getAuthHeaders(): Record<string, string> {
-  const headers: Record<string, string> = { "Content-Type": "application/json" };
+async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Response> {
   const token = localStorage.getItem("token");
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string> || {}),
+  };
+
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
   }
-  return headers;
+
+  let res = await fetch(url, { ...options, headers });
+
+  if (res.status === 401) {
+    const newToken = await refreshTokenApi();
+    if (newToken) {
+      headers["Authorization"] = `Bearer ${newToken}`;
+      res = await fetch(url, { ...options, headers });
+    } else {
+      window.dispatchEvent(new Event("auth:session-expired"));
+    }
+  }
+
+  return res;
 }
 
 async function safeParseResponse(res: Response, fallbackMsg: string) {
@@ -85,45 +104,40 @@ async function safeParseResponse(res: Response, fallbackMsg: string) {
 }
 
 export async function createSingleUserApi(payload: CreateUserPayload) {
-  const res = await fetch(`${BASE_URL}/create-user`, {
+  const res = await fetchWithAuth(`${BASE_URL}/create-user`, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
   return await safeParseResponse(res, "User creation completed");
 }
 
 export async function resetPasswordApi(payload: ResetPasswordPayload) {
-  const res = await fetch(`${BASE_URL}/reset-password`, {
+  const res = await fetchWithAuth(`${BASE_URL}/reset-password`, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
   return await safeParseResponse(res, "Password reset completed");
 }
 
 export async function lockUserApi(payload: LockUserPayload) {
-  const res = await fetch(`${BASE_URL}/lock`, {
+  const res = await fetchWithAuth(`${BASE_URL}/lock`, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
   return await safeParseResponse(res, "Lock user operation completed");
 }
 
 export async function unlockUserApi(payload: UnlockUserPayload) {
-  const res = await fetch(`${BASE_URL}/unlock`, {
+  const res = await fetchWithAuth(`${BASE_URL}/unlock`, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
   return await safeParseResponse(res, "Unlock user operation completed");
 }
 
 export async function processBulkCreateApi(payload: BulkCreatePayload) {
-  const res = await fetch(`${BASE_URL}/bulk-create/process`, {
+  const res = await fetchWithAuth(`${BASE_URL}/bulk-create/process`, {
     method: "POST",
-    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
   return await safeParseResponse(res, "Bulk user creation completed");
@@ -132,8 +146,6 @@ export async function processBulkCreateApi(payload: BulkCreatePayload) {
 export async function searchUsersApi(systemId: string, username?: string) {
   const params = new URLSearchParams({ system_id: systemId });
   if (username) params.append("username", username);
-  const res = await fetch(`${BASE_URL}/user-search?${params.toString()}`, {
-    headers: getAuthHeaders()
-  });
+  const res = await fetchWithAuth(`${BASE_URL}/user-search?${params.toString()}`);
   return await safeParseResponse(res, "User search completed");
 }

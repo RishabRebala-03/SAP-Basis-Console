@@ -143,7 +143,7 @@ export function SettingsPage({ settings, onChange, onBack }: {
                   <SelectField label="Language" sub="Interface display language" value={settings.language} options={["English (US)", "English (UK)", "German (DE)", "French (FR)", "Japanese (JP)", "Chinese (Simplified)"]} onChange={set("language") as (v: string) => void} />
                   <SelectField label="Date Format" sub="How dates are displayed throughout the application" value={settings.dateFormat} options={["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD", "DD-MMM-YYYY"]} onChange={set("dateFormat") as (v: string) => void} />
                   <SelectField label="Time Zone" sub="Time zone for displaying timestamps" value={settings.timezone} options={["UTC-8 (Pacific)", "UTC-5 (Eastern)", "UTC+0 (London)", "UTC+1 (Berlin/Paris)", "UTC+3 (Moscow)", "UTC+5:30 (India)", "UTC+8 (Singapore/HK)", "UTC+9 (Tokyo)"]} onChange={set("timezone") as (v: string) => void} />
-                  <SelectField label="Default System" sub="Pre-selected system in provisioning modules" value={settings.defaultSystem || "None"} options={["None", "PRD – Production", "QAS – Quality", "DEV – Development"]} onChange={set("defaultSystem") as (v: string) => void} />
+                  <SelectField label="Default System" sub="Pre-selected system in provisioning modules" value={settings.defaultSystem || "None"} options={["None", "SHD - Development", "EMP - Development", "EMQ - Development", "EMD - Development"]} onChange={set("defaultSystem") as (v: string) => void} />
                 </div>
               </div>
             )}
@@ -196,7 +196,7 @@ export function SettingsPage({ settings, onChange, onBack }: {
                         { label: "User creation failure", default: true },
                         { label: "Bulk import completion", default: true },
                         { label: "Password reset", default: false },
-                        { label: "Lock / unlock events", default: true },
+                        { label: "Wrong-password unlock events", default: true },
                         { label: "System registry changes", default: false },
                       ].map((item) => (
                         <div key={item.label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>

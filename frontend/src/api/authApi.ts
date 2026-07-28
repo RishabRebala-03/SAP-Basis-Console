@@ -39,6 +39,37 @@ export async function loginApi(payload: LoginPayload) {
   return data;
 }
 
+export async function refreshTokenApi(): Promise<string | null> {
+  const refreshToken = localStorage.getItem("refresh_token");
+  if (!refreshToken) {
+    return null;
+  }
+
+  try {
+    const res = await fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${refreshToken}`,
+      },
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    const data = await res.json();
+    if (data.access_token) {
+      localStorage.setItem("token", data.access_token);
+      return data.access_token as string;
+    }
+  } catch {
+    // Network or server error
+  }
+
+  return null;
+}
+
 export async function logoutApi() {
   const token = localStorage.getItem("token");
   const refreshToken = localStorage.getItem("refresh_token");

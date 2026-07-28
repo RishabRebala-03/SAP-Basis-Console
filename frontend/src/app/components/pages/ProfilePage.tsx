@@ -26,17 +26,10 @@ const AUTH_OBJECTS = [
 ];
 
 const SESSIONS = [
-  { id: "SES-A4B7C2D1", type: "Current", client: "100", system: "PRD", ip: "10.42.8.201", logon: "Today 08:30", terminal: "WIN-CORP-001", status: "active" as const },
-  { id: "SES-EF12GH56", type: "Browser", client: "200", system: "QAS", ip: "10.42.8.201", logon: "Today 07:55", terminal: "Chrome/126", status: "idle" as const },
+  { id: "SES-A4B7C2D1", type: "Current", client: "100", system: "EMP", ip: "10.42.8.201", logon: "Today 08:30", terminal: "WIN-CORP-001", status: "active" as const },
 ];
 
-const ACTIVITY = [
-  { action: "Create User",    target: "ALICE.SMITH",  system: "PRD", time: "09:15", status: "success" as const },
-  { action: "Lock User",      target: "BOB.JONES",    system: "PRD", time: "09:02", status: "success" as const },
-  { action: "Bulk Import",    target: "6 records",    system: "QAS", time: "08:47", status: "warning" as const },
-  { action: "Reset Password", target: "CAROL.WHITE",  system: "PRD", time: "08:30", status: "success" as const },
-  { action: "Create User",    target: "EVE.TAYLOR",   system: "DEV", time: "Yesterday", status: "error" as const },
-];
+const ACTIVITY: Array<{ action: string; target: string; system: string; time: string; status: "success" | "warning" | "error" }> = [];
 
 export function ProfilePage({ onBack }: { onBack: () => void }) {
   const [tab, setTab] = useState<Tab>("overview");
@@ -78,9 +71,9 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-3 sm:gap-6 mt-2 sm:mt-0">
               {[
-                { label: "Actions Today", value: "12" },
-                { label: "Users Managed", value: "47" },
-                { label: "Sessions", value: "2" },
+                { label: "Actions Today", value: "0" },
+                { label: "Users Managed", value: "0" },
+                { label: "Sessions", value: String(SESSIONS.length) },
               ].map((s) => (
                 <div key={s.label} className="text-center">
                   <p className="text-2xl text-white">{s.value}</p>
@@ -178,15 +171,11 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
                   <h3 className="text-sm" style={{ color: F.text }}>Last Logons</h3>
                 </div>
                 <div className="p-4 flex flex-col gap-3">
-                  {[
-                    { time: "Today 08:30", ip: "10.42.8.201", system: "PRD" },
-                    { time: "Yesterday 17:02", ip: "10.42.8.201", system: "QAS" },
-                    { time: "20 Jul, 09:14", ip: "10.42.8.201", system: "DEV" },
-                  ].map((l, i) => (
-                    <div key={i} className="flex items-center gap-2">
+                  {SESSIONS.map((l, i) => (
+                    <div key={l.id} className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: i === 0 ? F.success : F.border }} />
                       <div className="flex-1">
-                        <p className="text-xs" style={{ color: F.text }}>{l.time}</p>
+                        <p className="text-xs" style={{ color: F.text }}>{l.logon}</p>
                         <p className="text-xs" style={{ color: F.muted }}>{l.ip} · {l.system}</p>
                       </div>
                     </div>
@@ -283,7 +272,12 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
               <h3 className="text-sm" style={{ color: F.text }}>Recent Actions (Today)</h3>
             </div>
             <div className="divide-y" style={{ borderColor: F.border }}>
-              {ACTIVITY.map((item, i) => {
+              {ACTIVITY.length === 0 ? (
+                <div className="px-5 py-8 text-center">
+                  <p className="text-sm" style={{ color: F.text }}>No recent activity</p>
+                  <p className="text-xs mt-1" style={{ color: F.muted }}>Real account activity will appear here.</p>
+                </div>
+              ) : ACTIVITY.map((item, i) => {
                 const statusMap = { success: { icon: <CheckCircle2 size={14} style={{ color: F.success }} />, color: F.success }, warning: { icon: <AlertCircle size={14} style={{ color: F.warning }} />, color: F.warning }, error: { icon: <AlertCircle size={14} style={{ color: F.error }} />, color: F.error } };
                 const s = statusMap[item.status];
                 return (

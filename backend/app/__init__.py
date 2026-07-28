@@ -25,6 +25,10 @@ def create_app(config_class=Config):
     limiter.init_app(app)
     mongo.init_app(app)
 
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        return jsonify({"error": "Unauthorized", "message": "Token has expired"}), 401
+
     # Setup Logging
     setup_logger(app)
 

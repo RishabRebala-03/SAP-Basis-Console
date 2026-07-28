@@ -42,38 +42,18 @@ def app():
 
     db.sap_systems.insert_one({
         "system_id": "EMP",
-        "name": "SAP ERP Production Test",
-        "description": "SAP System for testing purposes",
-        "client": "200",
+        "name": "EMP",
+        "description": "EMP Development",
+        "client": "100",
+        "environment": "Development",
         "url": "https://sap-test.example.com",
         "user": "TEST_USER",
         "password": "TEST_PASSWORD",
         "is_active": True
     })
 
-    db.sap_users_mock.insert_one({
-        "system_id": "EMP",
-        "username": "JDOE",
-        "first_name": "John",
-        "last_name": "Doe",
-        "email": "john.doe@example.com",
-        "department": "Basis",
-        "company": "Enterprise",
-        "user_type": "A",
-        "valid_from": "2026-01-01",
-        "valid_to": "9999-12-31",
-        "language": "EN",
-        "employee_id": "EMP01",
-        "phone": "+123",
-        "cost_center": "CC-10",
-        "manager": "MGR-01",
-        "roles": ["SAP_ALL"],
-        "profiles": ["SAP_ALL"],
-        "lock_status": "Unlocked",
-        "lock_reason": ""
-    })
-
     yield app
+
 
 @pytest.fixture(scope="function")
 def client(app):
