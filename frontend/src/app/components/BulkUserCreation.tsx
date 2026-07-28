@@ -15,10 +15,8 @@ interface BulkUser {
   status: "valid" | "invalid" | "processed" | "failed"; errorMessage: string;
 }
 
-const MOCK_USERS: BulkUser[] = [
-  { row: 1, username: "BULK1", lastName: "Doe", firstName: "John", validFrom: "2026-01-01", validTo: "2027-01-01", roles: "Z_BASIS_ADMIN", status: "valid", errorMessage: "" },
-  { row: 2, username: "BULK2", lastName: "Smith", firstName: "Anna", validFrom: "2026-01-01", validTo: "2027-01-01", roles: "Z_FI_ACCOUNTANT", status: "valid", errorMessage: "" },
-];
+const MOCK_USERS: BulkUser[] = [];
+
 
 const F = { primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c", text: "#32363a", muted: "#74777a", border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff" };
 

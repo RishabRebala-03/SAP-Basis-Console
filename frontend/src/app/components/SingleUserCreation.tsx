@@ -496,11 +496,11 @@ export function SingleUserCreation() {
       {activeTab === "creation" && (
         <>
           {status === "success" && (
-            <div className="mb-5 flex items-start gap-3 px-4 py-3 rounded" style={{ background: "#f1fdf6", border: `1px solid ${F.success}` }}>
+            <div className="mb-5 flex items-start gap-3 px-4 py-3.5 rounded" style={{ background: "#f1fdf6", border: `1px solid ${F.success}` }}>
               <CheckCircle2 size={18} style={{ color: F.success, flexShrink: 0, marginTop: "2px" }} />
               <div>
                 <p className="text-sm" style={{ color: F.success }}>User <strong>{form.username}</strong> created successfully in <strong>{systems.find((s) => s.id === selectedSystem)?.systemId}</strong>.</p>
-                <p className="text-xs mt-0.5" style={{ color: F.muted }}>The user has been provisioned. Action recorded in audit log.</p>
+                <p className="text-xs mt-0.5" style={{ color: F.muted }}>Verified in SAP system and action recorded in security audit log at {new Date().toLocaleTimeString()}.</p>
               </div>
             </div>
           )}
@@ -581,7 +581,7 @@ export function SingleUserCreation() {
             <div className="px-5 py-4 flex items-center justify-between gap-3" style={{ background: "#fafafa" }}>
               <button onClick={handleReset} className="flex items-center gap-2 px-4 py-2 text-sm rounded transition-colors" style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}><RotateCcw size={14} /> Reset</button>
               <button onClick={handleSubmit} disabled={loading} className="flex items-center gap-2 px-5 py-2 text-sm rounded text-white" style={{ background: loading ? "#74a8f5" : F.primary }}>
-                {loading ? <><span className="animate-spin border-2 border-white border-t-transparent rounded-full w-3.5 h-3.5" /> Processing...</> : <><Save size={14} /> Create User</>}
+                {loading ? <><span className="animate-spin border-2 border-white border-t-transparent rounded-full w-3.5 h-3.5" /> Creating & Verifying in SAP...</> : <><Save size={14} /> Create User</>}
               </button>
             </div>
           </div>

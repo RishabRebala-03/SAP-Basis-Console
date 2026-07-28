@@ -29,32 +29,34 @@ class Config:
     RATELIMIT_STORAGE_URI = "memory://"
     
     # SAP Integration Config
-    SAP_MOCK = os.getenv("SAP_MOCK", "true").lower() == "true"
+    SAP_MOCK = os.getenv("SAP_MOCK", "false").lower() == "true"
     
+    SAP_CLIENT = os.getenv("SAP_CLIENT", "100")
+
     # Configured SAP Systems list
     SAP_SYSTEMS = {
         "SHD": {
-            "url": os.getenv("SAP_SHD_URL"),
-            "user": os.getenv("SAP_SHD_USER"),
-            "pass": os.getenv("SAP_SHD_PASS"),
-            "client": os.getenv("SAP_SHD_CLIENT", "100")
+            "url": os.getenv("SAP_SHD_URL", "http://183.82.103.80:8011/sap/opu/odata/SAP/ZBSUSERODATA_SRV"),
+            "user": os.getenv("SAP_SHD_USER", "AITEST1"),
+            "pass": os.getenv("SAP_SHD_PASS", "Naxrita@2026"),
+            "client": SAP_CLIENT
         },
         "EMP": {
-            "url": os.getenv("SAP_EMP_URL"),
-            "user": os.getenv("SAP_EMP_USER"),
-            "pass": os.getenv("SAP_EMP_PASS"),
-            "client": os.getenv("SAP_EMP_CLIENT", "200")
+            "url": os.getenv("SAP_EMP_URL", "http://49.206.197.17:8031/sap/opu/odata/SAP/ZBSUSERODATA_SRV"),
+            "user": os.getenv("SAP_EMP_USER", "AITEST1"),
+            "pass": os.getenv("SAP_EMP_PASS", "Naxrita@2026"),
+            "client": SAP_CLIENT
         },
         "EMQ": {
-            "url": os.getenv("SAP_EMQ_URL"),
-            "user": os.getenv("SAP_EMQ_USER"),
-            "pass": os.getenv("SAP_EMQ_PASS"),
-            "client": os.getenv("SAP_EMQ_CLIENT", "300")
+            "url": os.getenv("SAP_EMQ_URL", "http://49.206.197.17:8033/sap/opu/odata/SAP/ZBSUSERODATA_SRV"),
+            "user": os.getenv("SAP_EMQ_USER", "AITEST1"),
+            "pass": os.getenv("SAP_EMQ_PASS", "Naxrita@2026"),
+            "client": SAP_CLIENT
         },
         "EMD": {
-            "url": os.getenv("SAP_EMD_URL"),
-            "user": os.getenv("SAP_EMD_USER"),
-            "pass": os.getenv("SAP_EMD_PASS"),
-            "client": os.getenv("SAP_EMD_CLIENT", "400")
+            "url": os.getenv("SAP_EMD_URL", "http://49.206.197.17:8006/sap/opu/odata/SAP/ZBSUSERODATA_SRV"),
+            "user": os.getenv("SAP_EMD_USER", "AITEST1"),
+            "pass": os.getenv("SAP_EMD_PASS", "Naxrita@2026"),
+            "client": SAP_CLIENT
         }
     }

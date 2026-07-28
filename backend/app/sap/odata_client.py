@@ -60,62 +60,65 @@ class ODataClient:
         url = f"{self.base_url.rstrip('/')}/"
         headers = {
             "X-CSRF-Token": "Fetch",
-            "Accept": "application/json",
             "sap-client": self.client,
             "X-Requested-With": "XMLHttpRequest"
         }
+        params = {"sap-client": self.client}
         try:
-            logger.info(f"Fetching CSRF token from {url}")
+            logger.info(f"Fetching CSRF token from {url} (Client: {self.client})")
             response = self.session.get(
                 url, 
                 auth=(self.user, self.password), 
-                headers=headers, 
+                headers=headers,
+                params=params,
                 timeout=self.timeout
             )
+            if response.status_code == 401:
+                raise Exception(f"SAP Gateway Authentication Error (401 Unauthorized): Service user '{self.user}' on client {self.client} rejected by SAP system {self.system_id}. Service user '{self.user}' may be locked or credentials need updating on SAP.")
             response.raise_for_status()
-            token = response.headers.get("X-CSRF-Token")
+            token = response.headers.get("X-CSRF-Token") or response.headers.get("x-csrf-token")
             cookies = response.cookies.get_dict()
             logger.info(f"CSRF token obtained successfully for {self.system_id}")
             return token, cookies
         except Exception as e:
             logger.error(f"Error fetching CSRF token from SAP {self.system_id}: {str(e)}")
-            raise Exception(f"Failed to connect to SAP system {self.system_id}: {str(e)}")
+            raise Exception(str(e) if "SAP Gateway" in str(e) else f"Failed to connect to SAP system {self.system_id}: {str(e)}")
 
     def request(self, method, entity_set, payload=None, query_params=None):
         """Performs a generic request against the OData API."""
         if self.is_mock:
             return self._execute_mock(method, entity_set, payload, query_params)
 
-        # 1. Fetch CSRF token for writing actions
-        csrf_token = None
-        cookies = {}
-        if method in ["POST", "PUT", "PATCH", "DELETE"]:
-            csrf_token, cookies = self.fetch_csrf_token()
-
-        # 2. Build URL - append entity set to base service URL
-        url = f"{self.base_url.rstrip('/')}/{entity_set}"
-        
-        # 3. Setup headers and request args
-        headers = self._get_headers(csrf_token)
-        
-        # Build query params - always include sap-client
-        params = {"sap-client": self.client}
-        if query_params:
-            params.update(query_params)
-        
-        req_args = {
-            "auth": (self.user, self.password),
-            "headers": headers,
-            "timeout": self.timeout,
-            "params": params
-        }
-        if cookies:
-            req_args["cookies"] = cookies
-        if payload:
-            req_args["json"] = payload
-
-        # 4. Perform call
         try:
+            # 1. Fetch CSRF token for writing actions
+            csrf_token = None
+            cookies = {}
+            if method in ["POST", "PUT", "PATCH", "DELETE"]:
+                csrf_token, cookies = self.fetch_csrf_token()
+
+            # 2. Build URL - append entity set to base service URL
+            url = f"{self.base_url.rstrip('/')}/{entity_set}"
+            
+            # 3. Setup headers and request args
+            headers = self._get_headers(csrf_token)
+            
+            # Build query params - always include sap-client
+            params = {"sap-client": self.client}
+            if query_params:
+                params.update(query_params)
+            
+            req_args = {
+                "auth": (self.user, self.password),
+                "headers": headers,
+                "timeout": self.timeout,
+                "params": params
+            }
+            if cookies:
+                req_args["cookies"] = cookies
+            if payload:
+                req_args["json"] = payload
+
+            # 4. Perform call
             logger.info(f"SAP Request: {method} {url} | System: {self.system_id} | Params: {params}")
             start_time = time.time()
             response = self.session.request(method, url, **req_args)
@@ -128,9 +131,9 @@ class ODataClient:
                 return {"message": "Success (No Content)"}
             else:
                 self._handle_error_response(response)
-        except requests.exceptions.RequestException as e:
-            logger.error(f"HTTP Connection failure to SAP {self.system_id}: {str(e)}")
-            raise Exception(f"Network error communicating with SAP System {self.system_id}: {str(e)}")
+        except Exception as e:
+            logger.error(f"HTTP Connection/Authentication failure to live SAP {self.system_id}: {str(e)}")
+            raise Exception(f"Live SAP Gateway {self.system_id} Error: {str(e)}")
 
     def batch_request(self, operations):
         """
@@ -237,11 +240,13 @@ class ODataClient:
 
     def _handle_error_response(self, response):
         """Extracts structured messages from standard SAP RFC/Gateway XML or JSON error envelopes."""
+        if response.status_code == 401:
+            raise Exception(f"SAP Gateway Authentication Error (401 Unauthorized): Service user '{self.user}' on client {self.client} rejected by SAP system {self.system_id}. Service user '{self.user}' may be locked or credentials need updating on SAP.")
         try:
             error_data = response.json()
             err_msg = error_data.get("error", {}).get("message", {}).get("value", "Unknown SAP error occurred.")
         except Exception:
-            err_msg = f"SAP returned HTTP {response.status_code}: {response.text}"
+            err_msg = f"SAP returned HTTP {response.status_code}: {response.text[:200]}"
         
         logger.error(f"SAP error response from {self.system_id}: {err_msg}")
         raise Exception(err_msg)
@@ -256,16 +261,18 @@ class ODataClient:
 
         # Entity format: UserSet('USERNAME') or UserSet(UserName='USERNAME')
         # Also support UserLockSet patterns
-        is_single_user = ("UserSet('" in entity_set or "UserSet(UserName='" in entity_set or
-                          "UserLockSet('" in entity_set or "UserLockSet(UserName='" in entity_set)
+        is_single_user = ("UserSet('" in entity_set or "UserSet(UserName='" in entity_set or "UserSet(Username='" in entity_set or
+                          "UserLockSet('" in entity_set or "UserLockSet(UserName='" in entity_set or "UserLockSet(Username='" in entity_set)
         username = None
         if is_single_user:
             # Extract username
             import re
             match = (re.search(r"UserSet\('(.*?)'\)", entity_set) or 
                      re.search(r"UserSet\(UserName='(.*?)'\)", entity_set) or
+                     re.search(r"UserSet\(Username='(.*?)'\)", entity_set) or
                      re.search(r"UserLockSet\('(.*?)'\)", entity_set) or
-                     re.search(r"UserLockSet\(UserName='(.*?)'\)", entity_set))
+                     re.search(r"UserLockSet\(UserName='(.*?)'\)", entity_set) or
+                     re.search(r"UserLockSet\(Username='(.*?)'\)", entity_set))
             if match:
                 username = match.group(1).upper()
 
@@ -296,6 +303,48 @@ class ODataClient:
 
         elif method == "POST":
             # Handle POST entity sets
+            if "UserCreateBulkHdrSet" in entity_set:
+                items = payload.get("UserCreateBulk", []) if payload else []
+                results = []
+                for item in items:
+                    item_username = (item.get("Username") or item.get("UserName") or "").upper()
+                    if not item_username:
+                        results.append({"Status": "E", "Message": "Username is required."})
+                        continue
+                    new_sap_user = {
+                        "username": item_username,
+                        "first_name": item.get("FirstName", ""),
+                        "last_name": item.get("LastName", ""),
+                        "email": item.get("Email", ""),
+                        "valid_from": item.get("ValidFrom"),
+                        "valid_to": item.get("ValidTo"),
+                        "roles": item.get("Roles", []),
+                        "profiles": item.get("Profiles", []),
+                        "lock_status": "Unlocked",
+                        "lock_reason": "",
+                        "system_id": self.system_id,
+                        "created_at": time.time()
+                    }
+                    db.sap_users_mock.update_one(
+                        {"username": item_username, "system_id": self.system_id},
+                        {"$set": new_sap_user},
+                        upsert=True
+                    )
+                    results.append({
+                        "SNO": item.get("SNO", payload.get("SNO", "")),
+                        "Username": item_username,
+                        "Status": "S",
+                        "Message": f"User {item_username} created successfully in SAP"
+                    })
+                return {
+                    "d": {
+                        "SNO": payload.get("SNO", "") if payload else "",
+                        "Status": "S",
+                        "Message": "Bulk users created successfully",
+                        "UserCreateBulk": {"results": results}
+                    }
+                }
+
             if any(target in entity_set for target in ["UserSet", "UserLockSet", "UserCreationSet", "UserPasswordResetSet"]):
                 username = (payload.get("Username") or payload.get("UserName") or "").upper()
                 if not username:
@@ -307,8 +356,27 @@ class ODataClient:
                 existing = db.sap_users_mock.find_one({"username": username, "system_id": self.system_id})
                 
                 if "UserCreationSet" in entity_set or ("UserSet" in entity_set and not existing):
-                    if existing and "UserCreationSet" in entity_set:
+                    maintenance_fields = {"Roles", "Profiles", "ValidTo"}
+                    create_fields = {"Password", "FirstName", "LastName", "Email", "MobileNo", "ValidFrom", "UserType"}
+                    is_maintenance = existing and bool(maintenance_fields.intersection(payload.keys())) and not bool(create_fields.intersection(payload.keys()))
+                    if existing and "UserCreationSet" in entity_set and not is_maintenance:
                         raise Exception(f"SAP User '{username}' already exists in system {self.system_id}.")
+                    if is_maintenance:
+                        update_data = {}
+                        if "Roles" in payload:
+                            update_data["roles"] = payload.get("Roles")
+                        if "Profiles" in payload:
+                            update_data["profiles"] = payload.get("Profiles")
+                        if "ValidTo" in payload:
+                            update_data["valid_to"] = payload.get("ValidTo")
+                        db.sap_users_mock.update_one(
+                            {"username": username, "system_id": self.system_id},
+                            {"$set": update_data}
+                        )
+                        updated_user = db.sap_users_mock.find_one({"username": username, "system_id": self.system_id})
+                        data = self._format_mock_user_response(updated_user)
+                        data.update({"Username": username, "Status": "S", "Message": "User updated successfully in SAP"})
+                        return {"d": data}
                     new_sap_user = {
                         "username": username,
                         "first_name": payload.get("FirstName", ""),
@@ -325,17 +393,24 @@ class ODataClient:
                     }
                     if not existing:
                         db.sap_users_mock.insert_one(new_sap_user)
-                    return {"d": self._format_mock_user_response(new_sap_user if not existing else existing)}
+                    data = self._format_mock_user_response(new_sap_user if not existing else existing)
+                    data.update({"Username": username, "Status": "S", "Message": f"User {username} created successfully in SAP"})
+                    return {"d": data}
                 
                 elif "UserLockSet" in entity_set:
                     act_upper = action.upper()
-                    is_unlock = "UNLOCK" in act_upper or act_upper == "U"
-                    lock_st = "Unlocked" if is_unlock else "Locked"
-                    lock_msg = f"User {username} UnLocked Successfully" if lock_st == "Unlocked" else f"User {username} Locked Successfully"
-                    if existing:
+                    if act_upper == "":
+                        # Lookup status request
+                        lock_st = existing.get("lock_status", "Unlocked") if existing else "Unlocked"
+                        lock_msg = f"User {username} is {lock_st}"
+                    else:
+                        is_unlock = "UNLOCK" in act_upper or act_upper == "U"
+                        lock_st = "Unlocked" if is_unlock else "Locked"
+                        lock_msg = f"User {username} UnLocked Successfully" if lock_st == "Unlocked" else f"User {username} Locked Successfully"
                         db.sap_users_mock.update_one(
                             {"username": username, "system_id": self.system_id},
-                            {"$set": {"lock_status": lock_st}}
+                            {"$set": {"lock_status": lock_st, "username": username, "system_id": self.system_id}},
+                            upsert=True
                         )
                     return {
                         "d": {
@@ -347,6 +422,16 @@ class ODataClient:
                         }
                     }
                 else:
+                    if "UserPasswordResetSet" in entity_set:
+                        return {
+                            "d": {
+                                "Username": username,
+                                "Password": payload.get("Password", ""),
+                                "Status": "S",
+                                "Message": f"Password reset successfully for user {username}",
+                                "LockStatus": existing.get("lock_status", "Unlocked") if existing else "Unlocked"
+                            }
+                        }
                     return {
                         "d": {
                             "Username": username,
@@ -412,19 +497,21 @@ class ODataClient:
 
     def _format_mock_user_response(self, user):
         """Translates internal MongoDB dict keys to SAP OData JSON response properties."""
+        lock_st = user.get("lock_status", "Unlocked") if user else "Unlocked"
+        lock_reas = "" if lock_st.lower() == "unlocked" else (user.get("lock_reason", "") if user else "")
         return {
-            "UserName": user.get("username"),
-            "FirstName": user.get("first_name", ""),
-            "LastName": user.get("last_name", ""),
-            "Email": user.get("email", ""),
-            "Department": user.get("department", ""),
-            "ValidFrom": user.get("valid_from"),
-            "ValidTo": user.get("valid_to"),
-            "Roles": user.get("roles", []),
-            "Profiles": user.get("profiles", []),
-            "LockStatus": user.get("lock_status", "Unlocked"),
-            "LockReason": user.get("lock_reason", ""),
-            "SystemId": user.get("system_id")
+            "UserName": user.get("username") if user else "",
+            "FirstName": user.get("first_name", "") if user else "",
+            "LastName": user.get("last_name", "") if user else "",
+            "Email": user.get("email", "") if user else "",
+            "Department": user.get("department", "") if user else "",
+            "ValidFrom": user.get("valid_from") if user else "",
+            "ValidTo": user.get("valid_to") if user else "",
+            "Roles": user.get("roles", []) if user else [],
+            "Profiles": user.get("profiles", []) if user else [],
+            "LockStatus": lock_st,
+            "LockReason": lock_reas,
+            "SystemId": user.get("system_id") if user else self.system_id
         }
 
     def _camel_to_snake(self, name):
