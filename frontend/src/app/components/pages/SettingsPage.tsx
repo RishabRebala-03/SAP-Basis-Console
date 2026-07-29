@@ -158,8 +158,6 @@ export function SettingsPage({ settings, onChange, onBack }: {
 
           {/* Right Content */}
           <div className="flex-1 min-w-0">
-<<<<<<< HEAD
-=======
             {active === "general" && (
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
                 <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
@@ -174,8 +172,6 @@ export function SettingsPage({ settings, onChange, onBack }: {
                 </div>
               </div>
             )}
-
->>>>>>> origin/main
             {active === "security" && (
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
                 <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
@@ -219,7 +215,6 @@ export function SettingsPage({ settings, onChange, onBack }: {
                   <div className="py-4" style={{ borderBottom: `1px solid ${F.border}` }}>
                     <p className="text-sm mb-3" style={{ color: F.text }}>Notification Triggers</p>
                     <div className="flex flex-col gap-2">
-<<<<<<< HEAD
                       {([
                         ["User creation success", settings.notificationTriggers.userCreationSuccess, "userCreationSuccess"],
                         ["User creation failure", settings.notificationTriggers.userCreationFailure, "userCreationFailure"],
@@ -234,19 +229,6 @@ export function SettingsPage({ settings, onChange, onBack }: {
                             value={value}
                             onChange={(next) => onChange({ notificationTriggers: { ...settings.notificationTriggers, [key]: next } })}
                           />
-=======
-                      {[
-                        { label: "User creation success", default: true },
-                        { label: "User creation failure", default: true },
-                        { label: "Bulk import completion", default: true },
-                        { label: "Password reset", default: false },
-                        { label: "Wrong-password unlock events", default: true },
-                        { label: "System registry changes", default: false },
-                      ].map((item) => (
-                        <div key={item.label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
-                          <span className="text-sm" style={{ color: F.text }}>{item.label}</span>
-                          <Toggle value={item.default} onChange={() => {}} />
->>>>>>> origin/main
                         </div>
                       ))}
                     </div>

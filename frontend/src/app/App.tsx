@@ -94,13 +94,8 @@ function NotificationsPanel({ notifs, onRead, onReadAll, onClose }: { notifs: No
       <div className="overflow-y-auto" style={{ maxHeight: "360px" }}>
         {notifs.length === 0 ? (
           <div className="px-4 py-8 text-center">
-<<<<<<< HEAD
             <p className="text-sm" style={{ color: "var(--app-text)" }}>No notifications</p>
             <p className="text-xs mt-1" style={{ color: "var(--app-muted)" }}>Real system events will appear here.</p>
-=======
-            <p className="text-sm" style={{ color: "#32363a" }}>No notifications</p>
-            <p className="text-xs mt-1" style={{ color: "#74777a" }}>Real system events will appear here.</p>
->>>>>>> origin/main
           </div>
         ) : notifs.map((n) => (
           <button
@@ -138,11 +133,7 @@ function ProfileMenu({ user, onProfile, onLogout }: { user: AuthUser | null; onP
   const initials = uname.substring(0, 2).toUpperCase();
 
   return (
-<<<<<<< HEAD
     <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ top: "48px", width: "220px", background: "var(--app-surface)", border: "1px solid var(--app-border)" }}>
-=======
-    <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ top: "48px", width: "220px", background: "#fff", border: "1px solid #d9d9d9" }}>
->>>>>>> origin/main
       <div className="px-4 py-3" style={{ background: "linear-gradient(135deg, #1d2d3e 0%, #0d1e2e 100%)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0 font-semibold" style={{ background: "#0070f2" }}>{initials}</div>
@@ -327,15 +318,9 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
             className="flex flex-col"
           >
             <div style={{ minWidth: "260px", overflowY: "auto" }}>
-<<<<<<< HEAD
               <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--app-border)", background: "var(--app-bg)" }}>
                 <p className="text-xs" style={{ color: "var(--app-muted)" }}>Active User Session</p>
                 <p className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>{sessionUser.displayName} · {sessionUser.role}</p>
-=======
-              <div className="px-4 py-3" style={{ borderBottom: "1px solid #e4e4e4", background: "#f5f6f7" }}>
-                <p className="text-xs" style={{ color: "#74777a" }}>Active User Session</p>
-                <p className="text-sm font-semibold" style={{ color: "#32363a" }}>{displayUser} · {user?.role || "Super Admin"}</p>
->>>>>>> origin/main
               </div>
               <div className="px-3 py-3 flex flex-col gap-5">
                 {NAV_GROUPS.map((group) => (
