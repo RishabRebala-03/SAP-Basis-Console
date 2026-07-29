@@ -79,11 +79,11 @@ function NotificationsPanel({ notifs, onRead, onReadAll, onClose }: { notifs: No
   useOutsideClick(ref, onClose);
   const unread = notifs.filter((n) => !n.read).length;
   return (
-    <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ width: "360px", background: "#fff", border: "1px solid #d9d9d9", top: "44px" }}>
-      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid #d9d9d9", background: "#fafafa" }}>
+    <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ width: "360px", background: "var(--app-surface)", border: "1px solid var(--app-border)", top: "44px" }}>
+      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid var(--app-border)", background: "var(--app-subtle)" }}>
         <div className="flex items-center gap-2">
           <Bell size={15} style={{ color: "#0070f2" }} />
-          <span className="text-sm" style={{ color: "#32363a" }}>Notifications</span>
+          <span className="text-sm" style={{ color: "var(--app-text)" }}>Notifications</span>
           {unread > 0 && <span className="px-1.5 py-0.5 rounded-full text-xs text-white" style={{ background: "#bb0000" }}>{unread}</span>}
         </div>
         <div className="flex items-center gap-2">
@@ -94,8 +94,13 @@ function NotificationsPanel({ notifs, onRead, onReadAll, onClose }: { notifs: No
       <div className="overflow-y-auto" style={{ maxHeight: "360px" }}>
         {notifs.length === 0 ? (
           <div className="px-4 py-8 text-center">
+<<<<<<< HEAD
+            <p className="text-sm" style={{ color: "var(--app-text)" }}>No notifications</p>
+            <p className="text-xs mt-1" style={{ color: "var(--app-muted)" }}>Real system events will appear here.</p>
+=======
             <p className="text-sm" style={{ color: "#32363a" }}>No notifications</p>
             <p className="text-xs mt-1" style={{ color: "#74777a" }}>Real system events will appear here.</p>
+>>>>>>> origin/main
           </div>
         ) : notifs.map((n) => (
           <button
@@ -107,17 +112,17 @@ function NotificationsPanel({ notifs, onRead, onReadAll, onClose }: { notifs: No
             <div className="mt-0.5 flex-shrink-0">{notifIcon(n.type)}</div>
             <div className="flex-1 min-w-0">
               <div className="flex items-start justify-between gap-2">
-                <p className="text-sm" style={{ color: "#32363a" }}>{n.title}</p>
+              <p className="text-sm" style={{ color: "var(--app-text)" }}>{n.title}</p>
                 {!n.read && <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: "#0070f2" }} />}
               </div>
-              <p className="text-xs mt-0.5" style={{ color: "#74777a" }}>{n.body}</p>
+              <p className="text-xs mt-0.5" style={{ color: "var(--app-muted)" }}>{n.body}</p>
               <p className="text-xs mt-1" style={{ color: "#a0a0a8" }}>{n.time}</p>
             </div>
           </button>
         ))}
       </div>
-      <div className="px-4 py-2.5 text-center" style={{ borderTop: "1px solid #d9d9d9", background: "#fafafa" }}>
-        <span className="text-xs" style={{ color: "#74777a" }}>{notifs.length} notifications · {unread} unread</span>
+      <div className="px-4 py-2.5 text-center" style={{ borderTop: "1px solid var(--app-border)", background: "var(--app-subtle)" }}>
+        <span className="text-xs" style={{ color: "var(--app-muted)" }}>{notifs.length} notifications · {unread} unread</span>
       </div>
     </div>
   );
@@ -133,7 +138,11 @@ function ProfileMenu({ user, onProfile, onLogout }: { user: AuthUser | null; onP
   const initials = uname.substring(0, 2).toUpperCase();
 
   return (
+<<<<<<< HEAD
+    <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ top: "48px", width: "220px", background: "var(--app-surface)", border: "1px solid var(--app-border)" }}>
+=======
     <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ top: "48px", width: "220px", background: "#fff", border: "1px solid #d9d9d9" }}>
+>>>>>>> origin/main
       <div className="px-4 py-3" style={{ background: "linear-gradient(135deg, #1d2d3e 0%, #0d1e2e 100%)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0 font-semibold" style={{ background: "#0070f2" }}>{initials}</div>
@@ -149,8 +158,8 @@ function ProfileMenu({ user, onProfile, onLogout }: { user: AuthUser | null; onP
           onClick={onProfile}
           className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors"
         >
-          <User size={14} style={{ color: "#74777a" }} />
-          <span className="text-sm" style={{ color: "#32363a" }}>My Profile</span>
+          <User size={14} style={{ color: "var(--app-muted)" }} />
+          <span className="text-sm" style={{ color: "var(--app-text)" }}>My Profile</span>
         </button>
         <div style={{ borderTop: "1px solid #f0f0f0" }}>
           <button
@@ -197,6 +206,7 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
   const activeItem = ALL_ITEMS.find((n) => n.id === activeView)!;
   const activeGroup = NAV_GROUPS.find((g) => g.items.some((i) => i.id === activeView))!;
   const unreadCount = notifs.filter((n) => !n.read).length;
+  const sessionUser = { displayName: "admin", role: "Super Admin" };
 
   const readNotif = (id: string) => setNotifs((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
   const readAll = () => setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -207,8 +217,18 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
   const displayUser = user?.username || "ADMIN";
   const initials = displayUser.substring(0, 2).toUpperCase();
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const density = appSettings.density.toLowerCase();
+    const isDark = appSettings.theme === "Dark";
+    root.dataset.theme = isDark ? "dark" : "light";
+    root.classList.toggle("dark", isDark);
+    root.dataset.density = density;
+    root.style.setProperty("--font-size", density === "compact" ? "15px" : density === "spacious" ? "17px" : "16px");
+  }, [appSettings.density, appSettings.theme]);
+
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f5f6f7", fontFamily: "'72', '72full', Arial, Helvetica, sans-serif" }}>
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--app-bg)", fontFamily: "'72', '72full', Arial, Helvetica, sans-serif" }}>
       {/* Shell Bar */}
       <header style={{ background: "#1d2d3e", height: "44px", position: "relative", zIndex: 30 }} className="flex items-center px-4 gap-3 flex-shrink-0 shadow-md">
         {!isSubPage && (
@@ -272,7 +292,11 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
       {/* Sub-page views (full page, no sidebar) */}
       {pageView.type === "settings" && (
         <div className="flex-1 overflow-auto">
-          <SettingsPage settings={appSettings} onChange={(p) => setAppSettings((s) => ({ ...s, ...p }))} onBack={goMain} />
+          <SettingsPage
+            settings={appSettings}
+            onChange={(p) => setAppSettings((s) => ({ ...s, ...p }))}
+            onBack={goMain}
+          />
         </div>
       )}
 
@@ -299,18 +323,24 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
         <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 44px)" }}>
           {/* Side Navigation */}
           <aside
-            style={{ width: sidebarOpen ? "260px" : "0px", background: "#ffffff", borderRight: "1px solid #d9d9d9", transition: "width 0.2s ease", overflow: "hidden", flexShrink: 0 }}
+            style={{ width: sidebarOpen ? "260px" : "0px", background: "var(--app-surface)", borderRight: "1px solid var(--app-border)", transition: "width 0.2s ease", overflow: "hidden", flexShrink: 0 }}
             className="flex flex-col"
           >
             <div style={{ minWidth: "260px", overflowY: "auto" }}>
+<<<<<<< HEAD
+              <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--app-border)", background: "var(--app-bg)" }}>
+                <p className="text-xs" style={{ color: "var(--app-muted)" }}>Active User Session</p>
+                <p className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>{sessionUser.displayName} · {sessionUser.role}</p>
+=======
               <div className="px-4 py-3" style={{ borderBottom: "1px solid #e4e4e4", background: "#f5f6f7" }}>
                 <p className="text-xs" style={{ color: "#74777a" }}>Active User Session</p>
                 <p className="text-sm font-semibold" style={{ color: "#32363a" }}>{displayUser} · {user?.role || "Super Admin"}</p>
+>>>>>>> origin/main
               </div>
               <div className="px-3 py-3 flex flex-col gap-5">
                 {NAV_GROUPS.map((group) => (
                   <div key={group.label}>
-                    <p className="text-xs px-2 pb-2" style={{ color: "#74777a", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+                    <p className="text-xs px-2 pb-2" style={{ color: "var(--app-muted)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
                       {group.label}
                     </p>
                     <nav className="flex flex-col gap-0.5">
@@ -321,10 +351,10 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
                             key={item.id}
                             onClick={() => setActiveView(item.id)}
                             className="flex items-center gap-3 px-3 py-2.5 rounded text-left w-full transition-colors"
-                            style={{ background: isActive ? "#e8f2ff" : "transparent", borderLeft: isActive ? "3px solid #0070f2" : "3px solid transparent" }}
+                            style={{ background: isActive ? "var(--app-active)" : "transparent", borderLeft: isActive ? "3px solid #0070f2" : "3px solid transparent" }}
                           >
-                            <item.icon size={15} style={{ color: isActive ? "#0070f2" : "#74777a", flexShrink: 0 }} />
-                            <span className="text-sm" style={{ color: isActive ? "#0070f2" : "#32363a" }}>{item.label}</span>
+                            <item.icon size={15} style={{ color: isActive ? "#0070f2" : "var(--app-muted)", flexShrink: 0 }} />
+                            <span className="text-sm" style={{ color: isActive ? "#0070f2" : "var(--app-text)" }}>{item.label}</span>
                             {isActive && <ChevronRight size={13} className="ml-auto" style={{ color: "#0070f2" }} />}
                           </button>
                         );
@@ -338,12 +368,12 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
 
           {/* Main Content */}
           <main className="flex-1 overflow-auto">
-            <div className="px-6 py-2 flex items-center gap-1.5 text-sm flex-shrink-0" style={{ borderBottom: "1px solid #d9d9d9", background: "#ffffff" }}>
+            <div className="px-6 py-2 flex items-center gap-1.5 text-sm flex-shrink-0" style={{ borderBottom: "1px solid var(--app-border)", background: "var(--app-surface)" }}>
               <button onClick={() => setActiveView("dashboard")} className="hover:underline transition-colors" style={{ color: "#0070f2" }}>SAP Basis</button>
-              <ChevronRight size={12} style={{ color: "#74777a" }} />
+              <ChevronRight size={12} style={{ color: "var(--app-muted)" }} />
               <button onClick={() => setActiveView(activeGroup.items[0].id)} className="hover:underline transition-colors" style={{ color: "#0070f2" }}>{activeGroup.label}</button>
-              <ChevronRight size={12} style={{ color: "#74777a" }} />
-              <span style={{ color: "#32363a" }}>{activeItem.label}</span>
+              <ChevronRight size={12} style={{ color: "var(--app-muted)" }} />
+              <span style={{ color: "var(--app-text)" }}>{activeItem.label}</span>
             </div>
             <div className="p-6">
               {activeView === "dashboard" && (

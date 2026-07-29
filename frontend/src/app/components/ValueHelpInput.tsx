@@ -23,8 +23,8 @@ interface ValueHelpInputProps {
 }
 
 const F = {
-  primary: "#0070f2", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff", error: "#bb0000",
+  primary: "#0070f2", text: "var(--app-text)", muted: "var(--app-muted)",
+  border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)", error: "#bb0000",
 };
 
 export function ValueHelpInput({
@@ -114,7 +114,7 @@ export function ValueHelpInput({
           className="px-2.5 py-1.5 border-l flex items-center gap-1 transition-colors"
           style={{
             borderColor: F.border,
-            background: open ? "#e8f2ff" : F.bg,
+            background: open ? "var(--app-active)" : F.bg,
             color: open ? F.primary : F.muted,
           }}
           title="Open suggestions"
@@ -133,7 +133,7 @@ export function ValueHelpInput({
           style={{ top: "calc(100% + 4px)", background: F.white, border: `1px solid ${F.border}`, maxHeight: "320px", display: "flex", flexDirection: "column" }}
         >
           {/* Search Header */}
-          <div className="px-3 py-2.5 flex-shrink-0" style={{ borderBottom: `1px solid ${F.border}`, background: "#f5f6f7" }}>
+          <div className="px-3 py-2.5 flex-shrink-0" style={{ borderBottom: `1px solid ${F.border}`, background: "var(--app-subtle)" }}>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: F.muted }} />
@@ -166,7 +166,7 @@ export function ValueHelpInput({
                   onClick={() => select(opt)}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
                   style={{
-                    background: idx === highlighted ? "#e8f2ff" : idx % 2 === 0 ? F.white : "#fafafa",
+                    background: idx === highlighted ? "var(--app-active)" : idx % 2 === 0 ? F.white : "var(--app-subtle)",
                     borderBottom: `1px solid ${F.border}`,
                   }}
                   onMouseEnter={() => setHighlighted(idx)}
@@ -192,7 +192,7 @@ export function ValueHelpInput({
           </div>
 
           {/* Footer hint */}
-          <div className="px-3 py-1.5 flex-shrink-0" style={{ borderTop: `1px solid ${F.border}`, background: "#f5f6f7" }}>
+          <div className="px-3 py-1.5 flex-shrink-0" style={{ borderTop: `1px solid ${F.border}`, background: "var(--app-subtle)" }}>
             <p className="text-xs" style={{ color: F.muted }}>↑↓ Navigate · Enter Select · Esc Close</p>
           </div>
         </div>
@@ -203,4 +203,7 @@ export function ValueHelpInput({
 
 /* ─── Shared user/system data used across modules ─── */
 export const MOCK_SAP_USERS: VHOption[] = [];
+<<<<<<< HEAD
+=======
 
+>>>>>>> origin/main

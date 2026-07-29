@@ -18,7 +18,7 @@ interface BulkUser {
 const MOCK_USERS: BulkUser[] = [];
 
 
-const F = { primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c", text: "#32363a", muted: "#74777a", border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff" };
+const F = { primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c", text: "var(--app-text)", muted: "var(--app-muted)", border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)" };
 
 function SystemSelector({ systems, selectedId, onChange }: { systems: ReturnType<typeof useAppContext>["systems"]; selectedId: string; onChange: (id: string) => void }) {
   const active = systems.filter((s) => s.status === "Active");
@@ -262,7 +262,17 @@ function HistoryFilterBar({ filters, set, clearAll, submitFilters, systems, perf
             <Play size={12} fill="currentColor" /> Go
           </button>
           <p className="text-xs" style={{ color: F.muted }}>Showing <strong style={{ color: F.text }}>{shown}</strong> of <strong style={{ color: F.text }}>{total}</strong> entries</p>
-          {activeCount > 0 && <button onClick={clearAll} className="flex items-center gap-1 px-2.5 py-1 rounded text-xs" style={{ background: "#fff2f2", color: F.error, border: `1px solid #bb000030` }}><X size={11} /> Clear filters ({activeCount})</button>}
+          <button
+            onClick={clearAll}
+            className="flex items-center gap-1 px-2.5 py-1 rounded text-xs transition-colors"
+            style={{
+              background: activeCount > 0 ? "#fff2f2" : F.white,
+              color: activeCount > 0 ? F.error : F.muted,
+              border: `1px solid ${activeCount > 0 ? "#bb000030" : F.border}`,
+            }}
+          >
+            <X size={11} /> Clear All Filters
+          </button>
         </div>
       </div>
     </div>
@@ -490,4 +500,3 @@ export function BulkUserCreation() {
     </div>
   );
 }
-

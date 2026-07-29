@@ -13,8 +13,8 @@ import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000",
-  warning: "#e9730c", purple: "#6a1b9a", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff",
+  warning: "#e9730c", purple: "#6a1b9a", text: "var(--app-text)", muted: "var(--app-muted)",
+  border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)",
 };
 
 const MODULE_META: Record<AuditModule, { color: string; bg: string }> = {
@@ -99,6 +99,11 @@ export function Analytics({ onNavigate }: Props) {
   }), [auditLogs, rangeDays, systemFilter, statusFilter, now]);
 
   const filtersActive = range !== "30d" || systemFilter !== "All" || statusFilter !== "All";
+  const clearFilters = () => {
+    setRange("30d");
+    setSystemFilter("All");
+    setStatusFilter("All");
+  };
 
   /* Trend over time (by day) */
   const trendData = useMemo(() => {
@@ -223,13 +228,17 @@ export function Analytics({ onNavigate }: Props) {
                 placeholder="Search status…"
               />
             </div>
-            {filtersActive && (
-              <button onClick={() => { setRange("30d"); setSystemFilter("All"); setStatusFilter("All"); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors"
-                style={{ border: `1px solid ${F.border}`, background: F.white, color: F.muted }}>
-                <X size={12} /> Reset
-              </button>
-            )}
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors"
+              style={{
+                border: `1px solid ${filtersActive ? "#bb000030" : F.border}`,
+                background: filtersActive ? "#fff2f2" : F.white,
+                color: filtersActive ? F.error : F.muted,
+              }}
+            >
+              <X size={12} /> Clear All Filters
+            </button>
           </div>
         )}
       </div>
