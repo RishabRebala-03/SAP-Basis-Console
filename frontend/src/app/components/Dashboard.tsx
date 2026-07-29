@@ -141,11 +141,8 @@ export function Dashboard({ onNavigate, onViewAudit }: Props) {
             <div className="flex items-center gap-4">
               <img src={logoImage} alt="Naxrita" style={{ width: "52px", height: "52px", objectFit: "contain", filter: "drop-shadow(0 4px 12px rgba(0,112,242,0.4))" }} />
               <div>
-                <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting}, Admin</p>
-                <h1 className="text-white" style={{ fontWeight: 300, letterSpacing: "0.01em" }}>Basis Provisioning Overview</h1>
-                <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>
-                  {total} operations · {successRate}% success · {activeSystems} active systems
-                </p>
+                <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting}</p>
+                <h1 className="text-white" style={{ fontWeight: 300, letterSpacing: "0.01em" }}>Welcome Back</h1>
               </div>
             </div>
             <button

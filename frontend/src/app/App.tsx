@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { Users, UserPlus, Upload, KeyRound, Lock, ChevronRight, Bell, Settings, Menu, X, Database, ClipboardList, CheckCircle2, AlertCircle, Info, User, LogOut, LayoutDashboard, BarChart3 } from "lucide-react";
+import { UserPlus, Upload, KeyRound, Lock, ChevronRight, Bell, Settings, Menu, X, Database, ClipboardList, CheckCircle2, AlertCircle, Info, User, LogOut, LayoutDashboard, BarChart3 } from "lucide-react";
 import { AppProvider } from "./contexts/AppContext";
 import { AuditLog, SapSystem } from "./contexts/AppContext";
 import { SingleUserCreation } from "./components/SingleUserCreation";
@@ -16,6 +16,7 @@ import { SignInPage } from "./components/pages/SignInPage";
 import { Dashboard } from "./components/Dashboard";
 import { Analytics } from "./components/Analytics";
 import { logoutApi, getCurrentUser, User as AuthUser } from "../api/authApi";
+import logoImage from "../imports/image.png";
 
 type ActiveView = "dashboard" | "analytics" | "single-user" | "bulk-user" | "password-reset" | "lock-unlock" | "data-management" | "audit-logs";
 type PageView =
@@ -197,7 +198,6 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
   const activeItem = ALL_ITEMS.find((n) => n.id === activeView)!;
   const activeGroup = NAV_GROUPS.find((g) => g.items.some((i) => i.id === activeView))!;
   const unreadCount = notifs.filter((n) => !n.read).length;
-  const sessionUser = { displayName: "admin", role: "Super Admin" };
 
   const readNotif = (id: string) => setNotifs((prev) => prev.map((n) => n.id === id ? { ...n, read: true } : n));
   const readAll = () => setNotifs((prev) => prev.map((n) => ({ ...n, read: true })));
@@ -229,9 +229,7 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
         )}
         <div className="h-5 w-px bg-white/20" />
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: "#0070f2" }}>
-            <Users size={13} className="text-white" />
-          </div>
+          <img src={logoImage} alt="Naxrita" className="h-7 w-7 object-contain" />
           <span className="text-white text-sm">SAP Basis Provisioning Console</span>
         </div>
         <div className="flex-1" />
@@ -318,10 +316,6 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
             className="flex flex-col"
           >
             <div style={{ minWidth: "260px", overflowY: "auto" }}>
-              <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--app-border)", background: "var(--app-bg)" }}>
-                <p className="text-xs" style={{ color: "var(--app-muted)" }}>Active User Session</p>
-                <p className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>{sessionUser.displayName} · {sessionUser.role}</p>
-              </div>
               <div className="px-3 py-3 flex flex-col gap-5">
                 {NAV_GROUPS.map((group) => (
                   <div key={group.label}>
