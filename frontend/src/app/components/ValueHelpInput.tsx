@@ -202,29 +202,4 @@ export function ValueHelpInput({
 }
 
 /* ─── Shared user/system data used across modules ─── */
-<<<<<<< Updated upstream
-export const MOCK_SAP_USERS: VHOption[] = [
-  { value: "ALICE.SMITH",    label: "Alice Smith",    secondary: "Finance (FI) · PRD / Client 100",   badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "BOB.JONES",      label: "Bob Jones",      secondary: "Procurement (MM) · PRD / Client 100", badge: "Locked",  badgeColor: "#bb0000", badgeBg: "#fff2f2" },
-  { value: "CAROL.WHITE",    label: "Carol White",    secondary: "Sales (SD) · PRD / Client 100",     badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "DAVID.BROWN",    label: "David Brown",    secondary: "HR (HCM) · QAS / Client 200",       badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "EVE.TAYLOR",     label: "Eve Taylor",     secondary: "Basis · PRD / Client 100",          badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "FRANK.LEE",      label: "Frank Lee",      secondary: "Finance (FI) · PRD / Client 100",   badge: "Locked",  badgeColor: "#bb0000", badgeBg: "#fff2f2" },
-  { value: "GRACE.HO",       label: "Grace Ho",       secondary: "Sales (SD) · QAS / Client 200",     badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "HENRY.PARK",     label: "Henry Park",     secondary: "IT / Basis · DEV / Client 300",     badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "IRIS.CHEN",      label: "Iris Chen",      secondary: "Controlling (CO) · PRD / Client 100", badge: "Active", badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "JACK.MILLER",    label: "Jack Miller",    secondary: "Production Planning (PP) · PRD / Client 100", badge: "Active", badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "KAREN.DAVIS",    label: "Karen Davis",    secondary: "Quality Mgmt (QM) · PRD / Client 100", badge: "Active", badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "LIAM.WILSON",    label: "Liam Wilson",    secondary: "Materials Mgmt (MM) · PRD / Client 100", badge: "Active", badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "MONA.GARCIA",    label: "Mona Garcia",    secondary: "Sales & Distribution (SD) · PRD / Client 100", badge: "Active", badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "NICK.MARTIN",    label: "Nick Martin",    secondary: "Basis Admin · DEV / Client 300",    badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "OLIVIA.JOHNSON", label: "Olivia Johnson", secondary: "Finance (FI) · PRD / Client 100",   badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "PETER.NGUYEN",   label: "Peter Nguyen",   secondary: "Logistics (LE) · PRD / Client 100", badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "BASIS01",        label: "Basis Admin 01", secondary: "Basis / All Systems",               badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "SVC_INTERFACE",  label: "Interface Service", secondary: "System User · PRD / Client 100", badge: "System",  badgeColor: "#74777a", badgeBg: "#f5f6f7" },
-  { value: "SVC_BATCH",      label: "Batch Service",  secondary: "System User · PRD / Client 100",   badge: "System",   badgeColor: "#74777a", badgeBg: "#f5f6f7" },
-  { value: "ADMIN",          label: "System Admin",   secondary: "Basis / All Systems",               badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-];
-=======
 export const MOCK_SAP_USERS: VHOption[] = [];
->>>>>>> Stashed changes

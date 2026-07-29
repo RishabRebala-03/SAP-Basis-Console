@@ -380,17 +380,10 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {[
-<<<<<<< Updated upstream
-          { label: "Total Systems", value: stats.total, color: F.primary, bg: "#e8f2ff" },
-          { label: "Active", value: stats.active, color: F.success, bg: "#f1fdf6" },
-          { label: "Production", value: stats.production, color: "#bb0000", bg: "#fff2f2" },
-          { label: "Inactive", value: stats.inactive, color: F.muted, bg: "#f5f6f7" },
-=======
           { label: "Total Systems", value: stats.total, color: F.primary, bg: "var(--app-info-surface)" },
           { label: "Active", value: stats.active, color: F.success, bg: "var(--app-success-surface)" },
           { label: "Development", value: stats.development, color: F.primary, bg: "var(--app-info-surface)" },
           { label: "Inactive", value: stats.inactive, color: F.muted, bg: "var(--app-subtle)" },
->>>>>>> Stashed changes
         ].map((c) => (
           <div key={c.label} className="rounded px-4 py-3" style={{ background: c.bg, border: `1px solid ${c.color}25` }}>
             <p className="text-xs mb-1" style={{ color: F.muted }}>{c.label}</p>
@@ -400,67 +393,6 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
       </div>
 
       {/* Filters */}
-<<<<<<< Updated upstream
-      <div className="rounded mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-3 items-end" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-        <div className="lg:col-span-1 min-w-44">
-          <p className="text-xs mb-1" style={{ color: F.muted }}>Search</p>
-          <ValueHelpInput
-            value={search}
-            onChange={setSearch}
-            options={systems.map((s) => ({
-              value: s.systemId,
-              label: s.systemName,
-              secondary: `${s.environment} · Client ${s.client} · ${s.host}`,
-              badge: s.status,
-              badgeColor: s.status === "Active" ? "#107e3e" : "#74777a",
-              badgeBg: s.status === "Active" ? "#f1fdf6" : "#f5f6f7",
-            }))}
-            placeholder="Search systems…"
-            emptyMessage="No matching systems found."
-          />
-        </div>
-        <div>
-          <SearchableFilterDropdown
-            label="Environment"
-            value={envFilter === "All" ? "" : envFilter}
-            onChange={(v) => setEnvFilter(v || "All")}
-            options={["", "Production", "Quality", "Development", "Sandbox"]}
-            allLabel="All Environments"
-            placeholder="Search environment…"
-          />
-        </div>
-        <div>
-          <SearchableFilterDropdown
-            label="Status"
-            value={statusFilter === "All" ? "" : statusFilter}
-            onChange={(v) => setStatusFilter(v || "All")}
-            options={["", "Active", "Inactive"]}
-            allLabel="All Statuses"
-            placeholder="Search status…"
-          />
-        </div>
-        <div>
-          <SearchableFilterDropdown
-            label="Client"
-            value={clientFilter === "All" ? "" : clientFilter}
-            onChange={(v) => setClientFilter(v || "All")}
-            options={uniqueClients.map((c) => c === "All" ? "" : c)}
-            allLabel="All Clients"
-            placeholder="Search client…"
-          />
-        </div>
-        <div>
-          <SearchableFilterDropdown
-            label="Created By"
-            value={creatorFilter === "All" ? "" : creatorFilter}
-            onChange={(v) => setCreatorFilter(v || "All")}
-            options={uniqueCreators.map((c) => c === "All" ? "" : c)}
-            allLabel="All Creators"
-            placeholder="Search creator…"
-          />
-        </div>
-        <div className="lg:col-span-5 flex justify-between items-center pt-2" style={{ borderTop: `1px solid ${F.border}` }}>
-=======
       <div className="rounded mb-4 overflow-visible" style={{ background: F.white, border: `1px solid ${F.border}` }}>
         <div className="flex flex-wrap items-center gap-3 p-3">
           <div className="flex-1 min-w-44">
@@ -480,7 +412,6 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
               emptyMessage="No matching systems found."
             />
           </div>
->>>>>>> Stashed changes
           <button
             onClick={handleSubmit}
             className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded text-white shadow-sm transition-all"

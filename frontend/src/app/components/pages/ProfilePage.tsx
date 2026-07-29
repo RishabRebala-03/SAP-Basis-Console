@@ -25,15 +25,9 @@ const AUTH_OBJECTS = [
   { object: "S_CTS_ADMI",  desc: "Administration for Change & Transport", activities: ["CTS_ADMIN"] },
 ];
 
-<<<<<<< Updated upstream
-const SESSIONS = [
-  { id: "SES-A4B7C2D1", type: "Current", client: "100", system: "PRD", ip: "10.42.8.201", logon: "Today 08:30", terminal: "WIN-CORP-001", status: "active" as const },
-  { id: "SES-EF12GH56", type: "Browser", client: "200", system: "QAS", ip: "10.42.8.201", logon: "Today 07:55", terminal: "Chrome/126", status: "idle" as const },
-=======
 const INITIAL_SESSIONS = [
   { id: "SES-A4B7C2D1", type: "Current", client: "100", system: "EMP", ip: "10.42.8.201", logon: "Today 08:30", terminal: "WIN-CORP-001", status: "active" as const },
   { id: "SES-9F3D1A88", type: "Remote", client: "100", system: "SHD", ip: "10.42.8.214", logon: "Today 07:55", terminal: "WIN-CORP-014", status: "active" as const },
->>>>>>> Stashed changes
 ];
 
 const ACTIVITY = [
@@ -98,15 +92,9 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-3 sm:gap-6 mt-2 sm:mt-0">
               {[
-<<<<<<< Updated upstream
-                { label: "Actions Today", value: "12" },
-                { label: "Users Managed", value: "47" },
-                { label: "Sessions", value: "2" },
-=======
                 { label: "Actions Today", value: "0" },
                 { label: "Users Managed", value: "0" },
                 { label: "Sessions", value: String(sessions.length) },
->>>>>>> Stashed changes
               ].map((s) => (
                 <div key={s.label} className="text-center">
                   <p className="text-2xl text-white">{s.value}</p>
@@ -204,17 +192,8 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
                   <h3 className="text-sm" style={{ color: F.text }}>Last Logons</h3>
                 </div>
                 <div className="p-4 flex flex-col gap-3">
-<<<<<<< Updated upstream
-                  {[
-                    { time: "Today 08:30", ip: "10.42.8.201", system: "PRD" },
-                    { time: "Yesterday 17:02", ip: "10.42.8.201", system: "QAS" },
-                    { time: "20 Jul, 09:14", ip: "10.42.8.201", system: "DEV" },
-                  ].map((l, i) => (
-                    <div key={i} className="flex items-center gap-2">
-=======
                   {sessions.map((l, i) => (
                     <div key={l.id} className="flex items-center gap-2">
->>>>>>> Stashed changes
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: i === 0 ? F.success : F.border }} />
                       <div className="flex-1">
                         <p className="text-xs" style={{ color: F.text }}>{l.time}</p>
