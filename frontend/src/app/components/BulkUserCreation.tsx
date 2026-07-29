@@ -7,6 +7,7 @@ import {
 import { useAppContext } from "../contexts/AppContext";
 import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 import type { AuditLog } from "../contexts/AppContext";
+import { processBulkCreateApi } from "../../api/sapApi";
 
 interface BulkUser {
   row: number; username: string; lastName: string; firstName: string;
@@ -14,14 +15,8 @@ interface BulkUser {
   status: "valid" | "invalid" | "processed" | "failed"; errorMessage: string;
 }
 
-const MOCK_USERS: BulkUser[] = [
-  { row: 1, username: "ALICE.SMITH", lastName: "Smith", firstName: "Alice", validFrom: "2026-01-01", validTo: "2026-12-31", roles: "Z_FI_ACCOUNTANT", status: "valid", errorMessage: "" },
-  { row: 2, username: "", lastName: "Brown", firstName: "Bob", validFrom: "2026-01-01", validTo: "2026-12-31", roles: "Z_MM_PURCHASER", status: "invalid", errorMessage: "Username is required" },
-  { row: 3, username: "CAROL.WHITE", lastName: "White", firstName: "Carol", validFrom: "2026-06-01", validTo: "2026-01-01", roles: "Z_SD_SALES", status: "invalid", errorMessage: "Valid To must be after Valid From" },
-  { row: 4, username: "DAVID.JONES", lastName: "Jones", firstName: "David", validFrom: "2026-02-01", validTo: "2027-01-31", roles: "Z_HR_MANAGER", status: "valid", errorMessage: "" },
-  { row: 5, username: "EVE.TAYLOR", lastName: "Taylor", firstName: "Eve", validFrom: "2026-03-01", validTo: "2026-11-30", roles: "Z_BASIS_ADMIN", status: "valid", errorMessage: "" },
-  { row: 6, username: "FRANK", lastName: "", firstName: "Frank", validFrom: "2026-01-01", validTo: "2026-12-31", roles: "", status: "invalid", errorMessage: "Last name and roles are required" },
-];
+const MOCK_USERS: BulkUser[] = [];
+
 
 const F = { primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c", text: "var(--app-text)", muted: "var(--app-muted)", border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)" };
 
@@ -364,14 +359,60 @@ export function BulkUserCreation() {
 
   const handleProcess = async () => {
     if (!selectedSystem) { alert("Please select a target SAP system before processing."); return; }
-    setUploadState("processing"); setProcessingProgress(0);
+    setUploadState("processing"); setProcessingProgress(20);
     const validRows = users.filter((u) => u.status === "valid");
-    for (let i = 0; i <= validRows.length; i++) { await new Promise((r) => setTimeout(r, 400)); setProcessingProgress(Math.round((i / validRows.length) * 100)); }
-    let processed = 0, failed = 0;
-    setUsers((prev) => prev.map((u) => { if (u.status !== "valid") return u; const ok = Math.random() > 0.15; if (ok) processed++; else failed++; return { ...u, status: ok ? "processed" : "failed", errorMessage: ok ? "" : "Duplicate username in system" }; }));
-    setUploadState("done");
     const sys = systems.find((s) => s.id === selectedSystem);
-    logAction({ module: "Bulk User", action: "Bulk Import", targetObject: `${MOCK_USERS.length} records`, system: sys?.systemId ?? "—", client: sys?.client ?? "—", status: failed > 0 ? "Warning" : "Success", durationMs: Math.floor(3000 + Math.random() * 3000), details: `${processed} users created, ${failed} failed, ${MOCK_USERS.filter((u) => u.status === "invalid").length} skipped (validation errors). File: ${fileName}`, changesAfter: processed > 0 ? `${processed} users provisioned in ${sys?.systemId}/${sys?.client}` : undefined });
+    const targetSystemId = sys?.systemId || selectedSystem || "SHD";
+
+    try {
+      setProcessingProgress(50);
+      const res = await processBulkCreateApi({
+        system_id: targetSystemId,
+        users: validRows.map((u) => ({
+          username: u.username,
+          first_name: u.firstName,
+          last_name: u.lastName,
+          valid_from: u.validFrom,
+          valid_to: u.validTo,
+          roles: u.roles ? u.roles.split(",").map((r) => r.trim()) : [],
+        })),
+      });
+
+      setProcessingProgress(100);
+      const apiResults = res.results || [];
+      let processed = 0, failed = 0;
+
+      let validIdx = 0;
+      setUsers((prev) => prev.map((u) => {
+        if (u.status !== "valid") return u;
+        const result = apiResults[validIdx++] || { status: "Success", message: "User created" };
+        const ok = result.status === "Success";
+        if (ok) processed++; else failed++;
+        return { ...u, status: ok ? "processed" : "failed", errorMessage: ok ? "" : (result.message || "Bulk creation error") };
+      }));
+
+      setUploadState("done");
+      logAction({
+        module: "Bulk User", action: "Bulk Import", targetObject: `${users.length} records`,
+        system: targetSystemId, client: sys?.client ?? "100",
+        status: failed > 0 ? "Warning" : "Success",
+        durationMs: 2500,
+        details: `${processed} users created in SAP, ${failed} failed. System: ${targetSystemId}`,
+        changesAfter: processed > 0 ? `${processed} users provisioned in ${targetSystemId}/${sys?.client || "100"}` : undefined
+      });
+    } catch (err: any) {
+      setProcessingProgress(100);
+      setUsers((prev) => prev.map((u) => u.status === "valid" ? { ...u, status: "failed", errorMessage: err.message || "Bulk creation error" } : u));
+      setUploadState("done");
+      logAction({
+        module: "Bulk User", action: "Bulk Import", targetObject: `${users.length} records`,
+        system: targetSystemId, client: sys?.client ?? "100",
+        status: "Failed",
+        durationMs: 1500,
+        details: err.message || "Bulk creation API request failed.",
+        errorCode: "BULK_PROCESS_ERROR"
+      });
+    }
   };
 
   const handleReset = () => { setUploadState("idle"); setUsers([]); setFileName(""); setProcessingProgress(0); setSelectedSystem(""); if (fileRef.current) fileRef.current.value = ""; };

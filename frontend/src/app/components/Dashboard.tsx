@@ -100,8 +100,8 @@ export function Dashboard({ onNavigate, onViewAudit }: Props) {
 
   /* KPI cards */
   const kpis = [
-    { label: "Total Operations", value: total, sub: TIME_RANGES.find((r) => r.id === range)!.label, icon: Activity, color: F.primary, bg: "#e8f2ff", trend: "+12%", up: true, nav: "audit-logs" as DashNav },
-    { label: "Users Provisioned", value: usersCreated, sub: "Create User actions", icon: UserPlus, color: F.success, bg: "#f1fdf6", trend: "+8%", up: true, nav: "single-user" as DashNav },
+    { label: "Total Operations", value: total, sub: TIME_RANGES.find((r) => r.id === range)!.label, icon: Activity, color: F.primary, bg: "#e8f2ff", trend: total ? "activity recorded" : "no activity", up: true, nav: "audit-logs" as DashNav },
+    { label: "Users Provisioned", value: usersCreated, sub: "Create User actions", icon: UserPlus, color: F.success, bg: "#f1fdf6", trend: usersCreated ? "users created" : "none created", up: true, nav: "single-user" as DashNav },
     { label: "Success Rate", value: `${successRate}%`, sub: `${success} of ${total} succeeded`, icon: CheckCircle2, color: F.purple, bg: "#f3e5f5", trend: failed ? `${failed} failed` : "no errors", up: !failed, nav: "audit-logs" as DashNav },
     { label: "Active Systems", value: activeSystems, sub: `${systems.length} registered`, icon: Server, color: F.warning, bg: "#fff8f0", trend: "stable", up: true, nav: "data-management" as DashNav },
   ];
@@ -111,7 +111,7 @@ export function Dashboard({ onNavigate, onViewAudit }: Props) {
     { id: "single-user" as DashNav, label: "Single User Creation", desc: "Provision one user with roles & validity", icon: UserPlus, color: F.primary, bg: "#e8f2ff" },
     { id: "bulk-user" as DashNav, label: "Bulk User Creation", desc: "Import users from an Excel sheet", icon: Upload, color: F.purple, bg: "#f3e5f5" },
     { id: "password-reset" as DashNav, label: "Password Reset", desc: "Generate a temporary password", icon: KeyRound, color: F.warning, bg: "#fff8f0" },
-    { id: "lock-unlock" as DashNav, label: "Lock / Unlock User", desc: "Toggle account access state", icon: Lock, color: F.error, bg: "#fff2f2" },
+    { id: "lock-unlock" as DashNav, label: "Lock / Unlock User", desc: "Lock users or unlock wrong-password lockouts", icon: Lock, color: F.error, bg: "#fff2f2" },
     { id: "data-management" as DashNav, label: "Data Management", desc: "Manage SAP system registry", icon: Database, color: F.success, bg: "#f1fdf6" },
     { id: "audit-logs" as DashNav, label: "Audit Logs", desc: "Search, filter & export activity", icon: ClipboardList, color: F.muted, bg: "#f5f6f7" },
   ];

@@ -25,18 +25,17 @@ const AUTH_OBJECTS = [
   { object: "S_CTS_ADMI",  desc: "Administration for Change & Transport", activities: ["CTS_ADMIN"] },
 ];
 
+<<<<<<< HEAD
 const INITIAL_SESSIONS = [
   { id: "SES-A4B7C2D1", type: "Current", client: "100", system: "EMP", ip: "10.42.8.201", logon: "Today 08:30", terminal: "WIN-CORP-001", status: "active" as const },
   { id: "SES-9F3D1A88", type: "Remote", client: "100", system: "SHD", ip: "10.42.8.214", logon: "Today 07:55", terminal: "WIN-CORP-014", status: "active" as const },
+=======
+const SESSIONS = [
+  { id: "SES-A4B7C2D1", type: "Current", client: "100", system: "EMP", ip: "10.42.8.201", logon: "Today 08:30", terminal: "WIN-CORP-001", status: "active" as const },
+>>>>>>> origin/main
 ];
 
-const ACTIVITY = [
-  { action: "Create User",    target: "ALICE.SMITH",  system: "PRD", time: "09:15", status: "success" as const },
-  { action: "Lock User",      target: "BOB.JONES",    system: "PRD", time: "09:02", status: "success" as const },
-  { action: "Bulk Import",    target: "6 records",    system: "QAS", time: "08:47", status: "warning" as const },
-  { action: "Reset Password", target: "CAROL.WHITE",  system: "PRD", time: "08:30", status: "success" as const },
-  { action: "Create User",    target: "EVE.TAYLOR",   system: "DEV", time: "Yesterday", status: "error" as const },
-];
+const ACTIVITY: Array<{ action: string; target: string; system: string; time: string; status: "success" | "warning" | "error" }> = [];
 
 export function ProfilePage({ onBack }: { onBack: () => void }) {
   const [tab, setTab] = useState<Tab>("overview");
@@ -94,7 +93,11 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
               {[
                 { label: "Actions Today", value: "0" },
                 { label: "Users Managed", value: "0" },
+<<<<<<< HEAD
                 { label: "Sessions", value: String(sessions.length) },
+=======
+                { label: "Sessions", value: String(SESSIONS.length) },
+>>>>>>> origin/main
               ].map((s) => (
                 <div key={s.label} className="text-center">
                   <p className="text-2xl text-white">{s.value}</p>
@@ -192,11 +195,15 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
                   <h3 className="text-sm" style={{ color: F.text }}>Last Logons</h3>
                 </div>
                 <div className="p-4 flex flex-col gap-3">
+<<<<<<< HEAD
                   {sessions.map((l, i) => (
+=======
+                  {SESSIONS.map((l, i) => (
+>>>>>>> origin/main
                     <div key={l.id} className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: i === 0 ? F.success : F.border }} />
                       <div className="flex-1">
-                        <p className="text-xs" style={{ color: F.text }}>{l.time}</p>
+                        <p className="text-xs" style={{ color: F.text }}>{l.logon}</p>
                         <p className="text-xs" style={{ color: F.muted }}>{l.ip} · {l.system}</p>
                       </div>
                     </div>
@@ -316,7 +323,12 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
               <h3 className="text-sm" style={{ color: F.text }}>Recent Actions (Today)</h3>
             </div>
             <div className="divide-y" style={{ borderColor: F.border }}>
-              {ACTIVITY.map((item, i) => {
+              {ACTIVITY.length === 0 ? (
+                <div className="px-5 py-8 text-center">
+                  <p className="text-sm" style={{ color: F.text }}>No recent activity</p>
+                  <p className="text-xs mt-1" style={{ color: F.muted }}>Real account activity will appear here.</p>
+                </div>
+              ) : ACTIVITY.map((item, i) => {
                 const statusMap = { success: { icon: <CheckCircle2 size={14} style={{ color: F.success }} />, color: F.success }, warning: { icon: <AlertCircle size={14} style={{ color: F.warning }} />, color: F.warning }, error: { icon: <AlertCircle size={14} style={{ color: F.error }} />, color: F.error } };
                 const s = statusMap[item.status];
                 return (

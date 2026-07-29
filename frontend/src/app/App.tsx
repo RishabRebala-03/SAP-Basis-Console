@@ -15,6 +15,7 @@ import { SystemDetailPage } from "./components/pages/SystemDetailPage";
 import { SignInPage } from "./components/pages/SignInPage";
 import { Dashboard } from "./components/Dashboard";
 import { Analytics } from "./components/Analytics";
+import { logoutApi, getCurrentUser, User as AuthUser } from "../api/authApi";
 
 type ActiveView = "dashboard" | "analytics" | "single-user" | "bulk-user" | "password-reset" | "lock-unlock" | "data-management" | "audit-logs";
 type PageView =
@@ -54,13 +55,7 @@ const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
 /* ── Notification data ── */
 interface Notification { id: string; type: "warning" | "info" | "success" | "error"; title: string; body: string; time: string; read: boolean; }
-const INITIAL_NOTIFS: Notification[] = [
-  { id: "n1", type: "warning", title: "3 users pending activation", body: "Users provisioned today are awaiting role assignment in PRD/100.", time: "2 min ago", read: false },
-  { id: "n2", type: "error",   title: "Failed bulk import detected", body: "2 records failed in the last bulk user creation job (QAS/200).", time: "1 hr ago", read: false },
-  { id: "n3", type: "info",    title: "System SBX: Scheduled maintenance", body: "SBX environment will be unavailable Sat 02:00–06:00 UTC.", time: "3 hrs ago", read: false },
-  { id: "n4", type: "success", title: "Password policy updated", body: "Minimum length increased to 10 characters effective today.", time: "Yesterday", read: true },
-  { id: "n5", type: "info",    title: "New system BW1 registered", body: "SAP BW Production system was added to the system registry.", time: "2 days ago", read: true },
-];
+const INITIAL_NOTIFS: Notification[] = [];
 const notifIcon = (type: Notification["type"]) => {
   if (type === "warning") return <AlertCircle size={14} style={{ color: "#e9730c" }} />;
   if (type === "error")   return <AlertCircle size={14} style={{ color: "#bb0000" }} />;
@@ -99,8 +94,13 @@ function NotificationsPanel({ notifs, onRead, onReadAll, onClose }: { notifs: No
       <div className="overflow-y-auto" style={{ maxHeight: "360px" }}>
         {notifs.length === 0 ? (
           <div className="px-4 py-8 text-center">
+<<<<<<< HEAD
             <p className="text-sm" style={{ color: "var(--app-text)" }}>No notifications</p>
             <p className="text-xs mt-1" style={{ color: "var(--app-muted)" }}>Real system events will appear here.</p>
+=======
+            <p className="text-sm" style={{ color: "#32363a" }}>No notifications</p>
+            <p className="text-xs mt-1" style={{ color: "#74777a" }}>Real system events will appear here.</p>
+>>>>>>> origin/main
           </div>
         ) : notifs.map((n) => (
           <button
@@ -129,17 +129,27 @@ function NotificationsPanel({ notifs, onRead, onReadAll, onClose }: { notifs: No
 }
 
 /* ── Profile Menu Dropdown ── */
-function ProfileMenu({ onProfile, onLogout }: { onProfile: () => void; onLogout: () => void }) {
+function ProfileMenu({ user, onProfile, onLogout }: { user: AuthUser | null; onProfile: () => void; onLogout: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
   useOutsideClick(ref, () => {/* handled by parent toggle */});
+  const uname = user?.username || "ADMIN";
+  const email = user?.email || "admin@corp.local";
+  const role = user?.role || "Super Admin";
+  const initials = uname.substring(0, 2).toUpperCase();
+
   return (
+<<<<<<< HEAD
     <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ top: "48px", width: "220px", background: "var(--app-surface)", border: "1px solid var(--app-border)" }}>
+=======
+    <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ top: "48px", width: "220px", background: "#fff", border: "1px solid #d9d9d9" }}>
+>>>>>>> origin/main
       <div className="px-4 py-3" style={{ background: "linear-gradient(135deg, #1d2d3e 0%, #0d1e2e 100%)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0" style={{ background: "#0070f2" }}>AD</div>
-          <div>
-            <p className="text-sm text-white">ADMIN</p>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>admin@corp.local</p>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0 font-semibold" style={{ background: "#0070f2" }}>{initials}</div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-white truncate">{uname}</p>
+            <p className="text-xs truncate" style={{ color: "rgba(255,255,255,0.6)" }}>{email}</p>
+            <span className="inline-block text-[10px] px-1.5 py-0.2 rounded mt-0.5 text-white/90" style={{ background: "rgba(0,112,242,0.4)" }}>{role}</span>
           </div>
         </div>
       </div>
@@ -182,7 +192,7 @@ function LiveClock() {
 }
 
 /* ── Shell ── */
-function Shell({ onLogout }: { onLogout: () => void }) {
+function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void }) {
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
   const [pageView, setPageView] = useState<PageView>({ type: "main" });
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -204,6 +214,8 @@ function Shell({ onLogout }: { onLogout: () => void }) {
   const goMain = () => setPageView({ type: "main" });
 
   const isSubPage = pageView.type !== "main";
+  const displayUser = user?.username || "ADMIN";
+  const initials = displayUser.substring(0, 2).toUpperCase();
 
   useEffect(() => {
     const root = document.documentElement;
@@ -237,43 +249,38 @@ function Shell({ onLogout }: { onLogout: () => void }) {
           {/* Notifications */}
           <div className="relative">
             <button
-              onClick={() => { setNotifOpen((o) => !o); }}
-              className="p-2 rounded hover:bg-white/10 transition-colors relative"
-              style={{ color: notifOpen ? "#fff" : "rgba(255,255,255,0.7)" }}
+              onClick={() => setNotifOpen((o) => !o)}
+              className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-white transition-colors relative"
             >
               <Bell size={16} />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-white" style={{ background: "#bb0000", fontSize: "9px" }}>
-                  {unreadCount}
-                </span>
-              )}
+              {unreadCount > 0 && <span className="absolute top-1 right-1 w-2 h-2 rounded-full" style={{ background: "#0070f2" }} />}
             </button>
-            {notifOpen && <NotificationsPanel notifs={notifs} onRead={readNotif} onReadAll={readAll} onClose={() => setNotifOpen(false)} />}
+            {notifOpen && (
+              <NotificationsPanel
+                notifs={notifs}
+                onRead={readNotif}
+                onReadAll={readAll}
+                onClose={() => setNotifOpen(false)}
+              />
+            )}
           </div>
 
-          {/* Settings — full page */}
-          <button
-            onClick={() => setPageView({ type: "settings" })}
-            className="p-2 rounded hover:bg-white/10 transition-colors"
-            style={{ color: pageView.type === "settings" ? "#fff" : "rgba(255,255,255,0.7)" }}
-          >
+          <button onClick={() => setPageView({ type: "settings" })} className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-white transition-colors">
             <Settings size={16} />
           </button>
 
-          <div className="h-5 w-px bg-white/20 mx-1" />
-
-          {/* Profile dropdown */}
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setProfileOpen((o) => !o)}
               className="flex items-center gap-2 pl-1 pr-2 py-1 rounded hover:bg-white/10 transition-colors"
               style={{ background: profileOpen ? "rgba(255,255,255,0.1)" : "transparent" }}
             >
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs" style={{ background: "#0070f2" }}>AD</div>
-              <span className="text-white/80 text-sm hidden sm:block">Admin</span>
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold" style={{ background: "#0070f2" }}>{initials}</div>
+              <span className="text-white/80 text-sm hidden sm:block">{displayUser}</span>
             </button>
             {profileOpen && (
               <ProfileMenu
+                user={user}
                 onProfile={() => { setProfileOpen(false); setPageView({ type: "profile" }); }}
                 onLogout={() => { setProfileOpen(false); onLogout(); }}
               />
@@ -320,9 +327,15 @@ function Shell({ onLogout }: { onLogout: () => void }) {
             className="flex flex-col"
           >
             <div style={{ minWidth: "260px", overflowY: "auto" }}>
+<<<<<<< HEAD
               <div className="px-4 py-3" style={{ borderBottom: "1px solid var(--app-border)", background: "var(--app-bg)" }}>
                 <p className="text-xs" style={{ color: "var(--app-muted)" }}>Active User Session</p>
                 <p className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>{sessionUser.displayName} · {sessionUser.role}</p>
+=======
+              <div className="px-4 py-3" style={{ borderBottom: "1px solid #e4e4e4", background: "#f5f6f7" }}>
+                <p className="text-xs" style={{ color: "#74777a" }}>Active User Session</p>
+                <p className="text-sm font-semibold" style={{ color: "#32363a" }}>{displayUser} · {user?.role || "Super Admin"}</p>
+>>>>>>> origin/main
               </div>
               <div className="px-3 py-3 flex flex-col gap-5">
                 {NAV_GROUPS.map((group) => (
@@ -391,13 +404,37 @@ function Shell({ onLogout }: { onLogout: () => void }) {
 }
 
 function AppRoot() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<AuthUser | null>(() => getCurrentUser());
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    return !!localStorage.getItem("token");
+  });
+
+  useEffect(() => {
+    const handleSessionExpired = async () => {
+      await logoutApi();
+      setCurrentUser(null);
+      setIsLoggedIn(false);
+    };
+    window.addEventListener("auth:session-expired", handleSessionExpired);
+    return () => window.removeEventListener("auth:session-expired", handleSessionExpired);
+  }, []);
+
+  const handleSignIn = (user?: AuthUser) => {
+    if (user) setCurrentUser(user);
+    setIsLoggedIn(true);
+  };
+
+  const handleLogout = async () => {
+    await logoutApi();
+    setCurrentUser(null);
+    setIsLoggedIn(false);
+  };
 
   if (!isLoggedIn) {
-    return <SignInPage onSignIn={() => setIsLoggedIn(true)} />;
+    return <SignInPage onSignIn={handleSignIn} />;
   }
 
-  return <Shell onLogout={() => setIsLoggedIn(false)} />;
+  return <Shell user={currentUser} onLogout={handleLogout} />;
 }
 
 export default function App() {

@@ -1,0 +1,164 @@
+{
+  "info": {
+    "_postman_id": "8bfa2e9a-7c93-41e7-8b0d-b8ad2a7fb3c0",
+    "name": "SAP Basis Provisioning Console",
+    "description": "API collection for authentication and SAP OData operations.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"Admin@123456\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5000/api/auth/login",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5000",
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Refresh Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{refresh_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:5000/api/auth/refresh",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5000",
+              "path": ["api", "auth", "refresh"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SAP Operations",
+      "item": [
+        {
+          "name": "Get Systems",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:5000/api/sap/systems",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5000",
+              "path": ["api", "sap", "systems"]
+            }
+          }
+        },
+        {
+          "name": "User Search",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "http://127.0.0.1:5000/api/sap/user-search?system_id=EMP&username=JDOE",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5000",
+              "path": ["api", "sap", "user-search"],
+              "query": [
+                {
+                  "key": "system_id",
+                  "value": "EMP"
+                },
+                {
+                  "key": "username",
+                  "value": "JDOE"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"system_id\": \"EMP\",\n  \"username\": \"ASMITH\",\n  \"first_name\": \"Alice\",\n  \"last_name\": \"Smith\",\n  \"email\": \"alice.smith@corporate.com\",\n  \"init_password\": \"AlicePass@123\",\n  \"valid_from\": \"2026-07-21\",\n  \"valid_to\": \"2027-12-31\",\n  \"user_type\": \"A\",\n  \"language\": \"EN\",\n  \"roles\": [\"Z_READ_ONLY\"],\n  \"profiles\": [\"S_A.USER\"]\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5000/api/sap/create-user",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5000",
+              "path": ["api", "sap", "create-user"]
+            }
+          }
+        },
+        {
+          "name": "Lock User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"system_id\": \"EMP\",\n  \"username\": \"JDOE\",\n  \"reason\": \"Security Check\"\n}"
+            },
+            "url": {
+              "raw": "http://127.0.0.1:5000/api/sap/lock",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5000",
+              "path": ["api", "sap", "lock"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
