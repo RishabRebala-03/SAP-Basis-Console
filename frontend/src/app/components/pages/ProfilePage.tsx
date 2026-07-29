@@ -26,7 +26,7 @@ const AUTH_OBJECTS = [
 ];
 
 const INITIAL_SESSIONS = [
-  { id: "SES-A4B7C2D1", type: "Current", client: "100", system: "EMP", ip: "10.42.8.201", logon: "Today 08:30", terminal: "WIN-CORP-001", status: "active" as const },
+  { id: "SES-A4B7C2D1", type: "Current", client: "100", system: "EMP", ip: "Unavailable", logon: "Today 08:30", terminal: "Unavailable", status: "active" as const },
   { id: "SES-9F3D1A88", type: "Remote", client: "100", system: "SHD", ip: "10.42.8.214", logon: "Today 07:55", terminal: "WIN-CORP-014", status: "active" as const },
 ];
 

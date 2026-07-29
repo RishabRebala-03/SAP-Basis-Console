@@ -1,5 +1,5 @@
-from flask import Blueprint, request, jsonify, Response
-from flask_jwt_extended import jwt_required
+from flask import Blueprint, request, jsonify, Response, current_app
+from flask_jwt_extended import jwt_required, get_jwt_identity
 from datetime import datetime
 import pandas as pd
 import io
@@ -9,6 +9,38 @@ from backend.app.middleware.security import role_required
 
 audit_routes_bp = Blueprint("audit_routes", __name__)
 audit_repo = AuditRepository()
+
+@audit_routes_bp.route("/audit", methods=["POST"])
+@jwt_required()
+@role_required(["Super Admin", "Basis Admin"])
+def create_audit_log():
+    """Persists audit entries for UI-only operations such as system registry changes."""
+    data = request.get_json() or {}
+    username = get_jwt_identity() or "Unknown"
+    payload = data.get("payload") if isinstance(data.get("payload"), dict) else {}
+    target = str(data.get("targetObject") or payload.get("username") or payload.get("Username") or "")
+    sap_system = str(data.get("system") or data.get("sap_system") or "")
+    details = str(data.get("details") or "")
+
+    audit_doc = {
+        "timestamp": datetime.utcnow(),
+        "username": username,
+        "sap_system": sap_system,
+        "action": str(data.get("action") or "ui_action"),
+        "module": str(data.get("module") or "System"),
+        "target_object": target,
+        "client": str(data.get("client") or ""),
+        "payload": {**payload, "targetObject": target},
+        "response": {"Message": details},
+        "status": str(data.get("status") or "Success"),
+        "duration": float(data.get("durationMs") or 0) / 1000,
+        "ip_address": request.remote_addr or "Unavailable",
+        "details": details,
+        "changes_before": data.get("changesBefore"),
+        "changes_after": data.get("changesAfter"),
+    }
+    current_app.db.audit_logs.insert_one(audit_doc)
+    return jsonify({"message": "Audit log saved"}), 201
 
 @audit_routes_bp.route("/audit", methods=["GET"])
 @jwt_required()

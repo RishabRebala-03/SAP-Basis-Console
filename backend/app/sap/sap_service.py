@@ -296,8 +296,6 @@ class SAPService:
                         "UserType": user_type,
                         "Email": user_data.get("email", ""),
                         "MobileNo": user_data.get("phone", ""),
-                        "Roles": self._sap_list_value(roles),
-                        "Profiles": self._sap_list_value(profiles),
                         "Status": "",
                         "Message": ""
                     }]
@@ -333,8 +331,15 @@ class SAPService:
         
         res = self._request_operation(client, "reset_password", payload)
         data = res.get("d", {}) if isinstance(res, dict) else {}
+        if isinstance(data, dict) and isinstance(data.get("results"), list):
+            data = data["results"][0] if data["results"] else {}
         status_code, msg = self._sap_status(data, msg)
-        returned_pwd = data.get("Password") or returned_pwd
+        returned_pwd = (
+            data.get("NewPassword")
+            or data.get("Password")
+            or data.get("GeneratedPassword")
+            or returned_pwd
+        )
 
         return {
             "Username": uname_upper,
@@ -534,8 +539,6 @@ class SAPService:
                 "UserType": utype,
                 "Email": u.get("email", ""),
                 "MobileNo": u.get("phone", ""),
-                "Roles": self._sap_list_value(u.get("roles", [])),
-                "Profiles": self._sap_list_value(u.get("profiles", [])),
                 "Status": "",
                 "Message": ""
             })

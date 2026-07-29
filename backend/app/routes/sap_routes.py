@@ -312,14 +312,14 @@ def bulk_create_process():
         else:
             # Reformat dates if necessary
             user_data = {
-                "username": user["username"],
-                "first_name": user["first_name"],
-                "last_name": user["last_name"],
-                "email": user["email"],
+                "username": user.get("username", ""),
+                "first_name": user.get("first_name", user.get("FirstName", "")),
+                "last_name": user.get("last_name", user.get("LastName", "")),
+                "email": user.get("email", user.get("Email", "")),
                 "department": user.get("department", ""),
                 "company": user.get("company", ""),
                 "user_type": user.get("user_type", "A"),
-                "init_password": user["init_password"],
+                "init_password": user.get("init_password", user.get("Password", "")),
                 "valid_from": user.get("valid_from"),
                 "valid_to": user.get("valid_to"),
                 "language": user.get("language", "EN"),

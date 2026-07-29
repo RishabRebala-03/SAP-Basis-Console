@@ -38,7 +38,7 @@ def audit_action(action_name):
         def wrapper(*args, **kwargs):
             start_time = time.time()
             username = "Anonymous"
-            ip_address = request.remote_addr or "127.0.0.1"
+            ip_address = request.remote_addr or "Unavailable"
             
             # Retrieve username from JWT if available
             try:

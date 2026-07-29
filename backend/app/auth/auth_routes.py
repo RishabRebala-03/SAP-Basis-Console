@@ -46,7 +46,7 @@ def login():
     user_repo.register_session(
         username=user.username,
         refresh_token=refresh_token,
-        ip_address=request.remote_addr or "127.0.0.1",
+        ip_address=request.remote_addr or "Unavailable",
         expires_at=expires_at
     )
 
