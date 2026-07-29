@@ -78,15 +78,15 @@ export function SearchableFilterDropdown({
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
-      {label && <p className="text-xs mb-1 text-gray-500 font-medium">{label}</p>}
+      {label && <p className="text-xs mb-1 text-muted-foreground font-medium">{label}</p>}
 
       {/* Trigger button */}
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full px-3 py-1.5 text-xs rounded border border-gray-300 bg-white text-gray-800 flex items-center justify-between gap-1 text-left focus:outline-none focus:border-blue-500 hover:border-gray-400 transition-colors"
+        className="w-full px-3 py-1.5 text-xs rounded border border-border bg-input-background text-foreground flex items-center justify-between gap-1 text-left focus:outline-none focus:border-blue-500 hover:border-gray-400 transition-colors"
       >
-        <span className="truncate" style={{ color: value ? "#32363a" : "#74777a" }}>
+        <span className="truncate" style={{ color: value ? "var(--app-text)" : "var(--app-muted)" }}>
           {displayLabel}
         </span>
         <ChevronDown size={12} className="text-gray-400 flex-shrink-0" />
@@ -94,9 +94,9 @@ export function SearchableFilterDropdown({
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 rounded shadow-xl z-50 bg-white border border-gray-200 overflow-hidden min-w-[170px]">
+        <div className="absolute top-full left-0 right-0 mt-1 rounded shadow-xl z-50 bg-card text-card-foreground border border-border overflow-hidden min-w-[170px]">
           {/* Inner search input */}
-          <div className="p-1.5 border-b border-gray-200 bg-gray-50">
+          <div className="p-1.5 border-b border-border bg-muted">
             <div className="relative">
               <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -105,7 +105,7 @@ export function SearchableFilterDropdown({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={placeholder}
-                className="w-full pl-7 pr-6 py-1 text-xs rounded border border-gray-300 bg-white text-gray-800 outline-none focus:border-blue-500"
+                className="w-full pl-7 pr-6 py-1 text-xs rounded border border-border bg-input-background text-foreground outline-none focus:border-blue-500"
               />
               {search && (
                 <button
@@ -121,7 +121,7 @@ export function SearchableFilterDropdown({
           {/* Options list */}
           <div className="max-h-48 overflow-y-auto py-1">
             {filteredOptions.length === 0 ? (
-              <div className="px-3 py-3 text-xs text-gray-400 text-center">
+              <div className="px-3 py-3 text-xs text-muted-foreground text-center">
                 No matching options
               </div>
             ) : (
@@ -135,8 +135,8 @@ export function SearchableFilterDropdown({
                       onChange(opt.value);
                       setOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between hover:bg-blue-50 transition-colors ${
-                      isSelected ? "font-semibold text-blue-600 bg-blue-50/60" : "text-gray-700"
+                    className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between hover:bg-accent transition-colors ${
+                      isSelected ? "font-semibold text-blue-600 bg-blue-50/60" : "text-foreground"
                     }`}
                   >
                     <span className="truncate">{opt.label}</span>

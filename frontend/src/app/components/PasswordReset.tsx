@@ -10,7 +10,7 @@ import type { AuditLog } from "../contexts/AppContext";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c",
-  text: "#32363a", muted: "#74777a", border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff",
+  text: "var(--app-text)", muted: "var(--app-muted)", border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)",
 };
 
 function generatePasswordFromServer(): string {

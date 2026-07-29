@@ -1,28 +1,53 @@
 import { useState } from "react";
-import { ArrowLeft, Globe, Shield, Bell, Monitor, ChevronRight, ToggleLeft, ToggleRight, Save, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Shield, Bell, Monitor, ChevronRight, ToggleLeft, ToggleRight, Save, CheckCircle2 } from "lucide-react";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000",
-  warning: "#e9730c", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff",
+  warning: "#e9730c", text: "var(--app-text)", muted: "var(--app-muted)",
+  border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)",
 };
 
 export interface AppSettings {
   language: string; dateFormat: string; timezone: string; sessionTimeout: string;
   emailAlerts: boolean; browserNotifs: boolean; density: string; theme: string;
   auditRetention: string; defaultSystem: string;
+  notificationTriggers: {
+    userCreationSuccess: boolean;
+    userCreationFailure: boolean;
+    bulkImportCompletion: boolean;
+    passwordReset: boolean;
+    wrongPasswordUnlockEvents: boolean;
+    systemRegistryChanges: boolean;
+  };
+  displayPreferences: {
+    alternateRowStriping: boolean;
+    freezeFirstColumn: boolean;
+    showRowNumbers: boolean;
+  };
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   language: "English (US)", dateFormat: "DD/MM/YYYY", timezone: "UTC+0 (London)",
   sessionTimeout: "30 minutes", emailAlerts: true, browserNotifs: false,
   density: "Comfortable", theme: "Light", auditRetention: "90 days", defaultSystem: "",
+  notificationTriggers: {
+    userCreationSuccess: true,
+    userCreationFailure: true,
+    bulkImportCompletion: true,
+    passwordReset: false,
+    wrongPasswordUnlockEvents: true,
+    systemRegistryChanges: false,
+  },
+  displayPreferences: {
+    alternateRowStriping: true,
+    freezeFirstColumn: false,
+    showRowNumbers: false,
+  },
 };
 
-type Section = "general" | "security" | "notifications" | "display";
+type Section = "security" | "notifications" | "display";
 
 const SECTIONS: { id: Section; label: string; icon: typeof Globe }[] = [
-  { id: "general",       label: "General",       icon: Globe   },
   { id: "security",      label: "Security",       icon: Shield  },
   { id: "notifications", label: "Notifications",  icon: Bell    },
   { id: "display",       label: "Display",        icon: Monitor },
@@ -30,7 +55,7 @@ const SECTIONS: { id: Section; label: string; icon: typeof Globe }[] = [
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button onClick={() => onChange(!value)} style={{ color: value ? F.primary : F.muted }}>
+    <button type="button" onClick={() => onChange(!value)} style={{ color: value ? F.primary : F.muted }}>
       {value ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
     </button>
   );
@@ -67,7 +92,7 @@ export function SettingsPage({ settings, onChange, onBack }: {
   onChange: (patch: Partial<AppSettings>) => void;
   onBack: () => void;
 }) {
-  const [active, setActive] = useState<Section>("general");
+  const [active, setActive] = useState<Section>("display");
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
@@ -118,7 +143,7 @@ export function SettingsPage({ settings, onChange, onBack }: {
                     className="flex items-center gap-3 px-4 py-3 w-full text-left transition-colors"
                     style={{
                       borderBottom: `1px solid ${F.border}`,
-                      background: isActive ? "#e8f2ff" : F.white,
+                      background: isActive ? "var(--app-active)" : F.white,
                       borderLeft: `3px solid ${isActive ? F.primary : "transparent"}`,
                     }}
                   >
@@ -133,6 +158,7 @@ export function SettingsPage({ settings, onChange, onBack }: {
 
           {/* Right Content */}
           <div className="flex-1 min-w-0">
+<<<<<<< Updated upstream
             {active === "general" && (
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
                 <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
@@ -148,6 +174,8 @@ export function SettingsPage({ settings, onChange, onBack }: {
               </div>
             )}
 
+=======
+>>>>>>> Stashed changes
             {active === "security" && (
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
                 <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
@@ -191,6 +219,7 @@ export function SettingsPage({ settings, onChange, onBack }: {
                   <div className="py-4" style={{ borderBottom: `1px solid ${F.border}` }}>
                     <p className="text-sm mb-3" style={{ color: F.text }}>Notification Triggers</p>
                     <div className="flex flex-col gap-2">
+<<<<<<< Updated upstream
                       {[
                         { label: "User creation success", default: true },
                         { label: "User creation failure", default: true },
@@ -202,6 +231,22 @@ export function SettingsPage({ settings, onChange, onBack }: {
                         <div key={item.label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
                           <span className="text-sm" style={{ color: F.text }}>{item.label}</span>
                           <Toggle value={item.default} onChange={() => {}} />
+=======
+                      {([
+                        ["User creation success", settings.notificationTriggers.userCreationSuccess, "userCreationSuccess"],
+                        ["User creation failure", settings.notificationTriggers.userCreationFailure, "userCreationFailure"],
+                        ["Bulk import completion", settings.notificationTriggers.bulkImportCompletion, "bulkImportCompletion"],
+                        ["Password reset", settings.notificationTriggers.passwordReset, "passwordReset"],
+                        ["Wrong-password unlock events", settings.notificationTriggers.wrongPasswordUnlockEvents, "wrongPasswordUnlockEvents"],
+                        ["System registry changes", settings.notificationTriggers.systemRegistryChanges, "systemRegistryChanges"],
+                      ] as const).map(([label, value, key]) => (
+                        <div key={label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
+                          <span className="text-sm" style={{ color: F.text }}>{label}</span>
+                          <Toggle
+                            value={value}
+                            onChange={(next) => onChange({ notificationTriggers: { ...settings.notificationTriggers, [key]: next } })}
+                          />
+>>>>>>> Stashed changes
                         </div>
                       ))}
                     </div>
@@ -218,18 +263,21 @@ export function SettingsPage({ settings, onChange, onBack }: {
                 </div>
                 <div className="px-6">
                   <SelectField label="Display Density" sub="Controls spacing and padding throughout the UI" value={settings.density} options={["Compact", "Comfortable", "Spacious"]} onChange={set("density") as (v: string) => void} />
-                  <SelectField label="Theme" sub="Application colour theme (Light is the SAP Horizon default)" value={settings.theme} options={["Light", "High Contrast"]} onChange={set("theme") as (v: string) => void} />
+                  <SelectField label="Theme" sub="Application colour theme (Light is the SAP Horizon default)" value={settings.theme} options={["Light", "Dark"]} onChange={set("theme") as (v: string) => void} />
                   <div className="py-4" style={{ borderBottom: `1px solid ${F.border}` }}>
                     <p className="text-sm mb-3" style={{ color: F.text }}>Table Preferences</p>
                     <div className="flex flex-col gap-3">
-                      {[
-                        { label: "Alternate row striping", value: true },
-                        { label: "Freeze first column on scroll", value: false },
-                        { label: "Show row numbers", value: false },
-                      ].map((item) => (
-                        <div key={item.label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
-                          <span className="text-sm" style={{ color: F.text }}>{item.label}</span>
-                          <Toggle value={item.value} onChange={() => {}} />
+                      {([
+                        ["Alternate row striping", settings.displayPreferences.alternateRowStriping, "alternateRowStriping"],
+                        ["Freeze first column on scroll", settings.displayPreferences.freezeFirstColumn, "freezeFirstColumn"],
+                        ["Show row numbers", settings.displayPreferences.showRowNumbers, "showRowNumbers"],
+                      ] as const).map(([label, value, key]) => (
+                        <div key={label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
+                          <span className="text-sm" style={{ color: F.text }}>{label}</span>
+                          <Toggle
+                            value={value}
+                            onChange={(next) => onChange({ displayPreferences: { ...settings.displayPreferences, [key]: next } })}
+                          />
                         </div>
                       ))}
                     </div>

@@ -3,8 +3,8 @@ import { ArrowLeft, User, Shield, Clock, Activity, Key, Monitor, ChevronRight, C
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000",
-  warning: "#e9730c", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff",
+  warning: "#e9730c", text: "var(--app-text)", muted: "var(--app-muted)",
+  border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)",
 };
 
 type Tab = "overview" | "authorizations" | "sessions" | "activity";
@@ -25,9 +25,15 @@ const AUTH_OBJECTS = [
   { object: "S_CTS_ADMI",  desc: "Administration for Change & Transport", activities: ["CTS_ADMIN"] },
 ];
 
+<<<<<<< Updated upstream
 const SESSIONS = [
   { id: "SES-A4B7C2D1", type: "Current", client: "100", system: "PRD", ip: "10.42.8.201", logon: "Today 08:30", terminal: "WIN-CORP-001", status: "active" as const },
   { id: "SES-EF12GH56", type: "Browser", client: "200", system: "QAS", ip: "10.42.8.201", logon: "Today 07:55", terminal: "Chrome/126", status: "idle" as const },
+=======
+const INITIAL_SESSIONS = [
+  { id: "SES-A4B7C2D1", type: "Current", client: "100", system: "EMP", ip: "10.42.8.201", logon: "Today 08:30", terminal: "WIN-CORP-001", status: "active" as const },
+  { id: "SES-9F3D1A88", type: "Remote", client: "100", system: "SHD", ip: "10.42.8.214", logon: "Today 07:55", terminal: "WIN-CORP-014", status: "active" as const },
+>>>>>>> Stashed changes
 ];
 
 const ACTIVITY = [
@@ -40,6 +46,20 @@ const ACTIVITY = [
 
 export function ProfilePage({ onBack }: { onBack: () => void }) {
   const [tab, setTab] = useState<Tab>("overview");
+  const [sessions, setSessions] = useState(INITIAL_SESSIONS);
+  const [sessionActionMessage, setSessionActionMessage] = useState("");
+
+  const handleTerminateAllOtherSessions = () => {
+    const currentSession = sessions.find((s) => s.type === "Current");
+    const remainingSessions = currentSession ? [currentSession] : sessions.slice(0, 1);
+    setSessions(remainingSessions);
+    setSessionActionMessage("All other sessions have been terminated.");
+  };
+
+  const handleTerminateSession = (id: string) => {
+    setSessions((prev) => prev.filter((s) => s.id !== id));
+    setSessionActionMessage(`Session ${id} terminated.`);
+  };
 
   return (
     <div className="min-h-full" style={{ background: F.bg }}>
@@ -78,9 +98,15 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
             {/* Quick Stats */}
             <div className="grid grid-cols-3 gap-3 sm:gap-6 mt-2 sm:mt-0">
               {[
+<<<<<<< Updated upstream
                 { label: "Actions Today", value: "12" },
                 { label: "Users Managed", value: "47" },
                 { label: "Sessions", value: "2" },
+=======
+                { label: "Actions Today", value: "0" },
+                { label: "Users Managed", value: "0" },
+                { label: "Sessions", value: String(sessions.length) },
+>>>>>>> Stashed changes
               ].map((s) => (
                 <div key={s.label} className="text-center">
                   <p className="text-2xl text-white">{s.value}</p>
@@ -178,12 +204,17 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
                   <h3 className="text-sm" style={{ color: F.text }}>Last Logons</h3>
                 </div>
                 <div className="p-4 flex flex-col gap-3">
+<<<<<<< Updated upstream
                   {[
                     { time: "Today 08:30", ip: "10.42.8.201", system: "PRD" },
                     { time: "Yesterday 17:02", ip: "10.42.8.201", system: "QAS" },
                     { time: "20 Jul, 09:14", ip: "10.42.8.201", system: "DEV" },
                   ].map((l, i) => (
                     <div key={i} className="flex items-center gap-2">
+=======
+                  {sessions.map((l, i) => (
+                    <div key={l.id} className="flex items-center gap-2">
+>>>>>>> Stashed changes
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: i === 0 ? F.success : F.border }} />
                       <div className="flex-1">
                         <p className="text-xs" style={{ color: F.text }}>{l.time}</p>
@@ -238,13 +269,29 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
         {/* Sessions */}
         {tab === "sessions" && (
           <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm" style={{ color: F.muted }}>{SESSIONS.length} active session(s)</p>
-              <button className="flex items-center gap-2 px-4 py-2 text-sm rounded" style={{ border: `1px solid ${F.error}`, color: F.error, background: F.white }}>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm" style={{ color: F.muted }}>{sessions.length} active session(s)</p>
+              <button
+                type="button"
+                onClick={handleTerminateAllOtherSessions}
+                disabled={sessions.length <= 1}
+                className="flex items-center gap-2 px-4 py-2 text-sm rounded transition-colors"
+                style={{
+                  border: `1px solid ${sessions.length > 1 ? F.error : F.border}`,
+                  color: sessions.length > 1 ? F.error : F.muted,
+                  background: sessions.length > 1 ? F.white : F.bg,
+                  cursor: sessions.length > 1 ? "pointer" : "not-allowed",
+                }}
+              >
                 <Lock size={13} /> Terminate All Other Sessions
               </button>
             </div>
-            {SESSIONS.map((s) => (
+            {sessionActionMessage && (
+              <div className="rounded px-4 py-3 text-sm" style={{ background: "#f1fdf6", border: `1px solid ${F.success}25`, color: F.success }}>
+                {sessionActionMessage}
+              </div>
+            )}
+            {sessions.map((s) => (
               <div key={s.id} className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${s.status === "active" ? F.success : F.border}` }}>
                 <div className="px-5 py-3 flex items-center gap-3" style={{ borderBottom: `1px solid ${F.border}`, background: s.status === "active" ? "#f1fdf6" : "#fafafa" }}>
                   <span className="w-2 h-2 rounded-full" style={{ background: s.status === "active" ? F.success : F.warning }} />
@@ -253,7 +300,14 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
                     {s.status === "active" ? "Active" : "Idle"}
                   </span>
                   {s.type !== "Current" && (
-                    <button className="text-xs px-2 py-0.5 rounded" style={{ border: `1px solid ${F.error}`, color: F.error }}>Terminate</button>
+                    <button
+                      type="button"
+                      onClick={() => handleTerminateSession(s.id)}
+                      className="text-xs px-2 py-0.5 rounded transition-colors"
+                      style={{ border: `1px solid ${F.error}`, color: F.error, background: F.white }}
+                    >
+                      Terminate
+                    </button>
                   )}
                 </div>
                 <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-4">

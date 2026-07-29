@@ -6,8 +6,8 @@ import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000",
-  warning: "#e9730c", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff",
+  warning: "#e9730c", text: "var(--app-text)", muted: "var(--app-muted)",
+  border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)",
 };
 
 const MODULE_META: Record<AuditModule, { color: string; bg: string }> = {
@@ -144,6 +144,7 @@ export function AuditLogs({ onViewDetail }: { onViewDetail: (log: AuditLog) => v
   };
 
   const activeFilterCount = [moduleFilter !== "All", statusFilter !== "All", performerFilter !== "All", systemFilter !== "All", actionFilter !== "All", targetFilter !== "All", clientFilter !== "All", dateFrom, dateTo].filter(Boolean).length;
+  const hasAnyFilter = activeFilterCount > 0 || search.trim().length > 0 || hasSubmitted;
 
   const exportCsv = () => {
     const header = "Log ID,Timestamp,Module,Action,Target Object,System,Client,Performed By,Status,IP Address,Session ID,Duration (ms),Details,Error Code";
@@ -192,10 +193,10 @@ export function AuditLogs({ onViewDetail }: { onViewDetail: (log: AuditLog) => v
       {/* Summary Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {[
-          { label: "Total Events", value: auditLogs.length, color: F.primary, bg: "#e8f2ff" },
-          { label: "Successful", value: summary.success, color: F.success, bg: "#f1fdf6" },
-          { label: "Failed", value: summary.failed, color: F.error, bg: "#fff2f2" },
-          { label: "Warnings", value: summary.warning, color: F.warning, bg: "#fff8f0" },
+          { label: "Total Events", value: auditLogs.length, color: F.primary, bg: "var(--app-info-surface)" },
+          { label: "Successful", value: summary.success, color: F.success, bg: "var(--app-success-surface)" },
+          { label: "Failed", value: summary.failed, color: F.error, bg: "var(--app-error-surface)" },
+          { label: "Warnings", value: summary.warning, color: F.warning, bg: "var(--app-warning-surface)" },
         ].map((c) => (
           <div key={c.label} className="rounded px-4 py-3" style={{ background: c.bg, border: `1px solid ${c.color}25` }}>
             <p className="text-xs mb-1" style={{ color: F.muted }}>{c.label}</p>
@@ -224,6 +225,17 @@ export function AuditLogs({ onViewDetail }: { onViewDetail: (log: AuditLog) => v
             <Play size={12} fill="currentColor" /> Go
           </button>
           <button
+            onClick={clearFilters}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs rounded transition-colors"
+            style={{
+              border: `1px solid ${hasAnyFilter ? "#bb000030" : F.border}`,
+              background: hasAnyFilter ? "#fff2f2" : F.white,
+              color: hasAnyFilter ? F.error : F.muted,
+            }}
+          >
+            <X size={12} /> Clear All Filters
+          </button>
+          <button
             onClick={() => setShowFilters(!showFilters)}
             className="flex items-center gap-2 px-3 py-1.5 text-xs rounded"
             style={{
@@ -235,11 +247,6 @@ export function AuditLogs({ onViewDetail }: { onViewDetail: (log: AuditLog) => v
             <Filter size={13} />
             Filters {activeFilterCount > 0 && <span className="px-1.5 py-0.5 rounded-full text-xs text-white" style={{ background: F.primary }}>{activeFilterCount}</span>}
           </button>
-          {activeFilterCount > 0 && (
-            <button onClick={clearFilters} className="flex items-center gap-1 text-xs" style={{ color: F.error }}>
-              <X size={12} /> Clear all
-            </button>
-          )}
           <span className="text-xs ml-auto" style={{ color: F.muted }}>{hasSubmitted ? `${filtered.length} records` : "0 records"}</span>
         </div>
 

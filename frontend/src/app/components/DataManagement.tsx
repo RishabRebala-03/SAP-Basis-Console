@@ -6,8 +6,8 @@ import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000",
-  warning: "#e9730c", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff",
+  warning: "#e9730c", text: "var(--app-text)", muted: "var(--app-muted)",
+  border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)",
 };
 
 const ENV_META: Record<string, { color: string; bg: string }> = {
@@ -226,6 +226,7 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
   const [creatorFilter, setCreatorFilter] = useState("All");
   const [sortField, setSortField] = useState<SortField>("createdAt");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [showFilters, setShowFilters] = useState(true);
   const [drawerMode, setDrawerMode] = useState<"add" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<SapSystem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<SapSystem | null>(null);
@@ -246,6 +247,20 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
     setAppliedClient(clientFilter);
     setAppliedCreator(creatorFilter);
     setHasSubmitted(true);
+  };
+  const hasAnyFilter = search || envFilter !== "All" || statusFilter !== "All" || clientFilter !== "All" || creatorFilter !== "All" || hasSubmitted;
+  const clearAllFilters = () => {
+    setSearch("");
+    setEnvFilter("All");
+    setStatusFilter("All");
+    setClientFilter("All");
+    setCreatorFilter("All");
+    setAppliedSearch("");
+    setAppliedEnv("All");
+    setAppliedStatus("All");
+    setAppliedClient("All");
+    setAppliedCreator("All");
+    setHasSubmitted(false);
   };
 
   const uniqueClients = useMemo(() => ["All", ...Array.from(new Set(systems.map((s) => s.client).filter(Boolean)))], [systems]);
@@ -365,10 +380,17 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
       {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
         {[
+<<<<<<< Updated upstream
           { label: "Total Systems", value: stats.total, color: F.primary, bg: "#e8f2ff" },
           { label: "Active", value: stats.active, color: F.success, bg: "#f1fdf6" },
           { label: "Production", value: stats.production, color: "#bb0000", bg: "#fff2f2" },
           { label: "Inactive", value: stats.inactive, color: F.muted, bg: "#f5f6f7" },
+=======
+          { label: "Total Systems", value: stats.total, color: F.primary, bg: "var(--app-info-surface)" },
+          { label: "Active", value: stats.active, color: F.success, bg: "var(--app-success-surface)" },
+          { label: "Development", value: stats.development, color: F.primary, bg: "var(--app-info-surface)" },
+          { label: "Inactive", value: stats.inactive, color: F.muted, bg: "var(--app-subtle)" },
+>>>>>>> Stashed changes
         ].map((c) => (
           <div key={c.label} className="rounded px-4 py-3" style={{ background: c.bg, border: `1px solid ${c.color}25` }}>
             <p className="text-xs mb-1" style={{ color: F.muted }}>{c.label}</p>
@@ -378,6 +400,7 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
       </div>
 
       {/* Filters */}
+<<<<<<< Updated upstream
       <div className="rounded mb-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-3 items-end" style={{ background: F.white, border: `1px solid ${F.border}` }}>
         <div className="lg:col-span-1 min-w-44">
           <p className="text-xs mb-1" style={{ color: F.muted }}>Search</p>
@@ -437,15 +460,104 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
           />
         </div>
         <div className="lg:col-span-5 flex justify-between items-center pt-2" style={{ borderTop: `1px solid ${F.border}` }}>
+=======
+      <div className="rounded mb-4 overflow-visible" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+        <div className="flex flex-wrap items-center gap-3 p-3">
+          <div className="flex-1 min-w-44">
+            <p className="text-xs mb-1" style={{ color: F.muted }}>Search</p>
+            <ValueHelpInput
+              value={search}
+              onChange={setSearch}
+              options={systems.map((s) => ({
+                value: s.systemId,
+                label: s.systemName,
+                secondary: `${s.environment} · Client ${s.client} · ${s.host}`,
+                badge: s.status,
+                badgeColor: s.status === "Active" ? "#107e3e" : "#74777a",
+                badgeBg: s.status === "Active" ? "#f1fdf6" : "#f5f6f7",
+              }))}
+              placeholder="Search systems…"
+              emptyMessage="No matching systems found."
+            />
+          </div>
+>>>>>>> Stashed changes
           <button
             onClick={handleSubmit}
-            className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold rounded text-white shadow-sm transition-all"
+            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded text-white shadow-sm transition-all"
             style={{ background: F.primary }}
           >
             <Play size={12} fill="currentColor" /> Go
           </button>
-          <span className="text-xs" style={{ color: F.muted }}>{hasSubmitted ? `${filtered.length} of ${systems.length} systems` : "0 systems displayed"}</span>
+          <button
+            onClick={clearAllFilters}
+            className="flex items-center gap-1.5 px-3 py-2 rounded text-xs transition-colors"
+            style={{
+              border: `1px solid ${hasAnyFilter ? "#bb000030" : F.border}`,
+              background: hasAnyFilter ? "#fff2f2" : F.white,
+              color: hasAnyFilter ? F.error : F.muted,
+            }}
+          >
+            <X size={12} /> Clear All Filters
+          </button>
+          <button
+            onClick={() => setShowFilters((s) => !s)}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs rounded"
+            style={{
+              border: `1px solid ${showFilters ? F.primary : F.border}`,
+              background: showFilters ? "#e8f2ff" : F.white,
+              color: showFilters ? F.primary : F.text,
+            }}
+          >
+            <Filter size={13} />
+            Filters
+          </button>
+          <span className="text-xs ml-auto" style={{ color: F.muted }}>{hasSubmitted ? `${filtered.length} of ${systems.length} systems` : "0 systems displayed"}</span>
         </div>
+
+        {showFilters && (
+          <div className="px-3 pb-3 pt-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" style={{ borderTop: `1px solid ${F.border}` }}>
+            <div className="pt-3">
+              <SearchableFilterDropdown
+                label="Environment"
+                value={envFilter === "All" ? "" : envFilter}
+                onChange={(v) => setEnvFilter(v || "All")}
+                options={["", "Development"]}
+                allLabel="All Environments"
+                placeholder="Search environment…"
+              />
+            </div>
+            <div className="pt-3">
+              <SearchableFilterDropdown
+                label="Status"
+                value={statusFilter === "All" ? "" : statusFilter}
+                onChange={(v) => setStatusFilter(v || "All")}
+                options={["", "Active", "Inactive"]}
+                allLabel="All Statuses"
+                placeholder="Search status…"
+              />
+            </div>
+            <div className="pt-3">
+              <SearchableFilterDropdown
+                label="Client"
+                value={clientFilter === "All" ? "" : clientFilter}
+                onChange={(v) => setClientFilter(v || "All")}
+                options={uniqueClients.map((c) => c === "All" ? "" : c)}
+                allLabel="All Clients"
+                placeholder="Search client…"
+              />
+            </div>
+            <div className="pt-3">
+              <SearchableFilterDropdown
+                label="Created By"
+                value={creatorFilter === "All" ? "" : creatorFilter}
+                onChange={(v) => setCreatorFilter(v || "All")}
+                options={uniqueCreators.map((c) => c === "All" ? "" : c)}
+                allLabel="All Creators"
+                placeholder="Search creator…"
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Results / Blank State */}

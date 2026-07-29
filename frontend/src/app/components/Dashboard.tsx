@@ -9,8 +9,8 @@ import logoImage from "../../imports/image.png";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000",
-  warning: "#e9730c", purple: "#6a1b9a", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff",
+  warning: "#e9730c", purple: "#6a1b9a", text: "var(--app-text)", muted: "var(--app-muted)",
+  border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)",
 };
 
 const MODULE_META: Record<AuditModule, { color: string; bg: string }> = {
@@ -48,7 +48,7 @@ interface Props {
 function Panel({ title, icon, action, children }: { title: string; icon: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="rounded-lg overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-      <div className="flex items-center gap-2 px-5 py-3" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
+      <div className="flex items-center gap-2 px-5 py-3" style={{ borderBottom: `1px solid ${F.border}`, background: "var(--app-subtle)" }}>
         <span style={{ color: F.muted }}>{icon}</span>
         <h3 className="text-sm" style={{ color: F.text }}>{title}</h3>
         <div className="flex-1" />
@@ -93,6 +93,10 @@ export function Dashboard({ onNavigate, onViewAudit }: Props) {
   const filtersActive = range !== "7d" || systemFilter !== "All";
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const clearFilters = () => {
+    setRange("7d");
+    setSystemFilter("All");
+  };
 
   /* KPI cards */
   const kpis = [
@@ -160,7 +164,7 @@ export function Dashboard({ onNavigate, onViewAudit }: Props) {
         <button
           onClick={() => setShowFilters((s) => !s)}
           className="w-full flex items-center gap-2 px-5 py-3 text-left"
-          style={{ background: "#fafafa" }}
+          style={{ background: "var(--app-subtle)" }}
         >
           <Filter size={14} style={{ color: F.primary }} />
           <span className="text-sm" style={{ color: F.text }}>Filters</span>
@@ -203,15 +207,17 @@ export function Dashboard({ onNavigate, onViewAudit }: Props) {
                 {uniqueSystems.map((s) => <option key={s} value={s}>{s === "All" ? "All Systems" : s}</option>)}
               </select>
             </div>
-            {filtersActive && (
-              <button
-                onClick={() => { setRange("7d"); setSystemFilter("All"); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors"
-                style={{ border: `1px solid ${F.border}`, background: F.white, color: F.muted }}
-              >
-                <X size={12} /> Reset
-              </button>
-            )}
+            <button
+              onClick={clearFilters}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors"
+              style={{
+                border: `1px solid ${filtersActive ? "#bb000030" : F.border}`,
+                background: filtersActive ? "#fff2f2" : F.white,
+                color: filtersActive ? F.error : F.muted,
+              }}
+            >
+              <X size={12} /> Clear All Filters
+            </button>
           </div>
         )}
       </div>
