@@ -1,12 +1,10 @@
 import { useState, useMemo } from "react";
 import {
   Lock, Unlock, AlertCircle, CheckCircle2, ShieldAlert, X,
-  Server, History, Clock, Search, Filter, ChevronUp, ChevronDown, Play,
+  Server, History,
 } from "lucide-react";
 import { useAppContext } from "../contexts/AppContext";
-import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
-import type { AuditLog } from "../contexts/AppContext";
-import { lockUserApi, unlockUserApi, searchUsersApi } from "../../api/sapApi";
+import { lockUserApi, unlockUserApi } from "../../api/sapApi";
 
 const F = { primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c", text: "#32363a", muted: "#74777a", border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff" };
 type Action = "lock" | "unlock";
@@ -35,13 +33,13 @@ function ConfirmDialog({ username, action, system, onConfirm, onCancel }: { user
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
       <div className="rounded shadow-xl w-full max-w-md mx-4" style={{ background: F.white }}>
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${F.border}` }}>
-          <div className="flex items-center gap-2"><ShieldAlert size={18} style={{ color: isLock ? F.error : F.warning }} /><h3 className="text-base font-semibold" style={{ color: F.text }}>Confirm {isLock ? "Lock" : "Wrong Password Unlock"}</h3></div>
+          <div className="flex items-center gap-2"><ShieldAlert size={18} style={{ color: isLock ? F.error : F.warning }} /><h3 className="text-base font-semibold" style={{ color: F.text }}>Confirm {isLock ? "Lock User" : "Unlock User"}</h3></div>
           <button onClick={onCancel} className="p-1 rounded hover:bg-gray-100" style={{ color: F.muted }}><X size={16} /></button>
         </div>
         <div className="px-5 py-5">
           <div className="flex items-start gap-3 p-3 rounded mb-4" style={{ background: isLock ? "#fff2f2" : "#fff8f0", border: `1px solid ${isLock ? "#bb000030" : "#e9730c30"}` }}>
             {isLock ? <Lock size={16} style={{ color: F.error, flexShrink: 0, marginTop: "2px" }} /> : <Unlock size={16} style={{ color: F.warning, flexShrink: 0, marginTop: "2px" }} />}
-            <p className="text-sm" style={{ color: F.text }}>{isLock ? "You are about to lock" : "You are about to unlock"} user <strong>{username}</strong> in <strong>{system}</strong>.{isLock ? " This will only run after this confirmation." : " Use unlock only for accounts locked by wrong password attempts."}</p>
+            <p className="text-sm" style={{ color: F.text }}>{isLock ? "You are about to lock" : "You are about to unlock"} user <strong>{username.toUpperCase()}</strong> in <strong>{system}</strong>.</p>
           </div>
           <p className="text-xs" style={{ color: F.muted }}>This action will execute directly against the live SAP OData Gateway and will be recorded in the security audit log.</p>
         </div>
@@ -133,9 +131,8 @@ export function LockUnlockUser() {
   const [activeTab, setActiveTab] = useState<"control" | "history">("control");
   const [selectedSystem, setSelectedSystem] = useState("");
   const [username, setUsername] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [foundUser, setFoundUser] = useState<any | null>(null);
   const [action, setAction] = useState<Action>("unlock");
+  const [reason, setReason] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
@@ -143,55 +140,10 @@ export function LockUnlockUser() {
   const [loading, setLoading] = useState(false);
   const [lastAction, setLastAction] = useState<{ username: string; action: Action; system: string; verifiedAt?: string } | null>(null);
 
-  const handleLookup = async () => {
-    if (!selectedSystem) {
-      setErrors({ system: "Please select a target SAP system first" });
-      return;
-    }
-    if (!username.trim()) {
-      setErrors({ username: "Username is required for lookup" });
-      return;
-    }
-    setErrors({});
-    setSearching(true);
-    setStatus("idle");
-    setErrorMessage("");
-
-    const sys = systems.find((s) => s.id === selectedSystem || s.systemId === selectedSystem);
-    const targetSystemId = (sys?.systemId || selectedSystem || "SHD").replace("sys-", "").toUpperCase();
-
-    try {
-      const results = await searchUsersApi(targetSystemId, username.trim());
-      setSearching(false);
-      if (results && results.length > 0) {
-        const u = results[0];
-        setFoundUser(u);
-        const isLocked = (u.LockStatus || "").toLowerCase() === "locked";
-        setAction(isLocked ? "unlock" : "lock");
-      } else {
-        setFoundUser(null);
-        setStatus("error");
-        setErrorMessage(`User '${username.trim().toUpperCase()}' does not exist on SAP system ${targetSystemId}`);
-      }
-    } catch (err: any) {
-      setSearching(false);
-      setFoundUser(null);
-      setStatus("error");
-      setErrorMessage(err.message || `User '${username.trim().toUpperCase()}' was not found in SAP system ${targetSystemId}`);
-    }
-  };
-
   const validate = (): boolean => {
     const e: Record<string, string> = {};
     if (!selectedSystem) e.system = "Please select a target SAP system";
     if (!username.trim()) e.username = "Username is required";
-    if (!foundUser) e.username = "Please lookup and verify user before proceeding";
-    if (action === "unlock" && foundUser && (foundUser.LockStatus || "").toLowerCase() !== "locked") {
-      e.username = "This user is not locked in SAP. Unlock is only available for locked users.";
-    }
-    if (action === "lock" && foundUser && (foundUser.LockStatus || "").toLowerCase() === "locked") {
-      e.username = "This user is already locked in SAP. Choose Unlock if this was caused by wrong password attempts.";
-    }
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -204,36 +156,36 @@ export function LockUnlockUser() {
     setShowConfirmDialog(false); setLoading(true); setStatus("idle"); setErrorMessage("");
     const sys = systems.find((s) => s.id === selectedSystem || s.systemId === selectedSystem);
     const targetSystemId = (sys?.systemId || selectedSystem || "SHD").replace("sys-", "").toUpperCase();
+    const uname = username.trim().toUpperCase();
+    const defaultReason = action === "lock" ? "Locked via BASIS Console" : "Wrong Password Attempts";
+    const finalReason = reason.trim() || defaultReason;
 
     try {
       const res = action === "lock"
-        ? await lockUserApi({ system_id: targetSystemId, username: username.trim().toUpperCase(), reason: "Locked via BASIS Console" })
-        : await unlockUserApi({ system_id: targetSystemId, username: username.trim().toUpperCase(), reason: "Wrong Password Attempts" });
+        ? await lockUserApi({ system_id: targetSystemId, username: uname, reason: finalReason })
+        : await unlockUserApi({ system_id: targetSystemId, username: uname, reason: finalReason });
 
       const verifiedTime = res.VerifiedAt || new Date().toLocaleTimeString();
-
       const newStatus = res.LockStatus || (action === "lock" ? "Locked" : "Unlocked");
-      setFoundUser((prev) => prev ? { ...prev, LockStatus: newStatus } : null);
-      setAction(newStatus === "Locked" ? "unlock" : "lock");
 
       setLoading(false);
-      setLastAction({ username: username.trim().toUpperCase(), action, system: targetSystemId, verifiedAt: verifiedTime });
+      setLastAction({ username: uname, action, system: targetSystemId, verifiedAt: verifiedTime });
 
       if (action === "unlock" && newStatus === "Locked") {
         setStatus("error");
-        setErrorMessage(res.Message || "Wrong-password unlock was submitted, but SAP still reports the user as locked. Check for a remaining system-manager lock.");
+        setErrorMessage(res.Message || "Unlock request was submitted, but SAP still reports the user as locked.");
       } else {
         setStatus("success");
       }
 
       logAction({
         module: "Lock/Unlock", action: action === "lock" ? "Lock User" : "Unlock User",
-        targetObject: username.trim().toUpperCase(), system: targetSystemId, client: sys?.client ?? "100",
+        targetObject: uname, system: targetSystemId, client: sys?.client ?? "100",
         status: action === "unlock" && newStatus === "Locked" ? "Warning" : "Success",
         durationMs: 850,
-        details: res.Message || (action === "lock" ? `User ${username} locked in ${targetSystemId}` : `User ${username} unlocked after wrong password attempts in ${targetSystemId}`),
+        details: res.Message || (action === "lock" ? `User ${uname} locked in ${targetSystemId}` : `User ${uname} unlocked in ${targetSystemId}`),
         changesBefore: `Status: ${action === "lock" ? "Active" : "Locked"}`,
-        changesAfter: `Status: ${newStatus === "Locked" ? "Locked" : "Active"}`,
+        changesAfter: `Status: ${newStatus}`,
       });
     } catch (err: any) {
       setLoading(false);
@@ -241,7 +193,7 @@ export function LockUnlockUser() {
       setErrorMessage(err.message || `${action === "lock" ? "Lock" : "Unlock"} failed in SAP system.`);
       logAction({
         module: "Lock/Unlock", action: action === "lock" ? "Lock User" : "Unlock User",
-        targetObject: username.trim().toUpperCase(), system: targetSystemId, client: sys?.client ?? "100",
+        targetObject: uname, system: targetSystemId, client: sys?.client ?? "100",
         status: "Failed",
         durationMs: 550,
         details: err.message || `${action === "lock" ? "Lock" : "Unlock"} failed in SAP system.`,
@@ -252,8 +204,8 @@ export function LockUnlockUser() {
 
   const handleReset = () => {
     setUsername("");
-    setFoundUser(null);
     setAction("unlock");
+    setReason("");
     setErrors({});
     setStatus("idle");
     setErrorMessage("");
@@ -270,7 +222,7 @@ export function LockUnlockUser() {
 
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1"><Lock size={20} style={{ color: F.primary }} /><h1 className="text-xl font-semibold" style={{ color: F.text }}>Lock / Unlock User</h1></div>
-        <p className="text-sm" style={{ color: F.muted }}>Lookup users directly from SAP. Lock runs only after pressing Lock and confirming; unlock is for wrong password lockouts.</p>
+        <p className="text-sm" style={{ color: F.muted }}>Directly enter the SAP username to execute lock or unlock actions against live SAP OData Gateway.</p>
       </div>
 
       <div className="flex gap-0 mb-6" style={{ borderBottom: `2px solid ${F.border}` }}>
@@ -285,7 +237,7 @@ export function LockUnlockUser() {
               <CheckCircle2 size={18} style={{ color: F.success, flexShrink: 0, marginTop: "2px" }} />
               <div>
                 <p className="text-sm" style={{ color: F.success }}>User <strong>{lastAction.username}</strong> successfully <strong>{lastAction.action === "lock" ? "locked" : "unlocked"}</strong> in <strong>{lastAction.system}</strong>.</p>
-                <p className="text-xs mt-0.5" style={{ color: F.muted }}>Verified in SAP system and recorded in audit log at {lastAction.verifiedAt || new Date().toLocaleTimeString()}.</p>
+                <p className="text-xs mt-0.5" style={{ color: F.muted }}>Executed in SAP system and recorded in audit log at {lastAction.verifiedAt || new Date().toLocaleTimeString()}.</p>
               </div>
             </div>
           )}
@@ -296,7 +248,7 @@ export function LockUnlockUser() {
             </div>
           )}
 
-          <SystemSelector systems={systems} selectedId={selectedSystem} onChange={(id) => { setSelectedSystem(id); setFoundUser(null); setStatus("idle"); }} />
+          <SystemSelector systems={systems} selectedId={selectedSystem} onChange={(id) => { setSelectedSystem(id); setStatus("idle"); }} />
           {errors.system && <p className="flex items-center gap-1 mb-4 text-xs" style={{ color: F.error }}><AlertCircle size={11} /> {errors.system}</p>}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -306,84 +258,50 @@ export function LockUnlockUser() {
                 <div className="p-5">
                   <div className="mb-5">
                     <label className="block text-sm mb-1" style={{ color: F.muted }}>SAP Username <span style={{ color: F.error }}>*</span></label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={username}
-                        onChange={(e) => {
-                          setUsername(e.target.value);
-                          setFoundUser(null);
-                          setStatus("idle");
-                          if (errors.username) setErrors((errs) => { const n = { ...errs }; delete n.username; return n; });
-                        }}
-                        onKeyDown={(e) => { if (e.key === "Enter") handleLookup(); }}
-                        placeholder="Enter SAP Username"
-                        className="flex-1 px-3 py-2 text-sm rounded outline-none"
-                        style={{ border: `1px solid ${errors.username ? F.error : F.border}`, background: F.white, color: F.text }}
-                      />
-                      <button
-                        type="button"
-                        onClick={handleLookup}
-                        disabled={searching || !username.trim()}
-                        className="px-4 py-2 text-sm rounded text-white font-medium flex items-center gap-1.5 transition-all shadow-sm"
-                        style={{ background: searching ? "#74a8f5" : F.primary, opacity: searching || !username.trim() ? 0.7 : 1 }}
-                      >
-                        {searching ? (
-                          <><span className="animate-spin border-2 border-white border-t-transparent rounded-full w-3.5 h-3.5" /> Searching...</>
-                        ) : (
-                          <><Search size={15} /> Lookup User</>
-                        )}
-                      </button>
-                    </div>
+                    <input
+                      type="text"
+                      value={username}
+                      onChange={(e) => {
+                        setUsername(e.target.value);
+                        setStatus("idle");
+                        if (errors.username) setErrors((errs) => { const n = { ...errs }; delete n.username; return n; });
+                      }}
+                      placeholder="Enter SAP Username (e.g. JDOE)"
+                      className="w-full px-3 py-2 text-sm rounded outline-none"
+                      style={{ border: `1px solid ${errors.username ? F.error : F.border}`, background: F.white, color: F.text }}
+                    />
                     {errors.username && <p className="flex items-center gap-1 mt-1 text-xs" style={{ color: F.error }}><AlertCircle size={11} /> {errors.username}</p>}
-                    <p className="text-xs mt-1.5" style={{ color: F.muted }}>Lookup only reads SAP status. It will not lock or unlock anything.</p>
                   </div>
 
-                  {foundUser && (
-                    <div className="mb-6 p-4 rounded" style={{ background: "#f8fbff", border: `1px solid #0070f230` }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm" style={{ color: F.text }}>{foundUser.UserName}</span>
-                          <span className="text-xs px-2.5 py-0.5 rounded font-semibold" style={{
-                            background: (foundUser.LockStatus || "").toLowerCase() === "locked" ? "#fff2f2" : "#f1fdf6",
-                            color: (foundUser.LockStatus || "").toLowerCase() === "locked" ? F.error : F.success,
-                            border: `1px solid ${(foundUser.LockStatus || "").toLowerCase() === "locked" ? "#bb000040" : "#107e3e40"}`
-                          }}>
-                            {(foundUser.LockStatus || "").toLowerCase() === "locked" ? "● Locked in SAP" : "● Unlocked in SAP"}
-                          </span>
-                        </div>
-                        <span className="text-xs font-medium" style={{ color: F.muted }}>System: {foundUser.SystemId || selectedSystem}</span>
-                      </div>
-                      <p className="text-xs text-gray-600 mb-2">{foundUser.Message || "User verified in live SAP OData Gateway"}</p>
-                      <div className="grid grid-cols-2 gap-2 pt-2 text-xs border-t border-blue-100 text-gray-500">
-                        <div><span className="font-medium text-gray-700">Department:</span> {foundUser.Department || "N/A"}</div>
-                        <div><span className="font-medium text-gray-700">Email:</span> {foundUser.Email || "N/A"}</div>
-                      </div>
+                  <div className="mb-5">
+                    <label className="block text-sm mb-2" style={{ color: F.muted }}>Action <span style={{ color: F.error }}>*</span></label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button type="button" onClick={() => setAction("unlock")} className="flex items-center gap-3 p-4 rounded text-left transition-all" style={{ border: `2px solid ${action === "unlock" ? F.success : F.border}`, background: action === "unlock" ? "#f1fdf6" : F.white }}>
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: action === "unlock" ? F.success : "#f5f6f7" }}><Unlock size={16} style={{ color: action === "unlock" ? "#fff" : F.muted }} /></div>
+                        <div><p className="text-sm font-semibold" style={{ color: action === "unlock" ? F.success : F.text }}>Unlock User</p><p className="text-xs mt-0.5" style={{ color: F.muted }}>Unlocks user directly via SAP OData API</p></div>
+                      </button>
+                      <button type="button" onClick={() => setAction("lock")} className="flex items-center gap-3 p-4 rounded text-left transition-all" style={{ border: `2px solid ${action === "lock" ? F.error : F.border}`, background: action === "lock" ? "#fff2f2" : F.white }}>
+                        <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: action === "lock" ? F.error : "#f5f6f7" }}><Lock size={16} style={{ color: action === "lock" ? "#fff" : F.muted }} /></div>
+                        <div><p className="text-sm font-semibold" style={{ color: action === "lock" ? F.error : F.text }}>Lock User</p><p className="text-xs mt-0.5" style={{ color: F.muted }}>Locks user directly via SAP OData API</p></div>
+                      </button>
                     </div>
-                  )}
+                  </div>
 
-                  {foundUser && (
-                    <>
-                      <div className="mb-6">
-                        <label className="block text-sm mb-2" style={{ color: F.muted }}>Action <span style={{ color: F.error }}>*</span></label>
-                        <div className="grid grid-cols-2 gap-3">
-                          <button onClick={() => setAction("lock")} className="flex items-center gap-3 p-4 rounded text-left transition-all" style={{ border: `2px solid ${action === "lock" ? F.error : F.border}`, background: action === "lock" ? "#fff2f2" : F.white }}>
-                            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: action === "lock" ? F.error : "#f5f6f7" }}><Lock size={16} style={{ color: action === "lock" ? "#fff" : F.muted }} /></div>
-                            <div><p className="text-sm font-semibold" style={{ color: action === "lock" ? F.error : F.text }}>Lock User</p><p className="text-xs mt-0.5" style={{ color: F.muted }}>Requires clicking Lock and confirming</p></div>
-                          </button>
-                          <button onClick={() => setAction("unlock")} className="flex items-center gap-3 p-4 rounded text-left transition-all" style={{ border: `2px solid ${action === "unlock" ? F.success : F.border}`, background: action === "unlock" ? "#f1fdf6" : F.white }}>
-                            <div className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: action === "unlock" ? F.success : "#f5f6f7" }}><Unlock size={16} style={{ color: action === "unlock" ? "#fff" : F.muted }} /></div>
-                            <div><p className="text-sm font-semibold" style={{ color: action === "unlock" ? F.success : F.text }}>Unlock User</p><p className="text-xs mt-0.5" style={{ color: F.muted }}>For locked users from wrong password attempts</p></div>
-                          </button>
-                        </div>
-                      </div>
-
-                    </>
-                  )}
+                  <div className="mb-2">
+                    <label className="block text-sm mb-1" style={{ color: F.muted }}>Reason (Optional)</label>
+                    <input
+                      type="text"
+                      value={reason}
+                      onChange={(e) => setReason(e.target.value)}
+                      placeholder={action === "lock" ? "Locked via BASIS Console" : "Wrong Password Attempts"}
+                      className="w-full px-3 py-2 text-sm rounded outline-none"
+                      style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}
+                    />
+                  </div>
                 </div>
                 <div className="px-5 py-4 flex items-center justify-between" style={{ borderTop: `1px solid ${F.border}`, background: "#fafafa" }}>
-                  <button onClick={handleReset} className="px-4 py-2 text-sm rounded font-medium" style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}>Clear</button>
-                  <button onClick={handleSubmitClick} disabled={loading || !foundUser} className="flex items-center gap-2 px-5 py-2 text-sm rounded text-white font-medium shadow-sm" style={{ background: loading || !foundUser ? "#a0c4f8" : action === "lock" ? F.error : F.success }}>
+                  <button type="button" onClick={handleReset} className="px-4 py-2 text-sm rounded font-medium" style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}>Clear</button>
+                  <button type="button" onClick={handleSubmitClick} disabled={loading || !selectedSystem || !username.trim()} className="flex items-center gap-2 px-5 py-2 text-sm rounded text-white font-medium shadow-sm" style={{ background: loading || !selectedSystem || !username.trim() ? "#a0c4f8" : action === "lock" ? F.error : F.success }}>
                     {loading ? <><span className="animate-spin border-2 border-white border-t-transparent rounded-full w-3.5 h-3.5" /> Applying in SAP...</> : action === "lock" ? <><Lock size={14} /> Lock User</> : <><Unlock size={14} /> Unlock User</>}
                   </button>
                 </div>
@@ -403,3 +321,4 @@ export function LockUnlockUser() {
     </div>
   );
 }
+

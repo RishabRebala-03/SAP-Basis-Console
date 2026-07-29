@@ -143,9 +143,3 @@ export async function processBulkCreateApi(payload: BulkCreatePayload) {
   return await safeParseResponse(res, "Bulk user creation completed");
 }
 
-export async function searchUsersApi(systemId: string, username?: string) {
-  const params = new URLSearchParams({ system_id: systemId });
-  if (username) params.append("username", username);
-  const res = await fetchWithAuth(`${BASE_URL}/user-search?${params.toString()}`);
-  return await safeParseResponse(res, "User search completed");
-}

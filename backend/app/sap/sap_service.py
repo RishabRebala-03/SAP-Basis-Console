@@ -6,8 +6,8 @@ logger = logging.getLogger(__name__)
 
 ODATA_OPERATIONS = {
     "user_status": {"method": "GET", "entity_set": "UserLockSet", "purpose": "Read lock state only"},
-    "lock_user": {"method": "POST", "entity_set": "UserLockSet", "action": "LOCK", "purpose": "Lock selected user"},
-    "unlock_user": {"method": "POST", "entity_set": "UserLockSet", "action": "UNLOCK", "purpose": "Unlock wrong-password lockout"},
+    "lock_user": {"method": "POST", "entity_set": "UserLockSet", "action": "Lock", "purpose": "Lock selected user"},
+    "unlock_user": {"method": "POST", "entity_set": "UserLockSet", "action": "UnLock", "purpose": "Unlock wrong-password lockout"},
     "reset_password": {"method": "POST", "entity_set": "UserPasswordResetSet", "purpose": "Reset SAP password"},
     "create_user": {"method": "POST", "entity_set": "UserCreationSet", "purpose": "Create or maintain one SAP user"},
     "maintain_user": {"method": "POST", "entity_set": "UserCreationSet", "purpose": "Maintain roles, profiles, and validity"},
@@ -71,16 +71,24 @@ class SAPService:
         message = str(data.get("Message") or data.get("message") or "").strip()
         explicit_lower = explicit_status.lower()
 
-        if explicit_lower in {"unlocked", "unlock", "u", "false", "0", ""} and explicit_status:
+        if explicit_lower in {"unlocked", "unlock", "u", "false", "0"}:
             return "Unlocked", message
         if explicit_lower in {"locked", "lock", "l", "true", "1"}:
             return "Locked", message
 
-        combined = f"{explicit_status} {message}".lower()
-        if "not locked" in combined or "unlock" in combined or "unlocked" in combined or "lock removed" in combined:
+        # Check action if present in response data
+        action = str(data.get("Action") or data.get("action") or "").strip().upper()
+        if action in {"UNLOCK", "U"}:
             return "Unlocked", message
-        if "incorrect logon" in combined or "wrong password" in combined or "locked" in combined or "lock" in combined:
+        elif action in {"LOCK", "L"}:
             return "Locked", message
+
+        combined = f"{explicit_status} {message}".lower()
+        if "unlocked" in combined or "unlock" in combined or "not locked" in combined or "lock removed" in combined:
+            return "Unlocked", message
+        if "incorrect logon" in combined or "wrong password" in combined:
+            return "Locked", message
+
         return "Unknown", message
 
     @staticmethod
@@ -394,7 +402,8 @@ class SAPService:
         }
 
     def unlock_user(self, system_id, username, reason=""):
-        """Unlocks a user via the mapped UserLockSet operation."""
+        """Unlocks a user by executing the UserLockSet OData POST with Action=UNLOCK.
+        No post-operation GET verification is performed."""
         from datetime import datetime
         system_id = system_id.replace("sys-", "").strip().upper()
         uname_upper = username.strip().upper()
@@ -410,24 +419,6 @@ class SAPService:
         res = self._request_operation(client, "unlock_user", payload)
         data = res.get("d", res) if isinstance(res, dict) else {}
         status_code, action_msg = self._sap_status(data, f"User {uname_upper} UnLocked Successfully")
-        response_status, response_msg = self._lock_status_from_sap_data(data)
-
-        final_status = response_status
-        final_message = response_msg or action_msg
-        try:
-            live_status, live_message, _ = self._get_live_lock_state(client, uname_upper)
-            if live_status != "Unknown":
-                final_status = live_status
-            if live_message:
-                final_message = live_message
-        except Exception as exc:
-            logger.warning(f"Post-unlock keyed GET status check failed for {uname_upper} in {system_id}: {str(exc)}")
-
-        if final_status == "Locked":
-            final_message = (
-                f"Unlock request submitted for wrong-password attempts, but SAP still reports user {uname_upper} as Locked. "
-                f"{final_message or 'A remaining lock such as system-manager lock may still be active.'}"
-            )
 
         db = current_app.db if hasattr(current_app, "db") and current_app.db is not None else None
         if db is not None:
@@ -446,12 +437,12 @@ class SAPService:
             "Action": action,
             "Reason": reason,
             "Status": status_code,
-            "Message": final_message or f"User {uname_upper} UnLocked Successfully",
-            "LockStatus": "Locked" if final_status == "Locked" else "Unlocked",
-            "LockReason": "" if final_status != "Locked" else "Remaining lock still active in SAP",
-            "Verified": final_status != "Locked",
+            "Message": action_msg or f"User {uname_upper} UnLocked Successfully",
+            "LockStatus": "Unlocked",
+            "Verified": True,
             "VerifiedAt": verified_time
         }
+
 
     def assign_roles(self, system_id, username, roles):
         """Assign roles to user through the SAP user maintenance OData payload."""

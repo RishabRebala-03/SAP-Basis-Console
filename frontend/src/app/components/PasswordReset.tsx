@@ -1,12 +1,11 @@
 import { useState, useMemo } from "react";
 import {
   KeyRound, AlertCircle, CheckCircle2, Server, Copy, Check,
-  Eye, EyeOff, History, Clock, Search, X, Play,
+  Eye, EyeOff, History,
 } from "lucide-react";
 import { useAppContext } from "../contexts/AppContext";
-import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 import type { AuditLog } from "../contexts/AppContext";
-import { resetPasswordApi, searchUsersApi } from "../../api/sapApi";
+import { resetPasswordApi } from "../../api/sapApi";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c",
@@ -122,8 +121,6 @@ export function PasswordReset() {
   const [activeTab, setActiveTab] = useState<"reset" | "history">("reset");
   const [selectedSystem, setSelectedSystem] = useState("");
   const [username, setUsername] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [foundUser, setFoundUser] = useState<any | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -131,47 +128,12 @@ export function PasswordReset() {
   const [returnedPassword, setReturnedPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  const handleLookup = async () => {
-    if (!selectedSystem) {
-      setErrors({ system: "Please select a target SAP system first" });
-      return;
-    }
-    if (!username.trim()) {
-      setErrors({ username: "Username is required for lookup" });
-      return;
-    }
-    setErrors({});
-    setSearching(true);
-    setStatus("idle");
-    setErrorMessage("");
-
-    const sys = systems.find((s) => s.id === selectedSystem || s.systemId === selectedSystem);
-    const targetSystemId = (sys?.systemId || selectedSystem || "SHD").replace("sys-", "").toUpperCase();
-
-    try {
-      const results = await searchUsersApi(targetSystemId, username.trim());
-      setSearching(false);
-      if (results && results.length > 0) {
-        setFoundUser(results[0]);
-      } else {
-        setFoundUser(null);
-        setStatus("error");
-        setErrorMessage(`User '${username.trim().toUpperCase()}' does not exist on SAP system ${targetSystemId}`);
-      }
-    } catch (err: any) {
-      setSearching(false);
-      setFoundUser(null);
-      setStatus("error");
-      setErrorMessage(err.message || `User '${username.trim().toUpperCase()}' was not found in SAP system ${targetSystemId}`);
-    }
-  };
+  const [lastUsername, setLastUsername] = useState("");
 
   const validate = (): boolean => {
     const e: Record<string, string> = {};
     if (!selectedSystem) e.system = "Please select a target SAP system";
     if (!username.trim()) e.username = "Username is required";
-    if (!foundUser) e.username = "Please lookup and verify user before proceeding";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -198,6 +160,7 @@ export function PasswordReset() {
       setLoading(false);
       setStatus("success");
       setReturnedPassword(serverPassword);
+      setLastUsername(targetUsername);
 
       logAction({
         module: "Password Reset", action: "Reset Password", targetObject: targetUsername,
@@ -225,7 +188,6 @@ export function PasswordReset() {
 
   const handleClear = () => {
     setUsername("");
-    setFoundUser(null);
     setErrors({});
     setStatus("idle");
     setErrorMessage("");
@@ -233,6 +195,7 @@ export function PasswordReset() {
     setReturnedPassword("");
     setShowPassword(false);
     setCopied(false);
+    setLastUsername("");
   };
 
   const handleCopy = () => {
@@ -256,7 +219,7 @@ export function PasswordReset() {
           <KeyRound size={20} style={{ color: F.primary }} />
           <h1 className="text-xl font-semibold" style={{ color: F.text }}>Password Reset</h1>
         </div>
-        <p className="text-sm" style={{ color: F.muted }}>Lookup user in SAP OData Gateway and generate a temporary password.</p>
+        <p className="text-sm" style={{ color: F.muted }}>Directly enter the SAP username to reset their password via the SAP OData Gateway.</p>
       </div>
 
       <div className="flex gap-0 mb-6" style={{ borderBottom: `2px solid ${F.border}` }}>
@@ -275,8 +238,8 @@ export function PasswordReset() {
               <div className="flex items-start gap-3 px-4 py-4" style={{ borderBottom: `1px solid #107e3e30` }}>
                 <CheckCircle2 size={18} style={{ color: F.success, flexShrink: 0, marginTop: "2px" }} />
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: F.success }}>Password reset successfully for {username.toUpperCase()} in {selectedSystem || sys?.systemId}.</p>
-                  <p className="text-xs mt-0.5" style={{ color: F.muted }}>Verified in live SAP OData Gateway (`UserPasswordResetSet`). Recorded in security audit log at {new Date().toLocaleTimeString()}.</p>
+                  <p className="text-sm font-semibold" style={{ color: F.success }}>Password reset successfully for {lastUsername} in {sys?.systemId || selectedSystem}.</p>
+                  <p className="text-xs mt-0.5" style={{ color: F.muted }}>Executed via SAP OData Gateway (`UserPasswordResetSet`). Recorded in security audit log at {new Date().toLocaleTimeString()}.</p>
                 </div>
               </div>
               <div className="px-4 py-4">
@@ -307,74 +270,35 @@ export function PasswordReset() {
             </div>
           )}
 
-          <SystemSelector systems={systems} selectedId={selectedSystem} onChange={(id) => { setSelectedSystem(id); setFoundUser(null); setStatus("idle"); }} />
+          <SystemSelector systems={systems} selectedId={selectedSystem} onChange={(id) => { setSelectedSystem(id); setStatus("idle"); }} />
           {errors.system && <p className="flex items-center gap-1 mb-4 text-xs" style={{ color: F.error }}><AlertCircle size={11} /> {errors.system}</p>}
 
           <div className="max-w-2xl">
             <div className="rounded" style={{ background: F.white, border: `1px solid ${F.border}` }}>
               <div className="px-5 py-3" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-                <h3 className="text-sm font-semibold" style={{ color: F.text }}>User Identification & Reset</h3>
+                <h3 className="text-sm font-semibold" style={{ color: F.text }}>User Password Reset</h3>
               </div>
               <div className="p-5" style={{ borderBottom: `1px solid ${F.border}` }}>
                 <label className="block text-sm mb-1" style={{ color: F.muted }}>SAP Username <span style={{ color: F.error }}>*</span></label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={username}
-                    onChange={(e) => {
-                      setUsername(e.target.value);
-                      setFoundUser(null);
-                      setStatus("idle");
-                      if (errors.username) setErrors((errs) => { const n = { ...errs }; delete n.username; return n; });
-                    }}
-                    onKeyDown={(e) => { if (e.key === "Enter") handleLookup(); }}
-                    placeholder="Enter SAP Username"
-                    className="flex-1 px-3 py-2 text-sm rounded outline-none"
-                    style={{ border: `1px solid ${errors.username ? F.error : F.border}`, background: F.white, color: F.text }}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleLookup}
-                    disabled={searching || !username.trim()}
-                    className="px-4 py-2 text-sm rounded text-white font-medium flex items-center gap-1.5 transition-all shadow-sm"
-                    style={{ background: searching ? "#74a8f5" : F.primary, opacity: searching || !username.trim() ? 0.7 : 1 }}
-                  >
-                    {searching ? (
-                      <><span className="animate-spin border-2 border-white border-t-transparent rounded-full w-3.5 h-3.5" /> Searching...</>
-                    ) : (
-                      <><Search size={15} /> Lookup User</>
-                    )}
-                  </button>
-                </div>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    setStatus("idle");
+                    if (errors.username) setErrors((errs) => { const n = { ...errs }; delete n.username; return n; });
+                  }}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleResetClick(); }}
+                  placeholder="Enter SAP Username (e.g. JDOE)"
+                  className="w-full px-3 py-2 text-sm rounded outline-none"
+                  style={{ border: `1px solid ${errors.username ? F.error : F.border}`, background: F.white, color: F.text }}
+                />
                 {errors.username && <p className="flex items-center gap-1 mt-1 text-xs" style={{ color: F.error }}><AlertCircle size={11} /> {errors.username}</p>}
-                <p className="text-xs mt-1.5" style={{ color: F.muted }}>Enter username and click Lookup to verify existence in SAP before resetting password.</p>
-
-                {foundUser && (
-                  <div className="mt-5 p-4 rounded" style={{ background: "#f8fbff", border: `1px solid #0070f230` }}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-sm" style={{ color: F.text }}>{foundUser.UserName}</span>
-                        <span className="text-xs px-2.5 py-0.5 rounded font-semibold" style={{
-                          background: (foundUser.LockStatus || "").toLowerCase() === "locked" ? "#fff2f2" : "#f1fdf6",
-                          color: (foundUser.LockStatus || "").toLowerCase() === "locked" ? F.error : F.success,
-                          border: `1px solid ${(foundUser.LockStatus || "").toLowerCase() === "locked" ? "#bb000040" : "#107e3e40"}`
-                        }}>
-                          {(foundUser.LockStatus || "").toLowerCase() === "locked" ? "● Locked in SAP" : "● Active in SAP"}
-                        </span>
-                      </div>
-                      <span className="text-xs font-medium" style={{ color: F.muted }}>System: {foundUser.SystemId || selectedSystem}</span>
-                    </div>
-                    <p className="text-xs text-gray-600 mb-2">{foundUser.Message || "User verified in live SAP OData Gateway"}</p>
-                    <div className="grid grid-cols-2 gap-2 pt-2 text-xs border-t border-blue-100 text-gray-500">
-                      <div><span className="font-medium text-gray-700">Department:</span> {foundUser.Department || "N/A"}</div>
-                      <div><span className="font-medium text-gray-700">Email:</span> {foundUser.Email || "N/A"}</div>
-                    </div>
-                  </div>
-                )}
+                <p className="text-xs mt-1.5" style={{ color: F.muted }}>Enter the username and click Reset Password to execute directly against the SAP OData Gateway.</p>
               </div>
               <div className="px-5 py-4 flex items-center justify-between" style={{ background: "#fafafa" }}>
                 <button onClick={handleClear} className="px-4 py-2 text-sm rounded font-medium" style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}>Clear</button>
-                <button onClick={handleResetClick} disabled={loading || !foundUser} className="flex items-center gap-2 px-5 py-2 text-sm rounded text-white font-medium shadow-sm" style={{ background: loading || !foundUser ? "#74a8f5" : F.primary }}>
+                <button onClick={handleResetClick} disabled={loading || !selectedSystem || !username.trim()} className="flex items-center gap-2 px-5 py-2 text-sm rounded text-white font-medium shadow-sm" style={{ background: loading || !selectedSystem || !username.trim() ? "#74a8f5" : F.primary }}>
                   {loading ? <><span className="animate-spin border-2 border-white border-t-transparent rounded-full w-3.5 h-3.5" /> Resetting in SAP...</> : <><KeyRound size={14} /> Reset Password</>}
                 </button>
               </div>
