@@ -424,6 +424,11 @@ export function SingleUserCreation() {
     if (!form.validFrom) e.validFrom = "Valid From date is required";
     if (!form.validTo) e.validTo = "Valid To date is required";
     if (form.validFrom && form.validTo && form.validFrom >= form.validTo) e.validTo = "Valid To must be after Valid From";
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async () => {

@@ -7,15 +7,15 @@ import {
 import { useAppContext } from "../contexts/AppContext";
 import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 import type { AuditLog } from "../contexts/AppContext";
-import { processBulkCreateApi } from "../../api/sapApi";
+import { processBulkCreateApi, bulkPreviewApi } from "../../api/sapApi";
 
 interface BulkUser {
   row: number; username: string; lastName: string; firstName: string;
-  validFrom: string; validTo: string; roles: string;
+  email: string; initPassword: string;
+  validFrom: string; validTo: string; roles: string; profiles: string;
   status: "valid" | "invalid" | "processed" | "failed"; errorMessage: string;
 }
 
-const MOCK_USERS: BulkUser[] = [];
 
 
 const F = { primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c", text: "var(--app-text)", muted: "var(--app-muted)", border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)" };
@@ -346,16 +346,45 @@ export function BulkUserCreation() {
   const { systems, logAction } = useAppContext();
   const [activeTab, setActiveTab] = useState<"creation" | "history">("creation");
   const [selectedSystem, setSelectedSystem] = useState("");
-  const [uploadState, setUploadState] = useState<"idle" | "preview" | "processing" | "done">("idle");
+  const [uploadState, setUploadState] = useState<"idle" | "parsing" | "preview" | "processing" | "done">("idle");
   const [users, setUsers] = useState<BulkUser[]>([]);
+  const [parseError, setParseError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [fileName, setFileName] = useState("");
   const [processingProgress, setProcessingProgress] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const loadMockPreview = (name: string) => { setFileName(name); setUsers(MOCK_USERS); setUploadState("preview"); };
-  const handleFileDrop = (e: React.DragEvent) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) loadMockPreview(f.name); };
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if (f) loadMockPreview(f.name); };
+  const parseFile = async (file: File) => {
+    setFileName(file.name);
+    setParseError("");
+    setUploadState("parsing");
+    try {
+      const records = await bulkPreviewApi(file);
+      const mapped: BulkUser[] = records.map((r: any) => ({
+        row: r.row_num ?? r.row ?? 0,
+        username: r.username ?? "",
+        lastName: r.last_name ?? "",
+        firstName: r.first_name ?? "",
+        email: r.email ?? "",
+        initPassword: r.init_password ?? "",
+        validFrom: r.valid_from ?? "",
+        validTo: r.valid_to ?? "",
+        roles: Array.isArray(r.roles) ? r.roles.join(",") : (r.roles ?? ""),
+        profiles: Array.isArray(r.profiles) ? r.profiles.join(",") : (r.profiles ?? ""),
+        status: r.is_valid ? "valid" : "invalid",
+        errorMessage: Array.isArray(r.errors) ? r.errors.join("; ") : (r.errors ?? ""),
+      }));
+      setUsers(mapped);
+      setUploadState("preview");
+    } catch (err: any) {
+      setParseError(err.message || "Failed to parse Excel file.");
+      setUploadState("idle");
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  };
+
+  const handleFileDrop = (e: React.DragEvent) => { e.preventDefault(); setDragOver(false); const f = e.dataTransfer.files[0]; if (f) parseFile(f); };
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => { const f = e.target.files?.[0]; if (f) parseFile(f); };
 
   const handleProcess = async () => {
     if (!selectedSystem) { alert("Please select a target SAP system before processing."); return; }
@@ -372,9 +401,13 @@ export function BulkUserCreation() {
           username: u.username,
           first_name: u.firstName,
           last_name: u.lastName,
+          email: u.email,
+          init_password: u.initPassword || undefined,
           valid_from: u.validFrom,
           valid_to: u.validTo,
-          roles: u.roles ? u.roles.split(",").map((r) => r.trim()) : [],
+          roles: u.roles ? u.roles.split(",").map((r) => r.trim()).filter(Boolean) : [],
+          profiles: u.profiles ? u.profiles.split(",").map((p) => p.trim()).filter(Boolean) : [],
+          is_valid: true,
         })),
       });
 
@@ -415,8 +448,15 @@ export function BulkUserCreation() {
     }
   };
 
-  const handleReset = () => { setUploadState("idle"); setUsers([]); setFileName(""); setProcessingProgress(0); setSelectedSystem(""); if (fileRef.current) fileRef.current.value = ""; };
-  const downloadTemplate = () => { const csv = "Username,Last Name,First Name,Valid From,Valid To,Roles / Profiles\nJOHN.DOE,Doe,John,2026-01-01,2026-12-31,Z_FI_ACCOUNTANT"; const blob = new Blob([csv], { type: "text/csv" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "sap_user_template.csv"; a.click(); URL.revokeObjectURL(url); };
+  const handleReset = () => { setUploadState("idle"); setUsers([]); setFileName(""); setParseError(""); setProcessingProgress(0); setSelectedSystem(""); if (fileRef.current) fileRef.current.value = ""; };
+  const downloadTemplate = async () => {
+    const token = localStorage.getItem("token");
+    const res = await fetch("/api/sap/template", { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (!res.ok) { alert("Failed to download template."); return; }
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a"); a.href = url; a.download = "SAP_Bulk_User_Template.xlsx"; a.click(); URL.revokeObjectURL(url);
+  };
   const downloadReport = () => { const rows = users.map((u) => `${u.row},${u.username},${u.lastName},${u.validFrom},${u.validTo},${u.roles},${u.status},${u.errorMessage}`); const csv = ["Row,Username,Last Name,Valid From,Valid To,Roles,Status,Error", ...rows].join("\n"); const blob = new Blob([csv], { type: "text/csv" }); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "sap_provisioning_report.csv"; a.click(); URL.revokeObjectURL(url); };
 
   const validCount = users.filter((u) => u.status === "valid").length;
@@ -449,6 +489,23 @@ export function BulkUserCreation() {
       {activeTab === "creation" && (
         <>
           <SystemSelector systems={systems} selectedId={selectedSystem} onChange={setSelectedSystem} />
+          {parseError && (
+            <div className="mb-4 flex items-start gap-3 px-4 py-3 rounded" style={{ background: "#fff2f2", border: `1px solid ${F.error}` }}>
+              <AlertCircle size={16} style={{ color: F.error, flexShrink: 0, marginTop: "2px" }} />
+              <div>
+                <p className="text-sm font-medium" style={{ color: F.error }}>Failed to parse file</p>
+                <p className="text-xs mt-0.5" style={{ color: F.muted }}>{parseError}</p>
+              </div>
+            </div>
+          )}
+          {uploadState === "parsing" && (
+            <div className="rounded flex flex-col items-center justify-center gap-4 py-14" style={{ background: F.white, border: `2px dashed ${F.border}` }}>
+              <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "#e8f2ff" }}>
+                <span className="animate-spin border-4 border-blue-200 border-t-blue-500 rounded-full w-8 h-8" />
+              </div>
+              <p className="text-sm" style={{ color: F.text }}>Parsing and validating Excel file…</p>
+            </div>
+          )}
           {uploadState === "idle" && (
             <div className="rounded flex flex-col items-center justify-center gap-4 py-14 cursor-pointer transition-all" style={{ background: dragOver ? "#e8f2ff" : F.white, border: `2px dashed ${dragOver ? F.primary : F.border}` }} onDragOver={(e) => { e.preventDefault(); setDragOver(true); }} onDragLeave={() => setDragOver(false)} onDrop={handleFileDrop} onClick={() => fileRef.current?.click()}>
               <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "#e8f2ff" }}><FileSpreadsheet size={28} style={{ color: F.primary }} /></div>
@@ -460,7 +517,7 @@ export function BulkUserCreation() {
           {(uploadState === "preview" || uploadState === "processing" || uploadState === "done") && (
             <div>
               <div className="rounded mb-4 flex items-center gap-3 px-4 py-3" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-                <FileSpreadsheet size={18} style={{ color: F.primary }} /><span className="text-sm flex-1" style={{ color: F.text }}>{fileName}</span><span className="text-xs" style={{ color: F.muted }}>{users.length} records found</span><button onClick={handleReset} className="p-1 rounded hover:bg-gray-100" style={{ color: F.muted }}><X size={15} /></button>
+                <FileSpreadsheet size={18} style={{ color: F.primary }} /><span className="text-sm flex-1" style={{ color: F.text }}>{fileName}</span><span className="text-xs" style={{ color: F.muted }}>{users.length} record{users.length !== 1 ? "s" : ""} found ({users.filter(u => u.status === "valid").length} valid)</span><button onClick={handleReset} className="p-1 rounded hover:bg-gray-100" style={{ color: F.muted }}><X size={15} /></button>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
                 {[{ label: "Total Records", value: users.length, color: F.primary, bg: "#e8f2ff" }, { label: uploadState === "done" ? "Processed" : "Valid", value: uploadState === "done" ? processedCount : validCount, color: F.success, bg: "#f1fdf6" }, { label: uploadState === "done" ? "Failed" : "Invalid", value: uploadState === "done" ? failedCount : invalidCount, color: F.error, bg: "#fff2f2" }, { label: "Skipped", value: uploadState === "done" ? invalidCount : 0, color: F.warning, bg: "#fff8f0" }].map((card) => (
@@ -485,8 +542,8 @@ export function BulkUserCreation() {
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                    <thead><tr style={{ background: "#f5f6f7", borderBottom: `1px solid ${F.border}` }}>{["Row", "Username", "Last Name", "Valid From", "Valid To", "Roles / Profiles", "Status", "Error Message"].map((h) => <th key={h} className="px-4 py-2.5 text-left text-xs" style={{ color: F.muted, fontWeight: 600 }}>{h}</th>)}</tr></thead>
-                    <tbody>{users.map((user, i) => (<tr key={user.row} style={{ borderBottom: `1px solid ${F.border}`, background: (user.status === "invalid" || user.status === "failed") ? "#fff9f9" : i % 2 === 0 ? F.white : "#fafafa" }}><td className="px-4 py-2.5" style={{ color: F.muted }}>{user.row}</td><td className="px-4 py-2.5" style={{ color: F.text }}>{user.username || <span style={{ color: F.error }}>—</span>}</td><td className="px-4 py-2.5" style={{ color: F.text }}>{user.lastName || <span style={{ color: F.error }}>—</span>}</td><td className="px-4 py-2.5" style={{ color: F.text }}>{user.validFrom}</td><td className="px-4 py-2.5" style={{ color: F.text }}>{user.validTo}</td><td className="px-4 py-2.5" style={{ color: F.text }}>{user.roles || "—"}</td><td className="px-4 py-2.5">{statusBadge(user.status)}</td><td className="px-4 py-2.5 text-xs" style={{ color: user.errorMessage ? F.error : F.muted }}>{user.errorMessage || "—"}</td></tr>))}</tbody>
+                    <thead><tr style={{ background: "#f5f6f7", borderBottom: `1px solid ${F.border}` }}>{["Row", "Username", "Last Name", "Email", "Valid From", "Valid To", "Roles", "Profiles", "Status", "Error"].map((h) => <th key={h} className="px-4 py-2.5 text-left text-xs" style={{ color: F.muted, fontWeight: 600 }}>{h}</th>)}</tr></thead>
+                    <tbody>{users.map((user, i) => (<tr key={user.row} style={{ borderBottom: `1px solid ${F.border}`, background: (user.status === "invalid" || user.status === "failed") ? "#fff9f9" : i % 2 === 0 ? F.white : "#fafafa" }}><td className="px-4 py-2.5 text-xs" style={{ color: F.muted }}>{user.row}</td><td className="px-4 py-2.5 text-xs" style={{ color: F.text }}>{user.username || <span style={{ color: F.error }}>—</span>}</td><td className="px-4 py-2.5 text-xs" style={{ color: F.text }}>{user.lastName || <span style={{ color: F.error }}>—</span>}</td><td className="px-4 py-2.5 text-xs" style={{ color: F.muted }}>{user.email || "—"}</td><td className="px-4 py-2.5 text-xs" style={{ color: F.text }}>{user.validFrom || "—"}</td><td className="px-4 py-2.5 text-xs" style={{ color: F.text }}>{user.validTo || "—"}</td><td className="px-4 py-2.5 text-xs" style={{ color: F.text }}>{user.roles || "—"}</td><td className="px-4 py-2.5 text-xs" style={{ color: F.text }}>{user.profiles || "—"}</td><td className="px-4 py-2.5">{statusBadge(user.status)}</td><td className="px-4 py-2.5 text-xs" style={{ color: user.errorMessage ? F.error : F.muted }}>{user.errorMessage || "—"}</td></tr>))}</tbody>
                   </table>
                 </div>
               </div>

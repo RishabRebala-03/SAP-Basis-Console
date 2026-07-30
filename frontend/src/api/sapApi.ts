@@ -71,13 +71,21 @@ async function fetchWithAuth(url: string, options: RequestInit = {}): Promise<Re
   let res = await fetch(url, { ...options, headers });
 
   if (res.status === 401) {
-    const newToken = await refreshTokenApi();
-    if (newToken) {
-      headers["Authorization"] = `Bearer ${newToken}`;
-      res = await fetch(url, { ...options, headers });
-    } else {
-      window.dispatchEvent(new Event("auth:session-expired"));
+    // Only attempt refresh if we actually have a refresh token
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (refreshToken) {
+      const newToken = await refreshTokenApi();
+      if (newToken) {
+        // Retry with the new access token
+        headers["Authorization"] = `Bearer ${newToken}`;
+        res = await fetch(url, { ...options, headers });
+      } else {
+        // Refresh token is also expired/invalid — force logout
+        window.dispatchEvent(new Event("auth:session-expired"));
+      }
     }
+    // If no refresh token existed, just return the 401 response
+    // so safeParseResponse can throw a meaningful error instead of logging the user out
   }
 
   return res;
@@ -143,3 +151,51 @@ export async function processBulkCreateApi(payload: BulkCreatePayload) {
   return await safeParseResponse(res, "Bulk user creation completed");
 }
 
+/**
+ * Uploads an Excel file to the backend for parsing and validation preview.
+ * Returns an array of parsed row records with validation status.
+ * NOTE: Uses raw fetch (not fetchWithAuth) because FormData must NOT set Content-Type manually.
+ */
+export async function bulkPreviewApi(file: File): Promise<any[]> {
+  const token = localStorage.getItem("token");
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  let res = await fetch(`${BASE_URL}/bulk-create/preview`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (res.status === 401) {
+    const storedRefresh = localStorage.getItem("refresh_token");
+    if (storedRefresh) {
+      const newToken = await refreshTokenApi();
+      if (newToken) {
+        headers["Authorization"] = `Bearer ${newToken}`;
+        res = await fetch(`${BASE_URL}/bulk-create/preview`, {
+          method: "POST",
+          headers,
+          body: formData,
+        });
+      } else {
+        window.dispatchEvent(new Event("auth:session-expired"));
+      }
+    }
+  }
+
+  const text = await res.text();
+  let data: any;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(text || "Failed to parse server response");
+  }
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || `Preview failed (HTTP ${res.status})`);
+  }
+  return data;
+}

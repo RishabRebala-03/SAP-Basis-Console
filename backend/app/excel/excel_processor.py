@@ -7,6 +7,8 @@ from openpyxl.styles import Font, PatternFill, Alignment
 TEMPLATE_COLUMNS = [
     "Username",
     "Last Name",
+    "First Name",
+    "Email",
     "Init Password",
     "Valid From",
     "Valid To",
@@ -40,7 +42,7 @@ def generate_template():
 
     # Add a sample row
     sample_row = [
-        "JDOE", "Doe", "InitPass123!", "2026-07-20", "2027-12-31", 
+        "JDOE", "Doe", "John", "john.doe@company.com", "InitPass123!", "2026-07-20", "2027-12-31",
         "SAP_ALL,SAP_NEW", "Z_BASIS_ADMIN,Z_DEVELOPER_FULL"
     ]
     
@@ -64,8 +66,9 @@ def parse_and_validate_excel(file_stream):
     # Standardize column casing and trim spaces
     df.columns = [str(c).strip() for c in df.columns]
     
-    # Check headers
-    missing_cols = [c for c in TEMPLATE_COLUMNS if c not in df.columns]
+    # Required columns only – First Name, Email are optional
+    required_cols = ["Username", "Last Name", "Init Password", "Valid From", "Valid To"]
+    missing_cols = [c for c in required_cols if c not in df.columns]
     if missing_cols:
         raise Exception(f"Invalid template format. Missing required columns: {', '.join(missing_cols)}")
 
@@ -74,17 +77,19 @@ def parse_and_validate_excel(file_stream):
         row_num = idx + 2  # 1-based index plus header row
         username = str(row.get("Username", "")).strip().upper()
         last_name = str(row.get("Last Name", "")).strip()
+        first_name = str(row.get("First Name", "")).strip()
+        email = str(row.get("Email", "")).strip()
         init_pass = str(row.get("Init Password", "")).strip()
         valid_from = str(row.get("Valid From", "")).strip()
         valid_to = str(row.get("Valid To", "")).strip()
 
         errors = []
 
-        if not username or username == "NAN":
+        if not username or username.upper() == "NAN":
             errors.append("Username is mandatory")
-        if not last_name or last_name == "NAN":
+        if not last_name or last_name.upper() == "NAN":
             errors.append("Last Name is mandatory")
-        if not init_pass or init_pass == "NAN":
+        if not init_pass or init_pass.upper() == "NAN":
             errors.append("Initial Password is mandatory")
         elif len(init_pass) < 8:
             errors.append("Password must be at least 8 characters long")
@@ -93,16 +98,22 @@ def parse_and_validate_excel(file_stream):
         profiles_str = str(row.get("Profiles", "")).strip()
         roles_str = str(row.get("Roles", "")).strip()
         
-        profiles = [p.strip() for p in profiles_str.split(",") if p.strip() and p.strip() != "nan"]
-        roles = [r.strip() for r in roles_str.split(",") if r.strip() and r.strip() != "nan"]
+        profiles = [p.strip() for p in profiles_str.split(",") if p.strip() and p.strip().lower() != "nan"]
+        roles = [r.strip() for r in roles_str.split(",") if r.strip() and r.strip().lower() != "nan"]
+
+        # Normalise NAN values from pandas
+        def _clean(v):
+            return "" if not v or v.upper() == "NAN" else v
 
         records.append({
             "row_num": row_num,
-            "username": username if username != "NAN" else "",
-            "last_name": last_name if last_name != "NAN" else "",
-            "init_password": init_pass if init_pass != "NAN" else "",
-            "valid_from": valid_from if valid_from != "nan" else None,
-            "valid_to": valid_to if valid_to != "nan" else None,
+            "username": _clean(username),
+            "last_name": _clean(last_name),
+            "first_name": _clean(first_name),
+            "email": _clean(email),
+            "init_password": _clean(init_pass),
+            "valid_from": _clean(valid_from) or None,
+            "valid_to": _clean(valid_to) or None,
             "profiles": profiles,
             "roles": roles,
             "errors": errors,

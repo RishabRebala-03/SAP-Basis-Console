@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { KeyRound, Eye, EyeOff, AlertCircle, Shield, ArrowLeft, CheckCircle2, Mail, Lock } from "lucide-react";
 import logoImage from "../../../imports/image.png";
 import { loginApi, forgotPasswordApi, resetPasswordAuthApi, User } from "../../../api/authApi";
@@ -9,6 +9,20 @@ const F = {
 };
 
 export function SignInPage({ onSignIn }: { onSignIn: (user?: User) => void }) {
+  // Force the login page to always render in light mode regardless of app theme settings
+  useEffect(() => {
+    const root = document.documentElement;
+    const prevTheme = root.dataset.theme;
+    const prevClass = root.classList.contains("dark");
+    root.dataset.theme = "light";
+    root.classList.remove("dark");
+    return () => {
+      // Restore whatever theme was set before (will be re-applied by Shell on login)
+      if (prevTheme) root.dataset.theme = prevTheme;
+      if (prevClass) root.classList.add("dark");
+    };
+  }, []);
+
   const [viewMode, setViewMode] = useState<"signin" | "forgot" | "reset">("signin");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");

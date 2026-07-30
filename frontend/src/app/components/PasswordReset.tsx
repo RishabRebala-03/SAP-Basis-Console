@@ -76,7 +76,7 @@ function HistoryTab() {
           </thead>
           <tbody className="divide-y" style={{ borderColor: F.border }}>
             {pwLogs.map((log) => (
-              <tr key={log.id} className="hover:bg-gray-50">
+              <tr key={log.id} className="hover:bg-[var(--app-subtle)]">
                 <td className="p-3 text-gray-500 whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
                 <td className="p-3 font-semibold" style={{ color: F.text }}>{log.targetObject}</td>
                 <td className="p-3">{log.system}</td>

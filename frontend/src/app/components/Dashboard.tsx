@@ -296,7 +296,7 @@ export function Dashboard({ onNavigate, onViewAudit }: Props) {
                     <button
                       key={l.id}
                       onClick={() => onViewAudit(l)}
-                      className="flex items-center gap-3 py-3 text-left transition-colors hover:bg-gray-50 rounded px-2 -mx-2"
+                      className="flex items-center gap-3 py-3 text-left transition-colors hover:bg-[var(--app-subtle)] rounded px-2 -mx-2"
                       style={{ borderBottom: i < recent.length - 1 ? `1px solid ${F.border}` : "none" }}
                     >
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: mod.bg }}>
