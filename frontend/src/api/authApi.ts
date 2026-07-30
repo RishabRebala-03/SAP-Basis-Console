@@ -34,6 +34,7 @@ export async function loginApi(payload: LoginPayload) {
     localStorage.setItem("token", data.access_token);
     if (data.refresh_token) localStorage.setItem("refresh_token", data.refresh_token);
     if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
+    window.dispatchEvent(new Event("auth:changed"));
   }
 
   return data;
@@ -92,6 +93,7 @@ export async function logoutApi() {
   localStorage.removeItem("token");
   localStorage.removeItem("refresh_token");
   localStorage.removeItem("user");
+  window.dispatchEvent(new Event("auth:changed"));
 }
 
 export function getCurrentUser(): User | null {

@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { createAuditLogApi, getAuditLogsApi } from "../../api/auditApi";
 
 export interface SapSystem {
   id: string;
@@ -47,8 +48,6 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 const SESSION_ID = "SES-" + Math.random().toString(36).slice(2, 10).toUpperCase();
-const ADMIN_USER = "ADMIN";
-const ADMIN_IP = "10.42.8.201";
 
 const INITIAL_SYSTEMS: SapSystem[] = [
   { id: "sys-shd", systemId: "SHD", systemName: "SHD", client: "100", environment: "Development", host: "183.82.103.80:8011", description: "SHD Development (Client 100)", status: "Active", createdAt: "2026-01-10T08:00:00Z", createdBy: "ADMIN" },
@@ -59,9 +58,62 @@ const INITIAL_SYSTEMS: SapSystem[] = [
 
 const INITIAL_LOGS: AuditLog[] = [];
 
+const ACTION_LABELS: Record<string, { module: AuditModule; action: string }> = {
+  create_user: { module: "Single User", action: "Create User" },
+  bulk_create: { module: "Bulk User", action: "Bulk Import" },
+  reset_password: { module: "Password Reset", action: "Reset Password" },
+  lock_user: { module: "Lock/Unlock", action: "Lock User" },
+  unlock_user: { module: "Lock/Unlock", action: "Unlock User" },
+  assign_roles: { module: "Single User", action: "Assign Roles" },
+  assign_profiles: { module: "Single User", action: "Assign Profiles" },
+  extend_validity: { module: "Single User", action: "Extend Validity" },
+};
+
+function mapAuditLog(raw: any): AuditLog {
+  const mapped = ACTION_LABELS[raw.action] || { module: raw.module || "System", action: raw.action || "System Action" };
+  const payload = raw.payload || {};
+  const response = raw.response || {};
+  const timestamp = raw.timestamp || new Date().toISOString();
+  return {
+    id: raw.id || raw._id || `log-${timestamp}`,
+    timestamp,
+    module: mapped.module as AuditModule,
+    action: raw.displayAction || mapped.action,
+    targetObject: raw.target_object || raw.targetObject || payload.targetObject || payload.username || payload.Username || "—",
+    system: raw.sap_system || raw.system || "—",
+    client: raw.client || payload.client || "100",
+    performedBy: raw.username || raw.performedBy || "Unknown",
+    status: raw.status === "Warning" ? "Warning" : raw.status === "Failed" ? "Failed" : "Success",
+    ipAddress: raw.ip_address || raw.ipAddress || "Unavailable",
+    sessionId: raw.session_id || raw.sessionId || "—",
+    durationMs: raw.durationMs ?? Math.round(Number(raw.duration || 0) * 1000),
+    details: raw.details || response.Message || response.message || response.error || "",
+    errorCode: raw.error_code || raw.errorCode,
+    changesBefore: raw.changes_before || raw.changesBefore,
+    changesAfter: raw.changes_after || raw.changesAfter,
+  };
+}
+
 export function AppProvider({ children }: { children: ReactNode }) {
   const [systems, setSystems] = useState<SapSystem[]>(INITIAL_SYSTEMS);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>(INITIAL_LOGS);
+
+  const refreshAuditLogs = useCallback(async () => {
+    if (!localStorage.getItem("token")) return;
+    try {
+      const data = await getAuditLogsApi();
+      setAuditLogs((data.logs || []).map(mapAuditLog));
+    } catch {
+      // Keep the current view when the audit service is temporarily unavailable.
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshAuditLogs();
+    const handleAuthChanged = () => void refreshAuditLogs();
+    window.addEventListener("auth:changed", handleAuthChanged);
+    return () => window.removeEventListener("auth:changed", handleAuthChanged);
+  }, [refreshAuditLogs]);
 
   const addSystem = useCallback((s: Omit<SapSystem, "id" | "createdAt" | "createdBy">) => {
     const newSys: SapSystem = {
@@ -87,12 +139,24 @@ export function AppProvider({ children }: { children: ReactNode }) {
       ...entry,
       id: "log-" + Date.now(),
       timestamp: new Date().toISOString(),
-      performedBy: ADMIN_USER,
-      ipAddress: ADMIN_IP,
+      performedBy: (() => {
+        try {
+          return JSON.parse(localStorage.getItem("user") || "{}").username || "Unknown";
+        } catch {
+          return "Unknown";
+        }
+      })(),
+      ipAddress: "Unavailable",
       sessionId: SESSION_ID,
     };
     setAuditLogs((prev) => [log, ...prev]);
-  }, []);
+    const clientOnlyAction = entry.module === "Data Management" || entry.module === "System";
+    if (clientOnlyAction) {
+      void createAuditLogApi(entry).then(() => refreshAuditLogs()).catch(() => {});
+    } else {
+      void refreshAuditLogs();
+    }
+  }, [refreshAuditLogs]);
 
   return (
     <AppContext.Provider value={{ systems, addSystem, updateSystem, deleteSystem, auditLogs, logAction }}>

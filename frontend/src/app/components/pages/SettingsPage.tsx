@@ -189,7 +189,7 @@ export function SettingsPage({ settings, onChange, onBack }: {
                         ["Role", "Basis Administrator"],
                         ["Session ID", "SES-A4B7C2D1"],
                         ["Login Time", "Today 08:30 UTC"],
-                        ["IP Address", "10.42.8.201"],
+                        ["IP Address", "Unavailable"],
                         ["Auth Objects", "S_USER_GRP, S_USR_ADM, S_TCODE"],
                       ].map(([k, v]) => (
                         <div key={k} className="p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>

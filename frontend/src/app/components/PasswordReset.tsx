@@ -12,30 +12,6 @@ const F = {
   text: "var(--app-text)", muted: "var(--app-muted)", border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)",
 };
 
-function generatePasswordFromServer(): string {
-  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-  const lower = "abcdefghjkmnpqrstuvwxyz";
-  const digits = "23456789";
-  const special = "!@#$%&*";
-  const pool = [
-    upper[Math.floor(Math.random() * upper.length)],
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    digits[Math.floor(Math.random() * digits.length)],
-    special[Math.floor(Math.random() * special.length)],
-    special[Math.floor(Math.random() * special.length)],
-    upper[Math.floor(Math.random() * upper.length)],
-    lower[Math.floor(Math.random() * lower.length)],
-  ];
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return pool.join("");
-}
-
 function SystemSelector({ systems, selectedId, onChange }: {
   systems: ReturnType<typeof useAppContext>["systems"]; selectedId: string; onChange: (id: string) => void;
 }) {
@@ -156,7 +132,7 @@ export function PasswordReset() {
         username: targetUsername,
       });
 
-      const serverPassword = res.NewPassword || res.Password || generatePasswordFromServer();
+      const serverPassword = res.NewPassword || res.Password || res.GeneratedPassword || "";
       setLoading(false);
       setStatus("success");
       setReturnedPassword(serverPassword);
