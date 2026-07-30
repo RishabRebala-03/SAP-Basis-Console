@@ -260,16 +260,16 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
               </button>
             </div>
             {sessionActionMessage && (
-              <div className="rounded px-4 py-3 text-sm" style={{ background: "#f1fdf6", border: `1px solid ${F.success}25`, color: F.success }}>
+              <div className="rounded px-4 py-3 text-sm" style={{ background: "rgba(16,126,62,0.12)", border: `1px solid ${F.success}`, color: F.text }}>
                 {sessionActionMessage}
               </div>
             )}
             {sessions.map((s) => (
               <div key={s.id} className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${s.status === "active" ? F.success : F.border}` }}>
-                <div className="px-5 py-3 flex items-center gap-3" style={{ borderBottom: `1px solid ${F.border}`, background: s.status === "active" ? "#f1fdf6" : "#fafafa" }}>
+                <div className="px-5 py-3 flex items-center gap-3" style={{ borderBottom: `1px solid ${F.border}`, background: s.status === "active" ? "rgba(16,126,62,0.16)" : "#fafafa" }}>
                   <span className="w-2 h-2 rounded-full" style={{ background: s.status === "active" ? F.success : F.warning }} />
-                  <span className="text-sm" style={{ color: F.text }}>{s.type} Session</span>
-                  <span className="ml-auto text-xs px-2 py-0.5 rounded" style={{ background: s.status === "active" ? "#f1fdf6" : "#fff8f0", color: s.status === "active" ? F.success : F.warning }}>
+                  <span className="text-sm" style={{ color: F.text, fontWeight: 500 }}>{s.type} Session</span>
+                  <span className="ml-auto text-xs px-2 py-0.5 rounded" style={{ background: s.status === "active" ? "rgba(16,126,62,0.12)" : "rgba(233,115,12,0.14)", color: s.status === "active" ? F.success : F.warning, border: `1px solid ${s.status === "active" ? F.success : F.warning}33` }}>
                     {s.status === "active" ? "Active" : "Idle"}
                   </span>
                   {s.type !== "Current" && (
@@ -304,11 +304,11 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
 
         {/* Recent Activity */}
         {tab === "activity" && (
-          <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-            <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-              <Activity size={14} style={{ color: F.muted }} />
-              <h3 className="text-sm" style={{ color: F.text }}>Recent Actions (Today)</h3>
-            </div>
+            <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+              <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
+                <Activity size={14} style={{ color: F.muted }} />
+                <h3 className="text-sm" style={{ color: F.text }}>Recent Actions (Today)</h3>
+              </div>
             <div className="divide-y" style={{ borderColor: F.border }}>
               {ACTIVITY.length === 0 ? (
                 <div className="px-5 py-8 text-center">

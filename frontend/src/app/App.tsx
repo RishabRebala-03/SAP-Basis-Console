@@ -150,18 +150,27 @@ function ProfileMenu({ user, onProfile, onLogout }: { user: AuthUser | null; onP
       <div className="py-1">
         <button
           onClick={onProfile}
-          className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors"
+          className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+          style={{
+            color: "var(--app-text)",
+            background: "transparent",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.04)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         >
           <User size={14} style={{ color: "var(--app-muted)" }} />
-          <span className="text-sm" style={{ color: "var(--app-text)" }}>My Profile</span>
+          <span className="text-sm font-medium" style={{ color: "var(--app-text)" }}>My Profile</span>
         </button>
         <div style={{ borderTop: "1px solid #f0f0f0" }}>
           <button
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-red-50 transition-colors"
+            className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
+            style={{ color: "#bb0000", background: "transparent" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(187,0,0,0.08)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
           >
             <LogOut size={14} style={{ color: "#bb0000" }} />
-            <span className="text-sm" style={{ color: "#bb0000" }}>Log Out</span>
+            <span className="text-sm font-medium" style={{ color: "#bb0000" }}>Log Out</span>
           </button>
         </div>
       </div>
