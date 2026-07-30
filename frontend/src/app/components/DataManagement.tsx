@@ -96,9 +96,13 @@ function DeleteConfirmDialog({ system, onConfirm, onCancel }: { system: SapSyste
 }
 
 function SystemFormDrawer({
-  mode, initial, onSave, onClose,
+  mode, initial, onSave, onClose, variant = "drawer",
 }: {
-  mode: "add" | "edit"; initial: FormState; onSave: (f: FormState) => void; onClose: () => void;
+  mode: "add" | "edit";
+  initial: FormState;
+  onSave: (f: FormState) => void;
+  onClose: () => void;
+  variant?: "drawer" | "page";
 }) {
   const [form, setForm] = useState<FormState>(initial);
   const [errors, setErrors] = useState<Partial<FormState>>({});
@@ -112,7 +116,11 @@ function SystemFormDrawer({
       }
       return { ...f, [k]: v };
     });
-    setErrors((e) => { const n = { ...e }; delete n[k]; return n; });
+    setErrors((e) => {
+      const n = { ...e };
+      delete n[k];
+      return n;
+    });
   };
 
   const validate = () => {
@@ -129,114 +137,156 @@ function SystemFormDrawer({
     if (!validate()) return;
     const normalized = normalizeSystemForm(form);
     setSaved(true);
-    setTimeout(() => { onSave(normalized); onClose(); }, 600);
+    setTimeout(() => {
+      onSave(normalized);
+      onClose();
+    }, 600);
   };
 
-  return (
+  const content = (
+    <div className={variant === "drawer" ? "ml-auto h-full w-full max-w-lg flex flex-col shadow-2xl" : "flex flex-col"} style={{ background: F.white }}>
+      <div className="flex items-center gap-2 px-5 py-4 flex-shrink-0" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
+        <Server size={18} style={{ color: F.primary }} />
+        <h3 className="text-base" style={{ color: F.text }}>{mode === "add" ? "Add New SAP System" : `Edit System: ${initial.systemId}`}</h3>
+        <button onClick={onClose} className="ml-auto p-1 rounded hover:bg-gray-100" style={{ color: F.muted }}><X size={15} /></button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
+        <div className="rounded" style={{ border: `1px solid ${F.border}` }}>
+          <div className="px-4 py-2.5" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
+            <p className="text-xs" style={{ color: F.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>System Identity</p>
+          </div>
+          <div className="p-4 grid grid-cols-2 gap-4">
+            <FioriInput label="System ID" value={form.systemId} onChange={(v) => set("systemId")(v.toUpperCase())} placeholder="e.g. SHD" error={errors.systemId} required maxLength={3} />
+            <FioriInput label="System Name" value={form.systemName} onChange={set("systemName")} placeholder="SHD, EMP, EMQ, or EMD" error={errors.systemName} required />
+            <FioriInput label="Client Number" value="100" onChange={() => {}} placeholder="100" error={errors.client} required maxLength={3} />
+            <div>
+              <label className="block text-xs mb-1" style={{ color: F.muted }}>Environment <span style={{ color: F.error }}>*</span></label>
+              <select value="Development" onChange={() => {}} className="w-full px-3 py-2 text-sm outline-none rounded" style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}>
+                <option>Development</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div className="rounded" style={{ border: `1px solid ${F.border}` }}>
+          <div className="px-4 py-2.5" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
+            <p className="text-xs" style={{ color: F.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Connection Details</p>
+          </div>
+          <div className="p-4">
+            <FioriInput label="Host / Application Server" value={form.host} onChange={set("host")} placeholder="e.g. sap-prd.corp.local" error={errors.host} required />
+          </div>
+        </div>
+
+        <div className="rounded" style={{ border: `1px solid ${F.border}` }}>
+          <div className="px-4 py-2.5" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
+            <p className="text-xs" style={{ color: F.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Metadata</p>
+          </div>
+          <div className="p-4 flex flex-col gap-4">
+            <div>
+              <label className="block text-xs mb-1" style={{ color: F.muted }}>Description</label>
+              <textarea
+                value={form.description}
+                onChange={(e) => set("description")(e.target.value)}
+                rows={3}
+                placeholder="Brief description of this system's purpose..."
+                className="w-full px-3 py-2 text-sm outline-none rounded resize-none"
+                style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}
+                onFocus={(e) => { e.target.style.borderColor = F.primary; e.target.style.boxShadow = "0 0 0 2px #0070f218"; }}
+                onBlur={(e) => { e.target.style.borderColor = F.border; e.target.style.boxShadow = "none"; }}
+              />
+            </div>
+            <div>
+              <label className="block text-xs mb-2" style={{ color: F.muted }}>Status</label>
+              <div className="flex gap-3">
+                {["Active", "Inactive"].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => set("status")(s)}
+                    className="flex items-center gap-2 px-3 py-2 rounded text-sm transition-all"
+                    style={{
+                      border: `1px solid ${form.status === s ? (s === "Active" ? F.success : F.error) : F.border}`,
+                      background: form.status === s ? (s === "Active" ? "#f1fdf6" : "#fff2f2") : F.white,
+                      color: form.status === s ? (s === "Active" ? F.success : F.error) : F.text,
+                    }}
+                  >
+                    <span className="w-2 h-2 rounded-full" style={{ background: s === "Active" ? F.success : F.error }} />
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-between gap-3 px-5 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${F.border}`, background: "#fafafa" }}>
+        <button onClick={onClose} className="px-4 py-2 text-sm rounded" style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}>Cancel</button>
+        <button
+          onClick={handleSave}
+          className="flex items-center gap-2 px-5 py-2 text-sm rounded text-white"
+          style={{ background: saved ? F.success : F.primary }}
+        >
+          {saved ? <><CheckCircle2 size={14} /> Saved!</> : <><Save size={14} /> {mode === "add" ? "Add System" : "Save Changes"}</>}
+        </button>
+      </div>
+    </div>
+  );
+
+  return variant === "drawer" ? (
     <div className="fixed inset-0 z-50 flex" style={{ background: "rgba(0,0,0,0.35)" }}>
-      <div className="ml-auto h-full w-full max-w-lg flex flex-col shadow-2xl" style={{ background: F.white }}>
-        {/* Drawer Header */}
-        <div className="flex items-center gap-2 px-5 py-4 flex-shrink-0" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-          <Server size={18} style={{ color: F.primary }} />
-          <h3 className="text-base" style={{ color: F.text }}>{mode === "add" ? "Add New SAP System" : `Edit System: ${initial.systemId}`}</h3>
-          <button onClick={onClose} className="ml-auto p-1 rounded hover:bg-gray-100" style={{ color: F.muted }}><X size={15} /></button>
+      {content}
+    </div>
+  ) : content;
+}
+
+export function SystemFormPage({
+  initial,
+  onSave,
+  onBack,
+}: {
+  initial: FormState;
+  onSave: (f: FormState) => void;
+  onBack: () => void;
+}) {
+  return (
+    <div className="min-h-full" style={{ background: F.bg }}>
+      <div className="px-6 py-3 flex items-center gap-3" style={{ background: F.white, borderBottom: `1px solid ${F.border}` }}>
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded"
+          style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}
+        >
+          <X size={14} /> Back to Data Management
+        </button>
+        <div className="h-4 w-px" style={{ background: F.border }} />
+        <span className="text-sm" style={{ color: F.muted }}>SAP Basis</span>
+        <span className="text-sm" style={{ color: F.muted }}>/</span>
+        <span className="text-sm" style={{ color: F.muted }}>Administration</span>
+        <span className="text-sm" style={{ color: F.muted }}>/</span>
+        <span className="text-sm" style={{ color: F.text }}>Add New SAP System</span>
+      </div>
+
+      <div className="p-6 max-w-5xl mx-auto">
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <Database size={20} style={{ color: F.primary }} />
+            <h1 className="text-xl" style={{ color: F.text }}>Add New SAP System</h1>
+          </div>
+          <p className="text-sm" style={{ color: F.muted }}>
+            Create a new SAP system entry for use across the application.
+          </p>
         </div>
 
-        {/* Drawer Body */}
-        <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
-          {/* Identity */}
-          <div className="rounded" style={{ border: `1px solid ${F.border}` }}>
-            <div className="px-4 py-2.5" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-              <p className="text-xs" style={{ color: F.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>System Identity</p>
-            </div>
-            <div className="p-4 grid grid-cols-2 gap-4">
-              <FioriInput label="System ID" value={form.systemId} onChange={(v) => set("systemId")(v.toUpperCase())} placeholder="e.g. SHD" error={errors.systemId} required maxLength={3} />
-              <FioriInput label="System Name" value={form.systemName} onChange={set("systemName")} placeholder="SHD, EMP, EMQ, or EMD" error={errors.systemName} required />
-              <FioriInput label="Client Number" value="100" onChange={() => {}} placeholder="100" error={errors.client} required maxLength={3} />
-              <div>
-                <label className="block text-xs mb-1" style={{ color: F.muted }}>Environment <span style={{ color: F.error }}>*</span></label>
-                <select
-                  value="Development"
-                  onChange={() => {}}
-                  className="w-full px-3 py-2 text-sm outline-none rounded"
-                  style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}
-                >
-                  <option>Development</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Connection */}
-          <div className="rounded" style={{ border: `1px solid ${F.border}` }}>
-            <div className="px-4 py-2.5" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-              <p className="text-xs" style={{ color: F.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Connection Details</p>
-            </div>
-            <div className="p-4">
-              <FioriInput label="Host / Application Server" value={form.host} onChange={set("host")} placeholder="e.g. sap-prd.corp.local" error={errors.host} required />
-            </div>
-          </div>
-
-          {/* Metadata */}
-          <div className="rounded" style={{ border: `1px solid ${F.border}` }}>
-            <div className="px-4 py-2.5" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-              <p className="text-xs" style={{ color: F.muted, textTransform: "uppercase", letterSpacing: "0.05em" }}>Metadata</p>
-            </div>
-            <div className="p-4 flex flex-col gap-4">
-              <div>
-                <label className="block text-xs mb-1" style={{ color: F.muted }}>Description</label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => set("description")(e.target.value)}
-                  rows={3}
-                  placeholder="Brief description of this system's purpose..."
-                  className="w-full px-3 py-2 text-sm outline-none rounded resize-none"
-                  style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}
-                  onFocus={(e) => { e.target.style.borderColor = F.primary; e.target.style.boxShadow = "0 0 0 2px #0070f218"; }}
-                  onBlur={(e) => { e.target.style.borderColor = F.border; e.target.style.boxShadow = "none"; }}
-                />
-              </div>
-              <div>
-                <label className="block text-xs mb-2" style={{ color: F.muted }}>Status</label>
-                <div className="flex gap-3">
-                  {["Active", "Inactive"].map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => set("status")(s)}
-                      className="flex items-center gap-2 px-3 py-2 rounded text-sm transition-all"
-                      style={{
-                        border: `1px solid ${form.status === s ? (s === "Active" ? F.success : F.error) : F.border}`,
-                        background: form.status === s ? (s === "Active" ? "#f1fdf6" : "#fff2f2") : F.white,
-                        color: form.status === s ? (s === "Active" ? F.success : F.error) : F.text,
-                      }}
-                    >
-                      <span className="w-2 h-2 rounded-full" style={{ background: s === "Active" ? F.success : F.error }} />
-                      {s}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Drawer Footer */}
-        <div className="flex justify-between gap-3 px-5 py-4 flex-shrink-0" style={{ borderTop: `1px solid ${F.border}`, background: "#fafafa" }}>
-          <button onClick={onClose} className="px-4 py-2 text-sm rounded" style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}>Cancel</button>
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-2 px-5 py-2 text-sm rounded text-white"
-            style={{ background: saved ? F.success : F.primary }}
-          >
-            {saved ? <><CheckCircle2 size={14} /> Saved!</> : <><Save size={14} /> {mode === "add" ? "Add System" : "Save Changes"}</>}
-          </button>
+        <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+          <SystemFormDrawer mode="add" initial={initial} onSave={onSave} onClose={onBack} variant="page" />
         </div>
       </div>
     </div>
   );
 }
 
-export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSystem) => void }) {
+export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (system: SapSystem) => void; onAddSystem?: () => void }) {
   const { systems, addSystem, updateSystem, deleteSystem, logAction } = useAppContext();
   const [search, setSearch] = useState("");
   const [envFilter, setEnvFilter] = useState("All");
@@ -390,7 +440,7 @@ export function DataManagement({ onViewDetail }: { onViewDetail?: (system: SapSy
           </p>
         </div>
         <button
-          onClick={() => setDrawerMode("add")}
+          onClick={() => onAddSystem ? onAddSystem() : setDrawerMode("add")}
           className="flex items-center gap-2 px-4 py-2 text-sm rounded text-white flex-shrink-0"
           style={{ background: F.primary }}
         >
