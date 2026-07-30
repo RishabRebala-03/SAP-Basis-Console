@@ -145,11 +145,13 @@ function SystemFormDrawer({
 
   const content = (
     <div className={variant === "drawer" ? "ml-auto h-full w-full max-w-lg flex flex-col shadow-2xl" : "flex flex-col"} style={{ background: F.white }}>
-      <div className="flex items-center gap-2 px-5 py-4 flex-shrink-0" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-        <Server size={18} style={{ color: F.primary }} />
-        <h3 className="text-base" style={{ color: F.text }}>{mode === "add" ? "Add New SAP System" : `Edit System: ${initial.systemId}`}</h3>
-        <button onClick={onClose} className="ml-auto p-1 rounded hover:bg-gray-100" style={{ color: F.muted }}><X size={15} /></button>
-      </div>
+      {variant === "drawer" && (
+        <div className="flex items-center gap-2 px-5 py-4 flex-shrink-0" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
+          <Server size={18} style={{ color: F.primary }} />
+          <h3 className="text-base" style={{ color: F.text }}>{mode === "add" ? "Add New SAP System" : `Edit System: ${initial.systemId}`}</h3>
+          <button onClick={onClose} className="ml-auto p-1 rounded hover:bg-gray-100" style={{ color: F.muted }}><X size={15} /></button>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-4">
         <div className="rounded" style={{ border: `1px solid ${F.border}` }}>
@@ -244,10 +246,16 @@ export function SystemFormPage({
   initial,
   onSave,
   onBack,
+  mode = "add",
+  title = "Add New SAP System",
+  subtitle = "Create a new SAP system entry for use across the application.",
 }: {
   initial: FormState;
   onSave: (f: FormState) => void;
   onBack: () => void;
+  mode?: "add" | "edit";
+  title?: string;
+  subtitle?: string;
 }) {
   return (
     <div className="min-h-full" style={{ background: F.bg }}>
@@ -257,37 +265,56 @@ export function SystemFormPage({
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded"
           style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}
         >
-          <X size={14} /> Back to Data Management
+          <X size={14} /> Back
         </button>
         <div className="h-4 w-px" style={{ background: F.border }} />
-        <span className="text-sm" style={{ color: F.muted }}>SAP Basis</span>
-        <span className="text-sm" style={{ color: F.muted }}>/</span>
-        <span className="text-sm" style={{ color: F.muted }}>Administration</span>
-        <span className="text-sm" style={{ color: F.muted }}>/</span>
-        <span className="text-sm" style={{ color: F.text }}>Add New SAP System</span>
+        <div className="flex flex-col min-w-0">
+          <span className="text-sm font-medium truncate" style={{ color: F.text }}>{title}</span>
+          <span className="text-xs truncate" style={{ color: F.muted }}>{subtitle}</span>
+        </div>
       </div>
 
       <div className="p-6 max-w-5xl mx-auto">
-        <div className="mb-6">
-          <div className="flex items-center gap-2 mb-1">
-            <Database size={20} style={{ color: F.primary }} />
-            <h1 className="text-xl" style={{ color: F.text }}>Add New SAP System</h1>
-          </div>
-          <p className="text-sm" style={{ color: F.muted }}>
-            Create a new SAP system entry for use across the application.
-          </p>
-        </div>
-
         <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-          <SystemFormDrawer mode="add" initial={initial} onSave={onSave} onClose={onBack} variant="page" />
+          <SystemFormDrawer mode={mode} initial={initial} onSave={onSave} onClose={onBack} variant="page" />
         </div>
       </div>
     </div>
   );
 }
 
+export function SystemEditPage({
+  system,
+  onSave,
+  onBack,
+}: {
+  system: SapSystem;
+  onSave: (f: FormState) => void;
+  onBack: () => void;
+}) {
+  return (
+    <SystemFormPage
+      mode="edit"
+      title={`Edit System: ${system.systemId}`}
+      subtitle={`Update configuration for ${system.systemId}.`}
+      initial={{
+        systemId: system.systemId,
+        systemName: system.systemName,
+        client: system.client,
+        environment: system.environment,
+        host: system.host,
+        description: system.description,
+        status: system.status,
+      }}
+      onSave={onSave}
+      onBack={onBack}
+    />
+  );
+}
+
 export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (system: SapSystem) => void; onAddSystem?: () => void }) {
   const { systems, addSystem, updateSystem, deleteSystem, logAction } = useAppContext();
+  const isDark = typeof document !== "undefined" && document.documentElement.dataset.theme === "dark";
   const [search, setSearch] = useState("");
   const [envFilter, setEnvFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -298,6 +325,7 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
   const [showFilters, setShowFilters] = useState(true);
   const [drawerMode, setDrawerMode] = useState<"add" | "edit" | null>(null);
   const [editTarget, setEditTarget] = useState<SapSystem | null>(null);
+  const [pageMode, setPageMode] = useState<null | "add" | "edit">(null);
   const [deleteTarget, setDeleteTarget] = useState<SapSystem | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: "success" | "error" } | null>(null);
 
@@ -381,6 +409,7 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
     logAction({ module: "Data Management", action: "Edit System", targetObject: normalized.systemId, system: "—", client: "—", status: "Success", durationMs: 190, details: `System ${normalized.systemId} updated.`, changesBefore: before, changesAfter: after });
     showToast(`System ${normalized.systemId} updated.`, "success");
     setEditTarget(null);
+    setPageMode(null);
   };
 
   const handleDelete = () => {
@@ -402,6 +431,29 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
     development: systems.filter((s) => s.environment === "Development").length,
     inactive: systems.filter((s) => s.status === "Inactive").length,
   };
+
+  if (pageMode === "add") {
+    return (
+      <SystemFormPage
+        mode="add"
+        initial={EMPTY_FORM}
+        onSave={handleAdd}
+        onBack={() => setPageMode(null)}
+        title="Add New SAP System"
+        subtitle="Create a new SAP system entry for use across the application."
+      />
+    );
+  }
+
+  if (pageMode === "edit" && editTarget) {
+    return (
+      <SystemEditPage
+        system={editTarget}
+        onSave={handleEdit}
+        onBack={() => { setPageMode(null); setEditTarget(null); }}
+      />
+    );
+  }
 
   return (
     <div>
@@ -464,8 +516,8 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
       </div>
 
       {/* Filters */}
-      <div className="rounded mb-4 overflow-visible" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-        <div className="flex flex-wrap items-center gap-3 p-3">
+      <div className="rounded mb-4 overflow-visible" style={{ background: isDark ? "var(--app-surface)" : F.white, border: `1px solid ${F.border}` }}>
+        <div className="flex flex-wrap items-end gap-3 p-3">
           <div className="flex-1 min-w-44">
             <p className="text-xs mb-1" style={{ color: F.muted }}>Search</p>
             <ValueHelpInput
@@ -485,14 +537,14 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
           </div>
           <button
             onClick={handleSubmit}
-            className="flex items-center gap-1.5 px-4 py-2 text-xs font-semibold rounded text-white shadow-sm transition-all"
+            className="flex items-center justify-center gap-1.5 px-4 py-2 text-xs font-semibold rounded text-white shadow-sm transition-all h-[44px]"
             style={{ background: F.primary }}
           >
             <Play size={12} fill="currentColor" /> Go
           </button>
           <button
             onClick={clearAllFilters}
-            className="flex items-center gap-1.5 px-3 py-2 rounded text-xs transition-colors"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded text-xs transition-colors h-[44px]"
             style={{
               border: `1px solid ${hasAnyFilter ? "#bb000030" : F.border}`,
               background: hasAnyFilter ? "#fff2f2" : F.white,
@@ -503,7 +555,7 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
           </button>
           <button
             onClick={() => setShowFilters((s) => !s)}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs rounded"
+            className="flex items-center justify-center gap-2 px-3 py-2 text-xs rounded h-[44px]"
             style={{
               border: `1px solid ${showFilters ? F.primary : F.border}`,
               background: showFilters ? "#e8f2ff" : F.white,
@@ -513,7 +565,7 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
             <Filter size={13} />
             Filters
           </button>
-          <span className="text-xs ml-auto" style={{ color: F.muted }}>{hasSubmitted ? `${filtered.length} of ${systems.length} systems` : "0 systems displayed"}</span>
+          <span className="text-xs ml-auto pb-3" style={{ color: F.muted }}>{hasSubmitted ? `${filtered.length} of ${systems.length} systems` : "0 systems displayed"}</span>
         </div>
 
         {showFilters && (
@@ -572,11 +624,11 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
           <p className="text-xs">Select your system search criteria above, then click <strong>Go</strong> to load system entries.</p>
         </div>
       ) : (
-        <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+        <div className="rounded overflow-hidden" style={{ background: isDark ? "var(--app-surface)" : F.white, border: `1px solid ${F.border}` }}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ background: "#f5f6f7", borderBottom: `1px solid ${F.border}` }}>
+                <tr style={{ background: isDark ? "var(--app-subtle)" : "#f5f6f7", borderBottom: `1px solid ${F.border}` }}>
                   {([
                     ["systemId", "System ID"],
                     ["systemName", "System Name"],
@@ -613,9 +665,13 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
                     <tr
                       key={sys.id}
                       onClick={() => onViewDetail?.(sys)}
-                      style={{ borderBottom: `1px solid ${F.border}`, background: i % 2 === 0 ? F.white : "#fafafa", cursor: onViewDetail ? "pointer" : "default" }}
-                      onMouseEnter={(e) => { if (onViewDetail) e.currentTarget.style.background = "#f0f6ff"; }}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = i % 2 === 0 ? F.white : "#fafafa")}
+                      style={{
+                        borderBottom: `1px solid ${F.border}`,
+                        background: isDark ? (i % 2 === 0 ? "var(--app-surface)" : "var(--app-subtle)") : (i % 2 === 0 ? F.white : "#fafafa"),
+                        cursor: onViewDetail ? "pointer" : "default",
+                      }}
+                      onMouseEnter={(e) => { if (onViewDetail) e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.04)" : "#f0f6ff"; }}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = isDark ? (i % 2 === 0 ? "var(--app-surface)" : "var(--app-subtle)") : (i % 2 === 0 ? F.white : "#fafafa"))}
                     >
                       {/* System ID */}
                       <td className="px-4 py-3">
@@ -657,7 +713,7 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1 justify-end">
                           <button
-                            onClick={(e) => { e.stopPropagation(); setEditTarget(sys); setDrawerMode("edit"); }}
+                            onClick={(e) => { e.stopPropagation(); setEditTarget(sys); setPageMode("edit"); }}
                             className="p-1.5 rounded hover:bg-gray-100 transition-colors"
                             title="Edit"
                             style={{ color: F.muted }}
@@ -684,7 +740,7 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
           </div>
 
           {/* Table Footer */}
-          <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: `1px solid ${F.border}`, background: "#fafafa" }}>
+          <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: `1px solid ${F.border}`, background: isDark ? "var(--app-subtle)" : "#fafafa" }}>
             <p className="text-xs" style={{ color: F.muted }}>
               Showing <strong>{filtered.length}</strong> of <strong>{systems.length}</strong> registered systems
             </p>
