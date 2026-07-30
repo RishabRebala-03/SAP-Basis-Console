@@ -13,6 +13,7 @@ import { SettingsPage, DEFAULT_SETTINGS, AppSettings } from "./components/pages/
 import { ProfilePage } from "./components/pages/ProfilePage";
 import { SystemDetailPage } from "./components/pages/SystemDetailPage";
 import { SignInPage } from "./components/pages/SignInPage";
+import { SystemFormPage } from "./components/DataManagement";
 import { Dashboard } from "./components/Dashboard";
 import { Analytics } from "./components/Analytics";
 import { logoutApi, getCurrentUser, User as AuthUser } from "../api/authApi";
@@ -24,7 +25,8 @@ type PageView =
   | { type: "settings" }
   | { type: "profile" }
   | { type: "audit-detail"; log: AuditLog }
-  | { type: "system-detail"; system: SapSystem };
+  | { type: "system-detail"; system: SapSystem }
+  | { type: "add-system" };
 
 const NAV_GROUPS = [
   {
@@ -307,6 +309,24 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
         </div>
       )}
 
+      {pageView.type === "add-system" && (
+        <div className="flex-1 overflow-auto">
+          <SystemFormPage
+            initial={{
+              systemId: "",
+              systemName: "",
+              client: "100",
+              environment: "Development",
+              host: "",
+              description: "",
+              status: "Active",
+            }}
+            onSave={() => setPageView({ type: "main" })}
+            onBack={goMain}
+          />
+        </div>
+      )}
+
       {/* Main layout (sidebar + content) */}
       {pageView.type === "main" && (
         <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 44px)" }}>
@@ -369,7 +389,10 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
               {activeView === "password-reset" && <PasswordReset />}
               {activeView === "lock-unlock" && <LockUnlockUser />}
               {activeView === "data-management" && (
-                <DataManagement onViewDetail={(sys) => setPageView({ type: "system-detail", system: sys })} />
+                <DataManagement
+                  onViewDetail={(sys) => setPageView({ type: "system-detail", system: sys })}
+                  onAddSystem={() => setPageView({ type: "add-system" })}
+                />
               )}
               {activeView === "audit-logs" && (
                 <AuditLogs onViewDetail={(log) => setPageView({ type: "audit-detail", log })} />
