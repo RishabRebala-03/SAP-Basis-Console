@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Database, Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle, ChevronUp, ChevronDown, Save, ServerCrash, Server, Filter, Play, Search } from "lucide-react";
+import { Database, Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle, ChevronUp, ChevronDown, Save, ServerCrash, Server, Filter, Play, Search, Loader2 } from "lucide-react";
 import { useAppContext, SapSystem } from "../contexts/AppContext";
 import { ValueHelpInput } from "./ValueHelpInput";
 import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
@@ -313,7 +313,7 @@ export function SystemEditPage({
 }
 
 export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (system: SapSystem) => void; onAddSystem?: () => void }) {
-  const { systems, addSystem, updateSystem, deleteSystem, logAction } = useAppContext();
+  const { systems, systemsLoading, addSystem, updateSystem, deleteSystem, logAction } = useAppContext();
   const isDark = typeof document !== "undefined" && document.documentElement.dataset.theme === "dark";
   const [search, setSearch] = useState("");
   const [envFilter, setEnvFilter] = useState("All");
@@ -615,7 +615,12 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
       </div>
 
       {/* Results / Blank State */}
-      {!hasSubmitted ? (
+      {systemsLoading ? (
+        <div className="flex items-center justify-center py-16 gap-3 rounded" style={{ background: F.white, border: `1px solid ${F.border}`, color: F.muted }}>
+          <Loader2 size={20} className="animate-spin" style={{ color: F.primary }} />
+          <span className="text-sm" style={{ color: F.muted }}>Loading systems from backend…</span>
+        </div>
+      ) : !hasSubmitted ? (
         <div className="flex flex-col items-center justify-center py-16 gap-3 rounded" style={{ background: F.white, border: `1px solid ${F.border}`, color: F.muted }}>
           <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ background: "#e8f2ff", color: F.primary }}>
             <Filter size={24} />

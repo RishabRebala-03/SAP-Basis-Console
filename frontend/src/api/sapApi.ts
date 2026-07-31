@@ -199,3 +199,60 @@ export async function bulkPreviewApi(file: File): Promise<any[]> {
   }
   return data;
 }
+
+/* ── SAP Systems CRUD ── */
+
+export interface SapSystemPayload {
+  system_id: string;
+  system_name?: string;
+  client?: string;
+  environment?: string;
+  host?: string;
+  description?: string;
+  status?: string;
+}
+
+export async function getSystemsApi(): Promise<any[]> {
+  const res = await fetchWithAuth(`${BASE_URL}/systems`);
+  const data = await safeParseResponse(res, "Failed to load systems");
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createSystemApi(payload: SapSystemPayload): Promise<any> {
+  const res = await fetchWithAuth(`${BASE_URL}/systems`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return await safeParseResponse(res, "Failed to create system");
+}
+
+export async function updateSystemApi(systemId: string, payload: Partial<SapSystemPayload>): Promise<any> {
+  const res = await fetchWithAuth(`${BASE_URL}/systems/${encodeURIComponent(systemId)}`, {
+    method: "PUT",
+    body: JSON.stringify(payload),
+  });
+  return await safeParseResponse(res, "Failed to update system");
+}
+
+export async function deleteSystemApi(systemId: string): Promise<void> {
+  const res = await fetchWithAuth(`${BASE_URL}/systems/${encodeURIComponent(systemId)}`, {
+    method: "DELETE",
+  });
+  await safeParseResponse(res, "Failed to delete system");
+}
+
+/* ── Auth Sessions ── */
+
+export async function getSessionsApi(): Promise<any[]> {
+  const res = await fetchWithAuth("/api/auth/sessions");
+  const data = await safeParseResponse(res, "Failed to load sessions");
+  return Array.isArray(data.sessions) ? data.sessions : [];
+}
+
+export async function revokeSessionApi(sessionId: string): Promise<void> {
+  const res = await fetchWithAuth(`/api/auth/sessions/${encodeURIComponent(sessionId)}`, {
+    method: "DELETE",
+  });
+  await safeParseResponse(res, "Failed to revoke session");
+}
+

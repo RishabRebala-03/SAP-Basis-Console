@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { ArrowLeft, User, Shield, Clock, Activity, Key, Monitor, ChevronRight, CheckCircle2, AlertCircle, Lock } from "lucide-react";
+import { ArrowLeft, User, Shield, Clock, Activity, Monitor, CheckCircle2, AlertCircle, Lock } from "lucide-react";
+import { getCurrentUser } from "../../../api/authApi";
+import { useAppContext } from "../../contexts/AppContext";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000",
@@ -10,44 +12,79 @@ const F = {
 type Tab = "overview" | "authorizations" | "sessions" | "activity";
 
 const TABS: { id: Tab; label: string; icon: typeof User }[] = [
-  { id: "overview",       label: "Overview",        icon: User     },
-  { id: "authorizations", label: "Authorizations",  icon: Shield   },
-  { id: "sessions",       label: "Active Sessions", icon: Monitor  },
-  { id: "activity",       label: "Recent Activity", icon: Activity },
+  { id: "overview",       label: "Overview",           icon: User    },
+  { id: "authorizations", label: "App Permissions",    icon: Shield  },
+  { id: "sessions",       label: "Active Sessions",    icon: Monitor },
+  { id: "activity",       label: "Recent Activity",    icon: Activity },
 ];
 
-const AUTH_OBJECTS = [
-  { object: "S_USER_GRP",  desc: "User Maintenance: Assign Auth Group",  activities: ["01 Create", "02 Change", "06 Delete"] },
-  { object: "S_USR_ADM",   desc: "Central User Administration",           activities: ["01 Create", "02 Change", "05 Lock/Unlock"] },
-  { object: "S_TCODE",     desc: "Transaction Code Check",               activities: ["SU01", "SU10", "SM30", "SM50"] },
-  { object: "S_RFC",       desc: "RFC Access",                           activities: ["FUGR RFC_METADATA", "FUNC RFC_READ"] },
-  { object: "S_ADMI_FCD",  desc: "System Administration Functions",      activities: ["SP01 Spool", "SM21 Log"] },
-  { object: "S_CTS_ADMI",  desc: "Administration for Change & Transport", activities: ["CTS_ADMIN"] },
-];
-
-const INITIAL_SESSIONS = [
-  { id: "SES-A4B7C2D1", type: "Current", client: "100", system: "EMP", ip: "Unavailable", logon: "Today 08:30", terminal: "Unavailable", status: "active" as const },
-  { id: "SES-9F3D1A88", type: "Remote", client: "100", system: "SHD", ip: "10.42.8.214", logon: "Today 07:55", terminal: "WIN-CORP-014", status: "active" as const },
-];
-
-const ACTIVITY: Array<{ action: string; target: string; system: string; time: string; status: "success" | "warning" | "error" }> = [];
+/** Role → application permission mapping */
+const ROLE_PERMISSIONS: Record<string, { label: string; desc: string; allowed: boolean }[]> = {
+  "Super Admin": [
+    { label: "Single User Creation",    desc: "Create individual SAP users",                   allowed: true  },
+    { label: "Bulk User Creation",      desc: "Import users via Excel",                        allowed: true  },
+    { label: "Password Reset",          desc: "Reset SAP user passwords",                     allowed: true  },
+    { label: "Lock / Unlock User",      desc: "Lock or unlock SAP accounts",                  allowed: true  },
+    { label: "Data Management",         desc: "Manage SAP system registry",                   allowed: true  },
+    { label: "Audit Logs",              desc: "View and export all activity logs",             allowed: true  },
+    { label: "Analytics",               desc: "View usage analytics and charts",              allowed: true  },
+    { label: "Settings",                desc: "Change application preferences",                allowed: true  },
+  ],
+  "Basis Admin": [
+    { label: "Single User Creation",    desc: "Create individual SAP users",                   allowed: true  },
+    { label: "Bulk User Creation",      desc: "Import users via Excel",                        allowed: true  },
+    { label: "Password Reset",          desc: "Reset SAP user passwords",                     allowed: true  },
+    { label: "Lock / Unlock User",      desc: "Lock or unlock SAP accounts",                  allowed: true  },
+    { label: "Data Management",         desc: "Manage SAP system registry",                   allowed: false },
+    { label: "Audit Logs",              desc: "View and export all activity logs",             allowed: true  },
+    { label: "Analytics",               desc: "View usage analytics and charts",              allowed: true  },
+    { label: "Settings",                desc: "Change application preferences",                allowed: true  },
+  ],
+  "Viewer": [
+    { label: "Single User Creation",    desc: "Create individual SAP users",                   allowed: false },
+    { label: "Bulk User Creation",      desc: "Import users via Excel",                        allowed: false },
+    { label: "Password Reset",          desc: "Reset SAP user passwords",                     allowed: false },
+    { label: "Lock / Unlock User",      desc: "Lock or unlock SAP accounts",                  allowed: false },
+    { label: "Data Management",         desc: "Manage SAP system registry",                   allowed: false },
+    { label: "Audit Logs",              desc: "View and export all activity logs",             allowed: true  },
+    { label: "Analytics",               desc: "View usage analytics and charts",              allowed: true  },
+    { label: "Settings",                desc: "Change application preferences",                allowed: true  },
+  ],
+};
 
 export function ProfilePage({ onBack }: { onBack: () => void }) {
+  const user = getCurrentUser();
+  const { auditLogs } = useAppContext();
+
+  const username  = user?.username || "Unknown";
+  const email     = user?.email    || "—";
+  const role      = user?.role     || "Viewer";
+  const initials  = username.substring(0, 2).toUpperCase();
+
   const [tab, setTab] = useState<Tab>("overview");
-  const [sessions, setSessions] = useState(INITIAL_SESSIONS);
-  const [sessionActionMessage, setSessionActionMessage] = useState("");
 
-  const handleTerminateAllOtherSessions = () => {
-    const currentSession = sessions.find((s) => s.type === "Current");
-    const remainingSessions = currentSession ? [currentSession] : sessions.slice(0, 1);
-    setSessions(remainingSessions);
-    setSessionActionMessage("All other sessions have been terminated.");
-  };
+  /* ── Sessions — endpoint not available; show placeholder ── */
+  const sessions: any[] = [];
+  const sessionsLoading = false;
+  const sessionsError = "";
 
-  const handleTerminateSession = (id: string) => {
-    setSessions((prev) => prev.filter((s) => s.id !== id));
-    setSessionActionMessage(`Session ${id} terminated.`);
-  };
+  /* ── Activity (from real audit logs, filtered by this user) ── */
+  const myActivity = auditLogs
+    .filter((l) => l.performedBy.toLowerCase() === username.toLowerCase())
+    .slice(0, 20);
+
+  const todayActions = auditLogs.filter((l) => {
+    const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0);
+    return l.performedBy.toLowerCase() === username.toLowerCase() && new Date(l.timestamp) >= dayStart;
+  }).length;
+
+  const usersManaged = auditLogs.filter((l) =>
+    l.performedBy.toLowerCase() === username.toLowerCase() &&
+    ["Create User", "Bulk Import", "Lock User", "Unlock User", "Reset Password"].includes(l.action)
+  ).length;
+
+  /* ── Role permissions ── */
+  const permissions = ROLE_PERMISSIONS[role] ?? ROLE_PERMISSIONS["Viewer"];
 
   return (
     <div className="min-h-full" style={{ background: F.bg }}>
@@ -68,27 +105,29 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {/* Avatar */}
             <div className="w-20 h-20 rounded-full flex items-center justify-center text-white flex-shrink-0" style={{ background: F.primary, fontSize: "28px", fontWeight: 600, border: "3px solid rgba(255,255,255,0.15)" }}>
-              AD
+              {initials}
             </div>
 
             {/* Info */}
             <div className="flex-1">
-              <h1 className="text-2xl text-white">ADMIN</h1>
-              <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>admin@corp.local</p>
-              <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>SAP Basis Administrator · All Systems</p>
+              <h1 className="text-2xl text-white">{username}</h1>
+              <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.6)" }}>{email}</p>
+              <p className="text-sm mt-0.5" style={{ color: "rgba(255,255,255,0.5)" }}>{role} · SAP Basis Console</p>
               <div className="flex flex-wrap gap-2 mt-3">
-                {["S_USER_GRP", "S_USR_ADM", "S_TCODE", "S_RFC", "S_ADMI_FCD"].map((r) => (
-                  <span key={r} className="px-2 py-0.5 rounded text-xs" style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)" }}>{r}</span>
+                {permissions.filter((p) => p.allowed).slice(0, 5).map((p) => (
+                  <span key={p.label} className="px-2 py-0.5 rounded text-xs" style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)" }}>
+                    {p.label}
+                  </span>
                 ))}
               </div>
             </div>
 
-            {/* Quick Stats */}
+            {/* Quick Stats (computed from real audit logs) */}
             <div className="grid grid-cols-3 gap-3 sm:gap-6 mt-2 sm:mt-0">
               {[
-                { label: "Actions Today", value: "0" },
-                { label: "Users Managed", value: "0" },
-                { label: "Sessions", value: String(sessions.length) },
+                { label: "Actions Today",  value: String(todayActions) },
+                { label: "Users Managed",  value: String(usersManaged) },
+                { label: "Active Sessions",value: sessionsLoading ? "…" : String(sessions.length) },
               ].map((s) => (
                 <div key={s.label} className="text-center">
                   <p className="text-2xl text-white">{s.value}</p>
@@ -124,26 +163,22 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
 
       {/* Tab Content */}
       <div className="max-w-6xl mx-auto px-6 py-6">
-        {/* Overview */}
+        {/* ── Overview ── */}
         {tab === "overview" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* Personal Details */}
+            {/* Account Info */}
             <div className="lg:col-span-2">
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
                 <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
                   <User size={14} style={{ color: F.muted }} />
-                  <h3 className="text-sm" style={{ color: F.text }}>Personal Details</h3>
+                  <h3 className="text-sm" style={{ color: F.text }}>Account Information</h3>
                 </div>
                 <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {[
-                    ["User ID",      "ADMIN"],
-                    ["Full Name",    "System Administrator"],
-                    ["Email",        "admin@corp.local"],
-                    ["Department",   "IT / SAP Basis"],
-                    ["Job Title",    "SAP Basis Administrator"],
-                    ["Employee No.", "EMP-001"],
-                    ["Cost Centre",  "CC-IT-8801"],
-                    ["Location",     "London, UK"],
+                    ["User ID",        username],
+                    ["Email Address",  email],
+                    ["Role",           role],
+                    ["Account Type",   role === "Super Admin" ? "Administrator" : role === "Basis Admin" ? "Operator" : "Read-Only"],
                   ].map(([k, v]) => (
                     <div key={k} className="p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
                       <p className="text-xs mb-0.5" style={{ color: F.muted }}>{k}</p>
@@ -154,7 +189,7 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
               </div>
             </div>
 
-            {/* Sidebar info */}
+            {/* Sidebar */}
             <div className="flex flex-col gap-4">
               {/* Account Status */}
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
@@ -164,12 +199,9 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
                 </div>
                 <div className="p-5 flex flex-col gap-3">
                   {[
-                    { label: "Account Status",   value: "Active",    color: F.success },
-                    { label: "User Type",         value: "Dialog",    color: F.primary },
-                    { label: "Valid From",         value: "01/01/2026", color: F.text },
-                    { label: "Valid To",           value: "31/12/2026", color: F.text },
-                    { label: "Password Expires",  value: "90 days",  color: F.warning },
-                    { label: "Failed Logins",     value: "0",         color: F.success },
+                    { label: "Status",          value: "Active",  color: F.success },
+                    { label: "Role",             value: role,      color: F.primary },
+                    { label: "Active Sessions",  value: sessionsLoading ? "Loading…" : String(sessions.length), color: F.text },
                   ].map((item) => (
                     <div key={item.label} className="flex items-center justify-between">
                       <span className="text-xs" style={{ color: F.muted }}>{item.label}</span>
@@ -179,19 +211,30 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
                 </div>
               </div>
 
-              {/* Last Logons */}
+              {/* Recent Logons (from sessions) */}
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
                 <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
                   <Clock size={14} style={{ color: F.muted }} />
-                  <h3 className="text-sm" style={{ color: F.text }}>Last Logons</h3>
+                  <h3 className="text-sm" style={{ color: F.text }}>Recent Logons</h3>
                 </div>
                 <div className="p-4 flex flex-col gap-3">
-                  {sessions.map((l, i) => (
-                    <div key={l.id} className="flex items-center gap-2">
+                  {sessionsLoading ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 size={14} className="animate-spin" style={{ color: F.primary }} />
+                      <span className="text-xs" style={{ color: F.muted }}>Loading sessions…</span>
+                    </div>
+                  ) : sessions.length === 0 ? (
+                    <p className="text-xs" style={{ color: F.muted }}>No active sessions found.</p>
+                  ) : sessions.map((s, i) => (
+                    <div key={s._id || i} className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: i === 0 ? F.success : F.border }} />
                       <div className="flex-1">
-                        <p className="text-xs" style={{ color: F.text }}>{l.logon}</p>
-                        <p className="text-xs" style={{ color: F.muted }}>{l.ip} · {l.system}</p>
+                        <p className="text-xs" style={{ color: F.text }}>
+                          {s.created_at ? new Date(s.created_at).toLocaleString() : "Recent"}
+                        </p>
+                        <p className="text-xs" style={{ color: F.muted }}>
+                          {s.ip_address || "—"}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -201,35 +244,44 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
           </div>
         )}
 
-        {/* Authorizations */}
+        {/* ── App Permissions ── */}
         {tab === "authorizations" && (
           <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
             <div className="px-5 py-3 flex items-center justify-between" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-              <div className="flex items-center gap-2"><Shield size={14} style={{ color: F.muted }} /><h3 className="text-sm" style={{ color: F.text }}>Assigned Authorization Objects</h3></div>
-              <span className="text-xs px-2 py-0.5 rounded" style={{ background: "#e8f2ff", color: F.primary }}>{AUTH_OBJECTS.length} objects</span>
+              <div className="flex items-center gap-2">
+                <Shield size={14} style={{ color: F.muted }} />
+                <h3 className="text-sm" style={{ color: F.text }}>Application Permissions — {role}</h3>
+              </div>
+              <span className="text-xs px-2 py-0.5 rounded" style={{ background: "#e8f2ff", color: F.primary }}>
+                {permissions.filter((p) => p.allowed).length} / {permissions.length} granted
+              </span>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr style={{ background: F.bg, borderBottom: `1px solid ${F.border}` }}>
-                    {["Authorization Object", "Description", "Permitted Activities"].map((h) => (
+                    {["Module", "Description", "Access"].map((h) => (
                       <th key={h} className="px-5 py-3 text-left text-xs" style={{ color: F.muted, fontWeight: 600 }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
-                  {AUTH_OBJECTS.map((obj, i) => (
-                    <tr key={obj.object} style={{ borderBottom: `1px solid ${F.border}`, background: i % 2 === 0 ? F.white : "#fafafa" }}>
+                  {permissions.map((perm, i) => (
+                    <tr key={perm.label} style={{ borderBottom: `1px solid ${F.border}`, background: i % 2 === 0 ? F.white : "#fafafa" }}>
                       <td className="px-5 py-3">
-                        <span className="px-2 py-0.5 rounded text-xs font-mono" style={{ background: "#e8f2ff", color: F.primary }}>{obj.object}</span>
+                        <span className="px-2 py-0.5 rounded text-xs" style={{ background: "#e8f2ff", color: F.primary }}>{perm.label}</span>
                       </td>
-                      <td className="px-5 py-3 text-xs" style={{ color: F.text }}>{obj.desc}</td>
+                      <td className="px-5 py-3 text-xs" style={{ color: F.text }}>{perm.desc}</td>
                       <td className="px-5 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {obj.activities.map((a) => (
-                            <span key={a} className="px-1.5 py-0.5 rounded text-xs" style={{ background: "#f1fdf6", color: F.success }}>{a}</span>
-                          ))}
-                        </div>
+                        {perm.allowed ? (
+                          <span className="flex items-center gap-1.5 text-xs" style={{ color: F.success }}>
+                            <CheckCircle2 size={13} /> Granted
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1.5 text-xs" style={{ color: F.muted }}>
+                            <AlertCircle size={13} /> Not Granted
+                          </span>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -239,98 +291,61 @@ export function ProfilePage({ onBack }: { onBack: () => void }) {
           </div>
         )}
 
-        {/* Sessions */}
+        {/* ── Active Sessions ── */}
         {tab === "sessions" && (
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm" style={{ color: F.muted }}>{sessions.length} active session(s)</p>
-              <button
-                type="button"
-                onClick={handleTerminateAllOtherSessions}
-                disabled={sessions.length <= 1}
-                className="flex items-center gap-2 px-4 py-2 text-sm rounded transition-colors"
-                style={{
-                  border: `1px solid ${sessions.length > 1 ? F.error : F.border}`,
-                  color: sessions.length > 1 ? F.error : F.muted,
-                  background: sessions.length > 1 ? F.white : F.bg,
-                  cursor: sessions.length > 1 ? "pointer" : "not-allowed",
-                }}
-              >
-                <Lock size={13} /> Terminate All Other Sessions
-              </button>
+          <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+            <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
+              <Monitor size={14} style={{ color: F.muted }} />
+              <h3 className="text-sm" style={{ color: F.text }}>Active Sessions</h3>
             </div>
-            {sessionActionMessage && (
-              <div className="rounded px-4 py-3 text-sm" style={{ background: "rgba(16,126,62,0.12)", border: `1px solid ${F.success}`, color: F.text }}>
-                {sessionActionMessage}
-              </div>
-            )}
-            {sessions.map((s) => (
-              <div key={s.id} className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${s.status === "active" ? F.success : F.border}` }}>
-                <div className="px-5 py-3 flex items-center gap-3" style={{ borderBottom: `1px solid ${F.border}`, background: s.status === "active" ? "rgba(16,126,62,0.16)" : "#fafafa" }}>
-                  <span className="w-2 h-2 rounded-full" style={{ background: s.status === "active" ? F.success : F.warning }} />
-                  <span className="text-sm" style={{ color: F.text, fontWeight: 500 }}>{s.type} Session</span>
-                  <span className="ml-auto text-xs px-2 py-0.5 rounded" style={{ background: s.status === "active" ? "rgba(16,126,62,0.12)" : "rgba(233,115,12,0.14)", color: s.status === "active" ? F.success : F.warning, border: `1px solid ${s.status === "active" ? F.success : F.warning}33` }}>
-                    {s.status === "active" ? "Active" : "Idle"}
-                  </span>
-                  {s.type !== "Current" && (
-                    <button
-                      type="button"
-                      onClick={() => handleTerminateSession(s.id)}
-                      className="text-xs px-2 py-0.5 rounded transition-colors"
-                      style={{ border: `1px solid ${F.error}`, color: F.error, background: F.white }}
-                    >
-                      Terminate
-                    </button>
-                  )}
-                </div>
-                <div className="p-5 grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {[
-                    ["Session ID",  s.id],
-                    ["System",      `${s.system} / ${s.client}`],
-                    ["IP Address",  s.ip],
-                    ["Logged In",   s.logon],
-                    ["Terminal",    s.terminal],
-                  ].map(([k, v]) => (
-                    <div key={k}>
-                      <p className="text-xs mb-0.5" style={{ color: F.muted }}>{k}</p>
-                      <p className="text-sm font-mono" style={{ color: F.text }}>{v}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
+            <div className="px-5 py-8 text-center">
+              <p className="text-sm" style={{ color: F.text }}>Your current session is active.</p>
+              <p className="text-xs mt-1" style={{ color: F.muted }}>Session management via the console is not yet available.</p>
+            </div>
           </div>
         )}
 
-        {/* Recent Activity */}
+        {/* ── Recent Activity (real audit logs for this user) ── */}
         {tab === "activity" && (
-            <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-              <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-                <Activity size={14} style={{ color: F.muted }} />
-                <h3 className="text-sm" style={{ color: F.text }}>Recent Actions (Today)</h3>
-              </div>
-            <div className="divide-y" style={{ borderColor: F.border }}>
-              {ACTIVITY.length === 0 ? (
+          <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+            <div className="px-5 py-3 flex items-center gap-2" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
+              <Activity size={14} style={{ color: F.muted }} />
+              <h3 className="text-sm" style={{ color: F.text }}>Recent Activity — {username}</h3>
+              <span className="ml-auto text-xs px-2 py-0.5 rounded" style={{ background: "#e8f2ff", color: F.primary }}>
+                {myActivity.length} events
+              </span>
+            </div>
+            <div>
+              {myActivity.length === 0 ? (
                 <div className="px-5 py-8 text-center">
-                  <p className="text-sm" style={{ color: F.text }}>No recent activity</p>
-                  <p className="text-xs mt-1" style={{ color: F.muted }}>Real account activity will appear here.</p>
+                  <p className="text-sm" style={{ color: F.text }}>No activity recorded yet</p>
+                  <p className="text-xs mt-1" style={{ color: F.muted }}>Actions you perform will appear here in real-time.</p>
                 </div>
-              ) : ACTIVITY.map((item, i) => {
-                const statusMap = { success: { icon: <CheckCircle2 size={14} style={{ color: F.success }} />, color: F.success }, warning: { icon: <AlertCircle size={14} style={{ color: F.warning }} />, color: F.warning }, error: { icon: <AlertCircle size={14} style={{ color: F.error }} />, color: F.error } };
-                const s = statusMap[item.status];
+              ) : myActivity.map((item, i) => {
+                const isSuccess = item.status === "Success";
+                const isFailed  = item.status === "Failed";
+                const statusColor = isSuccess ? F.success : isFailed ? F.error : F.warning;
+                const statusBg    = isSuccess ? "#f1fdf6" : isFailed ? "#fff2f2" : "#fff8f0";
                 return (
-                  <div key={i} className="px-5 py-3.5 flex items-center gap-4">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: F.bg }}>{s.icon}</div>
+                  <div key={item.id} className="px-5 py-3.5 flex items-center gap-4" style={{ borderBottom: i < myActivity.length - 1 ? `1px solid ${F.border}` : "none" }}>
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: F.bg }}>
+                      {isSuccess
+                        ? <CheckCircle2 size={14} style={{ color: F.success }} />
+                        : <AlertCircle  size={14} style={{ color: statusColor }} />}
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm" style={{ color: F.text }}>{item.action}</p>
-                      <p className="text-xs mt-0.5" style={{ color: F.muted }}>
-                        Target: <span className="font-mono">{item.target}</span> · System: {item.system}
+                      <p className="text-xs mt-0.5 truncate" style={{ color: F.muted }}>
+                        Target: <span className="font-mono">{item.targetObject}</span>
+                        {item.system !== "—" && ` · System: ${item.system}`}
                       </p>
                     </div>
                     <div className="text-right flex-shrink-0">
-                      <p className="text-xs" style={{ color: F.muted }}>{item.time}</p>
-                      <span className="text-xs px-2 py-0.5 rounded" style={{ background: item.status === "success" ? "#f1fdf6" : item.status === "warning" ? "#fff8f0" : "#fff2f2", color: s.color }}>
-                        {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+                      <p className="text-xs" style={{ color: F.muted }}>
+                        {new Date(item.timestamp).toLocaleString()}
+                      </p>
+                      <span className="text-xs px-2 py-0.5 rounded" style={{ background: statusBg, color: statusColor }}>
+                        {item.status}
                       </span>
                     </div>
                   </div>
