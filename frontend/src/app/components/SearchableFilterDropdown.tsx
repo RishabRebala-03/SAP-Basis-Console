@@ -75,6 +75,7 @@ export function SearchableFilterDropdown({
 
   const selectedOption = normalizedOptions.find((o) => o.value === value);
   const displayLabel = selectedOption && selectedOption.label ? selectedOption.label : allLabel;
+  const isOptionSelected = (optValue: string) => optValue === value;
 
   return (
     <div ref={containerRef} className={`relative w-full ${className}`}>
@@ -84,33 +85,36 @@ export function SearchableFilterDropdown({
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="w-full px-3 py-1.5 text-xs rounded border border-border bg-input-background text-foreground flex items-center justify-between gap-1 text-left focus:outline-none focus:border-blue-500 hover:border-gray-400 transition-colors"
+        className="w-full px-3 py-1.5 text-xs rounded border flex items-center justify-between gap-1 text-left focus:outline-none transition-colors"
+        style={{ borderColor: "var(--app-border)", background: "var(--app-subtle)", color: "var(--app-text)" }}
       >
         <span className="truncate" style={{ color: value ? "var(--app-text)" : "var(--app-muted)" }}>
           {displayLabel}
         </span>
-        <ChevronDown size={12} className="text-gray-400 flex-shrink-0" />
+        <ChevronDown size={12} style={{ color: "var(--app-muted)" }} className="flex-shrink-0" />
       </button>
 
       {/* Dropdown panel */}
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 rounded shadow-xl z-50 bg-card text-card-foreground border border-border overflow-hidden min-w-[170px]">
+        <div className="absolute top-full left-0 right-0 mt-1 rounded shadow-xl z-50 border overflow-hidden min-w-[170px]" style={{ background: "var(--app-surface)", color: "var(--app-text)", borderColor: "var(--app-border)" }}>
           {/* Inner search input */}
-          <div className="p-1.5 border-b border-border bg-muted">
+          <div className="p-1.5 border-b" style={{ borderColor: "var(--app-border)", background: "var(--app-subtle)" }}>
             <div className="relative">
-              <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={11} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: "var(--app-muted)" }} />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={placeholder}
-                className="w-full pl-7 pr-6 py-1 text-xs rounded border border-border bg-input-background text-foreground outline-none focus:border-blue-500"
+                className="w-full pl-7 pr-6 py-1 text-xs rounded border outline-none transition-colors"
+                style={{ borderColor: "var(--app-border)", background: "var(--app-surface)", color: "var(--app-text)" }}
               />
               {search && (
                 <button
                   onClick={() => setSearch("")}
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2"
+                  style={{ color: "var(--app-muted)" }}
                 >
                   <X size={10} />
                 </button>
@@ -126,7 +130,6 @@ export function SearchableFilterDropdown({
               </div>
             ) : (
               filteredOptions.map((opt) => {
-                const isSelected = opt.value === value;
                 return (
                   <button
                     key={opt.value}
@@ -135,12 +138,15 @@ export function SearchableFilterDropdown({
                       onChange(opt.value);
                       setOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-1.5 text-xs flex items-center justify-between hover:bg-accent transition-colors ${
-                      isSelected ? "font-semibold text-blue-600 bg-blue-50/60" : "text-foreground"
-                    }`}
+                    className="w-full text-left px-3 py-1.5 text-xs flex items-center justify-between transition-colors"
+                    style={{
+                      color: "var(--app-text)",
+                      background: isOptionSelected(opt.value) ? "var(--app-active)" : "transparent",
+                      fontWeight: isOptionSelected(opt.value) ? 600 : 400,
+                    }}
                   >
                     <span className="truncate">{opt.label}</span>
-                    {isSelected && <Check size={12} className="text-blue-600 flex-shrink-0" />}
+                    {isOptionSelected(opt.value) && <Check size={12} style={{ color: "var(--primary)" }} className="flex-shrink-0" />}
                   </button>
                 );
               })

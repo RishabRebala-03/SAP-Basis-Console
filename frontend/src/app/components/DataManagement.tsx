@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Database, Plus, Pencil, Trash2, X, CheckCircle2, AlertCircle, ChevronUp, ChevronDown, Save, ServerCrash, Server, Filter, Play, Search, Loader2 } from "lucide-react";
 import { useAppContext, SapSystem } from "../contexts/AppContext";
+import type { TableDisplayPreferences } from "./pages/SettingsPage";
 import { ValueHelpInput } from "./ValueHelpInput";
 import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 
@@ -312,9 +313,18 @@ export function SystemEditPage({
   );
 }
 
-export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (system: SapSystem) => void; onAddSystem?: () => void }) {
+export function DataManagement({
+  onViewDetail,
+  onAddSystem,
+  displayPreferences,
+}: {
+  onViewDetail?: (system: SapSystem) => void;
+  onAddSystem?: () => void;
+  displayPreferences?: TableDisplayPreferences;
+}) {
   const { systems, systemsLoading, addSystem, updateSystem, deleteSystem, logAction } = useAppContext();
   const isDark = typeof document !== "undefined" && document.documentElement.dataset.theme === "dark";
+  const prefs = displayPreferences ?? { alternateRowStriping: true, freezeFirstColumn: false, showRowNumbers: false };
   const [search, setSearch] = useState("");
   const [envFilter, setEnvFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -634,6 +644,9 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ background: isDark ? "var(--app-subtle)" : "#f5f6f7", borderBottom: `1px solid ${F.border}` }}>
+                  {prefs.showRowNumbers && (
+                    <th className="px-4 py-3 text-left text-xs" style={{ color: F.muted, fontWeight: 600 }}>#</th>
+                  )}
                   {([
                     ["systemId", "System ID"],
                     ["systemName", "System Name"],
@@ -656,10 +669,10 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
                   <th className="px-4 py-3 text-right text-xs" style={{ color: F.muted, fontWeight: 600 }}>Actions</th>
                 </tr>
               </thead>
-              <tbody>
+                <tbody>
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-4 py-12 text-center text-sm" style={{ color: F.muted }}>
+                    <td colSpan={prefs.showRowNumbers ? 10 : 9} className="px-4 py-12 text-center text-sm" style={{ color: F.muted }}>
                       No systems found. Adjust filters or add a new system.
                     </td>
                   </tr>
@@ -672,20 +685,27 @@ export function DataManagement({ onViewDetail, onAddSystem }: { onViewDetail?: (
                       onClick={() => onViewDetail?.(sys)}
                       style={{
                         borderBottom: `1px solid ${F.border}`,
-                        background: isDark ? (i % 2 === 0 ? "var(--app-surface)" : "var(--app-subtle)") : (i % 2 === 0 ? F.white : "#fafafa"),
+                        background: isDark
+                          ? (prefs.alternateRowStriping ? (i % 2 === 0 ? "var(--app-surface)" : "var(--app-subtle)") : "var(--app-surface)")
+                          : (prefs.alternateRowStriping ? (i % 2 === 0 ? F.white : "#fafafa") : F.white),
                         cursor: onViewDetail ? "pointer" : "default",
                       }}
                       onMouseEnter={(e) => { if (onViewDetail) e.currentTarget.style.background = isDark ? "rgba(255,255,255,0.04)" : "#f0f6ff"; }}
-                      onMouseLeave={(e) => (e.currentTarget.style.background = isDark ? (i % 2 === 0 ? "var(--app-surface)" : "var(--app-subtle)") : (i % 2 === 0 ? F.white : "#fafafa"))}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = isDark
+                        ? (prefs.alternateRowStriping ? (i % 2 === 0 ? "var(--app-surface)" : "var(--app-subtle)") : "var(--app-surface)")
+                        : (prefs.alternateRowStriping ? (i % 2 === 0 ? F.white : "#fafafa") : F.white))}
                     >
+                      {prefs.showRowNumbers && (
+                        <td className="px-4 py-3 text-xs" style={{ color: F.muted }}>{i + 1}</td>
+                      )}
                       {/* System ID */}
-                      <td className="px-4 py-3">
+                      <td className={`px-4 py-3 ${prefs.freezeFirstColumn ? "sticky left-0 z-10" : ""}`} style={{ background: prefs.freezeFirstColumn ? (isDark ? "var(--app-surface)" : (prefs.alternateRowStriping ? (i % 2 === 0 ? F.white : "#fafafa") : F.white)) : undefined }}>
                         <span className="px-2 py-1 rounded text-xs" style={{ background: "#e8f2ff", color: F.primary, fontWeight: 600 }}>
                           {sys.systemId}
                         </span>
                       </td>
                       {/* System Name */}
-                      <td className="px-4 py-3" style={{ color: F.text }}>{sys.systemName}</td>
+                      <td className={prefs.freezeFirstColumn ? "sticky left-[96px] z-10" : ""} style={{ color: F.text, background: prefs.freezeFirstColumn ? (isDark ? "var(--app-surface)" : (prefs.alternateRowStriping ? (i % 2 === 0 ? F.white : "#fafafa") : F.white)) : undefined }}>{sys.systemName}</td>
                       {/* Client */}
                       <td className="px-4 py-3" style={{ color: F.muted }}>{sys.client}</td>
                       {/* Environment */}

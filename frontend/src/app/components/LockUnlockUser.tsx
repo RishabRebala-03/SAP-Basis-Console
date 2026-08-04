@@ -1,10 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   Lock, Unlock, AlertCircle, CheckCircle2, ShieldAlert, X,
   Server, History,
 } from "lucide-react";
 import { useAppContext } from "../contexts/AppContext";
 import { lockUserApi, unlockUserApi } from "../../api/sapApi";
+import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
+import { Search } from "lucide-react";
+import type { TableDisplayPreferences } from "./pages/SettingsPage";
 
 const F = { primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c", text: "var(--app-text)", muted: "var(--app-muted)", border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)" };
 type Action = "lock" | "unlock";
@@ -29,6 +32,22 @@ function SystemSelector({ systems, selectedId, onChange }: { systems: ReturnType
 
 function ConfirmDialog({ username, action, system, onConfirm, onCancel }: { username: string; action: Action; system: string; onConfirm: () => void; onCancel: () => void }) {
   const isLock = action === "lock";
+  const isDark = typeof document !== "undefined" && document.documentElement.dataset.theme === "dark";
+  const panelBg = isDark
+    ? isLock
+      ? "rgba(187, 0, 0, 0.16)"
+      : "rgba(233, 115, 12, 0.16)"
+    : isLock
+      ? "#fff2f2"
+      : "#fff8f0";
+  const panelBorder = isDark
+    ? isLock
+      ? "rgba(187, 0, 0, 0.35)"
+      : "rgba(233, 115, 12, 0.35)"
+    : isLock
+      ? "#bb000030"
+      : "#e9730c30";
+  const panelText = isDark ? "rgba(255,255,255,0.92)" : F.text;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.4)" }}>
       <div className="rounded shadow-xl w-full max-w-md mx-4" style={{ background: F.white }}>
@@ -37,9 +56,9 @@ function ConfirmDialog({ username, action, system, onConfirm, onCancel }: { user
           <button onClick={onCancel} className="p-1 rounded hover:bg-gray-100" style={{ color: F.muted }}><X size={16} /></button>
         </div>
         <div className="px-5 py-5">
-          <div className="flex items-start gap-3 p-3 rounded mb-4" style={{ background: isLock ? "#fff2f2" : "#fff8f0", border: `1px solid ${isLock ? "#bb000030" : "#e9730c30"}` }}>
+          <div className="flex items-start gap-3 p-3 rounded mb-4" style={{ background: panelBg, border: `1px solid ${panelBorder}` }}>
             {isLock ? <Lock size={16} style={{ color: F.error, flexShrink: 0, marginTop: "2px" }} /> : <Unlock size={16} style={{ color: F.warning, flexShrink: 0, marginTop: "2px" }} />}
-            <p className="text-sm" style={{ color: F.text }}>{isLock ? "You are about to lock" : "You are about to unlock"} user <strong>{username.toUpperCase()}</strong> in <strong>{system}</strong>.</p>
+            <p className="text-sm" style={{ color: panelText }}>{isLock ? "You are about to lock" : "You are about to unlock"} user <strong>{username.toUpperCase()}</strong> in <strong>{system}</strong>.</p>
           </div>
           <p className="text-xs" style={{ color: F.muted }}>This action will execute directly against the live SAP OData Gateway and will be recorded in the security audit log.</p>
         </div>
@@ -55,6 +74,77 @@ function ConfirmDialog({ username, action, system, onConfirm, onCancel }: { user
 function StatusBadge({ status }: { status: string }) {
   const cfg = status === "Success" ? { bg: "#f1fdf6", color: F.success, border: "#107e3e40" } : status === "Failed" ? { bg: "#fff2f2", color: F.error, border: "#bb000040" } : { bg: "#fff8f0", color: F.warning, border: "#e9730c40" };
   return <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium" style={{ background: cfg.bg, color: cfg.color, border: `1px solid ${cfg.border}` }}>{status === "Success" ? <CheckCircle2 size={10} /> : <AlertCircle size={10} />}{status}</span>;
+}
+
+function SearchAutocomplete({
+  value, onChange, targets, systems, performers, placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  targets: string[];
+  systems: string[];
+  performers: string[];
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, []);
+
+  const groups = [
+    { label: "Username", values: targets },
+    { label: "System", values: systems },
+    { label: "Performed By", values: performers },
+  ].map((g) => ({
+    ...g,
+    visible: value ? g.values.filter((v) => v.toLowerCase().includes(value.toLowerCase())) : g.values.slice(0, 5),
+  })).filter((g) => g.visible.length > 0);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: F.muted }} />
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setOpen(true)}
+          placeholder={placeholder ?? "Search usernames, systems, performers…"}
+          className="w-full px-3 py-1.5 pl-7 text-xs rounded outline-none"
+          style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}
+        />
+      </div>
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 rounded shadow-xl z-50 overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+          <div style={{ maxHeight: 240, overflowY: "auto" }}>
+            {groups.map((g) => (
+              <div key={g.label}>
+                <div className="px-3 py-1.5 text-[11px]" style={{ background: "#fafafa", borderBottom: `1px solid ${F.border}`, color: F.muted }}>
+                  {g.label}
+                </div>
+                {g.visible.map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); onChange(v); setOpen(false); }}
+                    className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--app-subtle)]"
+                    style={{ color: F.text }}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function HistoryTabMini() {
@@ -77,9 +167,46 @@ function HistoryTabMini() {
   );
 }
 
-function HistoryTab() {
+function HistoryTab({ displayPreferences }: { displayPreferences: TableDisplayPreferences }) {
   const { auditLogs } = useAppContext();
   const lockLogs = useMemo(() => auditLogs.filter((l) => l.module === "Lock/Unlock"), [auditLogs]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [systemFilter, setSystemFilter] = useState("All");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [appliedStatus, setAppliedStatus] = useState("All");
+  const [appliedSystem, setAppliedSystem] = useState("All");
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
+  const uniqueSystems = useMemo(() => ["All", ...Array.from(new Set(lockLogs.map((l) => l.system).filter((s) => s && s !== "—")))].sort(), [lockLogs]);
+  const filtered = useMemo(() => {
+    if (!hasSubmitted) return [];
+    const q = appliedSearch.trim().toLowerCase();
+    return lockLogs.filter((l) => {
+      const matchSearch = !q || l.targetObject.toLowerCase().includes(q) || l.system.toLowerCase().includes(q) || l.performedBy.toLowerCase().includes(q) || l.details.toLowerCase().includes(q) || l.action.toLowerCase().includes(q);
+      const matchStatus = appliedStatus === "All" || l.status === appliedStatus;
+      const matchSystem = appliedSystem === "All" || l.system === appliedSystem;
+      return matchSearch && matchStatus && matchSystem;
+    });
+  }, [lockLogs, appliedSearch, appliedStatus, appliedSystem, hasSubmitted]);
+
+  const activeFilterCount = [statusFilter !== "All", systemFilter !== "All", search.trim().length > 0].filter(Boolean).length;
+  const submitFilters = () => {
+    setAppliedSearch(search);
+    setAppliedStatus(statusFilter);
+    setAppliedSystem(systemFilter);
+    setHasSubmitted(true);
+  };
+  const clearAll = () => {
+    setSearch("");
+    setStatusFilter("All");
+    setSystemFilter("All");
+    setAppliedSearch("");
+    setAppliedStatus("All");
+    setAppliedSystem("All");
+    setHasSubmitted(false);
+  };
+
   if (lockLogs.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 rounded" style={{ background: F.white, border: `1px solid ${F.border}`, color: F.muted }}>
@@ -89,15 +216,36 @@ function HistoryTab() {
     );
   }
   return (
-    <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+    <div className="rounded overflow-visible relative" style={{ background: F.white, border: `1px solid ${F.border}` }}>
       <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
         <h3 className="text-sm font-semibold" style={{ color: F.text }}>Lock / Unlock Audit History</h3>
         <span className="text-xs px-2.5 py-0.5 rounded font-medium" style={{ background: "#e8f2ff", color: F.primary }}>{lockLogs.length} total entries</span>
+      </div>
+      <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end" style={{ borderBottom: `1px solid ${F.border}` }}>
+        <div>
+          <label className="block text-xs mb-1" style={{ color: F.muted }}>Search</label>
+          <SearchAutocomplete
+            value={search}
+            onChange={setSearch}
+            targets={Array.from(new Set(lockLogs.map((l) => l.targetObject).filter(Boolean)))}
+            systems={uniqueSystems.filter((s) => s !== "All")}
+            performers={Array.from(new Set(lockLogs.map((l) => l.performedBy).filter(Boolean)))}
+            placeholder="Search values…"
+          />
+        </div>
+        <SearchableFilterDropdown label="System" value={systemFilter === "All" ? "" : systemFilter} onChange={(v) => setSystemFilter(v || "All")} options={uniqueSystems.map((s) => s === "All" ? "" : s)} allLabel="All Systems" placeholder="Search system…" />
+        <SearchableFilterDropdown label="Status" value={statusFilter === "All" ? "" : statusFilter} onChange={(v) => setStatusFilter(v || "All")} options={["", "Success", "Failed", "Warning"]} allLabel="All Statuses" placeholder="Search status…" />
+      </div>
+      <div className="px-4 py-2.5 flex items-center gap-3" style={{ borderBottom: `1px solid ${F.border}` }}>
+        <button onClick={submitFilters} className="px-4 py-1.5 text-xs rounded text-white" style={{ background: F.primary }}>Go</button>
+        <button onClick={clearAll} className="px-3 py-1.5 text-xs rounded" style={{ border: `1px solid ${F.border}`, color: activeFilterCount ? F.error : F.muted, background: activeFilterCount ? "#fff2f2" : F.white }}>Clear All Filters</button>
+        <span className="text-xs ml-auto" style={{ color: F.muted }}>{hasSubmitted ? `${filtered.length} entries shown` : "0 entries shown"}</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
             <tr style={{ background: "#f5f6f7", borderBottom: `1px solid ${F.border}`, color: F.muted }}>
+              {displayPreferences.showRowNumbers && <th className="p-3">#</th>}
               <th className="p-3">Time</th>
               <th className="p-3">Username</th>
               <th className="p-3">Action</th>
@@ -108,8 +256,9 @@ function HistoryTab() {
             </tr>
           </thead>
           <tbody className="divide-y" style={{ borderColor: F.border }}>
-            {lockLogs.map((log) => (
+            {(hasSubmitted ? filtered : []).map((log, i) => (
               <tr key={log.id} className="hover:bg-[var(--app-subtle)]">
+                {displayPreferences.showRowNumbers && <td className="p-3 text-gray-500">{i + 1}</td>}
                 <td className="p-3 text-gray-500 whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
                 <td className="p-3 font-semibold" style={{ color: F.text }}>{log.targetObject}</td>
                 <td className="p-3">{log.action}</td>
@@ -126,8 +275,9 @@ function HistoryTab() {
   );
 }
 
-export function LockUnlockUser() {
+export function LockUnlockUser({ displayPreferences }: { displayPreferences?: TableDisplayPreferences }) {
   const { systems, logAction } = useAppContext();
+  const prefs = displayPreferences ?? { alternateRowStriping: true, freezeFirstColumn: false, showRowNumbers: false };
   const [activeTab, setActiveTab] = useState<"control" | "history">("control");
   const [selectedSystem, setSelectedSystem] = useState("");
   const [username, setUsername] = useState("");
@@ -317,8 +467,7 @@ export function LockUnlockUser() {
         </>
       )}
 
-      {activeTab === "history" && <HistoryTab />}
+        {activeTab === "history" && <HistoryTab displayPreferences={prefs} />}
     </div>
   );
 }
-

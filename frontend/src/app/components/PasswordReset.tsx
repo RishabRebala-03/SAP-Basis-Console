@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   KeyRound, AlertCircle, CheckCircle2, Server, Copy, Check,
   Eye, EyeOff, History,
@@ -6,6 +6,9 @@ import {
 import { useAppContext } from "../contexts/AppContext";
 import type { AuditLog } from "../contexts/AppContext";
 import { resetPasswordApi } from "../../api/sapApi";
+import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
+import { Search } from "lucide-react";
+import type { TableDisplayPreferences } from "./pages/SettingsPage";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000", warning: "#e9730c",
@@ -45,9 +48,117 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function HistoryTab() {
+function SearchAutocomplete({
+  value, onChange, targets, systems, performers, placeholder,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  targets: string[];
+  systems: string[];
+  performers: string[];
+  placeholder?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const onOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, []);
+
+  const groups = [
+    { label: "Username", values: targets },
+    { label: "System", values: systems },
+    { label: "Performed By", values: performers },
+  ].map((g) => ({
+    ...g,
+    visible: value ? g.values.filter((v) => v.toLowerCase().includes(value.toLowerCase())) : g.values.slice(0, 5),
+  })).filter((g) => g.visible.length > 0);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="relative">
+        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: F.muted }} />
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setOpen(true)}
+          placeholder={placeholder ?? "Search usernames, systems, performers…"}
+          className="w-full px-3 py-1.5 pl-7 text-xs rounded outline-none"
+          style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text }}
+        />
+      </div>
+      {open && (
+        <div className="absolute top-full left-0 right-0 mt-1 rounded shadow-xl z-50 overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+          <div style={{ maxHeight: 240, overflowY: "auto" }}>
+            {groups.map((g) => (
+              <div key={g.label}>
+                <div className="px-3 py-1.5 text-[11px]" style={{ background: "#fafafa", borderBottom: `1px solid ${F.border}`, color: F.muted }}>
+                  {g.label}
+                </div>
+                {g.visible.map((v) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); onChange(v); setOpen(false); }}
+                    className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--app-subtle)]"
+                    style={{ color: F.text }}
+                  >
+                    {v}
+                  </button>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function HistoryTab({ displayPreferences }: { displayPreferences: TableDisplayPreferences }) {
   const { auditLogs } = useAppContext();
   const pwLogs = useMemo(() => auditLogs.filter((l) => l.module === "Password Reset"), [auditLogs]);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [systemFilter, setSystemFilter] = useState("All");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [appliedStatus, setAppliedStatus] = useState("All");
+  const [appliedSystem, setAppliedSystem] = useState("All");
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+
+  const uniqueSystems = useMemo(() => ["All", ...Array.from(new Set(pwLogs.map((l) => l.system).filter((s) => s && s !== "—")))].sort(), [pwLogs]);
+  const filtered = useMemo(() => {
+    if (!hasSubmitted) return [];
+    const q = appliedSearch.trim().toLowerCase();
+    return pwLogs.filter((l) => {
+      const matchSearch = !q || l.targetObject.toLowerCase().includes(q) || l.system.toLowerCase().includes(q) || l.performedBy.toLowerCase().includes(q) || l.details.toLowerCase().includes(q);
+      const matchStatus = appliedStatus === "All" || l.status === appliedStatus;
+      const matchSystem = appliedSystem === "All" || l.system === appliedSystem;
+      return matchSearch && matchStatus && matchSystem;
+    });
+  }, [pwLogs, appliedSearch, appliedStatus, appliedSystem, hasSubmitted]);
+
+  const activeFilterCount = [statusFilter !== "All", systemFilter !== "All", search.trim().length > 0].filter(Boolean).length;
+  const submitFilters = () => {
+    setAppliedSearch(search);
+    setAppliedStatus(statusFilter);
+    setAppliedSystem(systemFilter);
+    setHasSubmitted(true);
+  };
+  const clearAll = () => {
+    setSearch("");
+    setStatusFilter("All");
+    setSystemFilter("All");
+    setAppliedSearch("");
+    setAppliedStatus("All");
+    setAppliedSystem("All");
+    setHasSubmitted(false);
+  };
+
   if (pwLogs.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 rounded" style={{ background: F.white, border: `1px solid ${F.border}`, color: F.muted }}>
@@ -57,15 +168,36 @@ function HistoryTab() {
     );
   }
   return (
-    <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+    <div className="rounded overflow-visible relative" style={{ background: F.white, border: `1px solid ${F.border}` }}>
       <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
         <h3 className="text-sm font-semibold" style={{ color: F.text }}>Password Reset Action History</h3>
         <span className="text-xs px-2.5 py-0.5 rounded font-medium" style={{ background: "#e8f2ff", color: F.primary }}>{pwLogs.length} total entries</span>
+      </div>
+      <div className="px-4 py-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end" style={{ borderBottom: `1px solid ${F.border}` }}>
+        <div>
+          <label className="block text-xs mb-1" style={{ color: F.muted }}>Search</label>
+          <SearchAutocomplete
+            value={search}
+            onChange={setSearch}
+            targets={Array.from(new Set(pwLogs.map((l) => l.targetObject).filter(Boolean)))}
+            systems={uniqueSystems.filter((s) => s !== "All")}
+            performers={Array.from(new Set(pwLogs.map((l) => l.performedBy).filter(Boolean)))}
+            placeholder="Search values…"
+          />
+        </div>
+        <SearchableFilterDropdown label="System" value={systemFilter === "All" ? "" : systemFilter} onChange={(v) => setSystemFilter(v || "All")} options={uniqueSystems.map((s) => s === "All" ? "" : s)} allLabel="All Systems" placeholder="Search system…" />
+        <SearchableFilterDropdown label="Status" value={statusFilter === "All" ? "" : statusFilter} onChange={(v) => setStatusFilter(v || "All")} options={["", "Success", "Failed", "Warning"]} allLabel="All Statuses" placeholder="Search status…" />
+      </div>
+      <div className="px-4 py-2.5 flex items-center gap-3" style={{ borderBottom: `1px solid ${F.border}` }}>
+        <button onClick={submitFilters} className="px-4 py-1.5 text-xs rounded text-white" style={{ background: F.primary }}>Go</button>
+        <button onClick={clearAll} className="px-3 py-1.5 text-xs rounded" style={{ border: `1px solid ${F.border}`, color: activeFilterCount ? F.error : F.muted, background: activeFilterCount ? "#fff2f2" : F.white }}>Clear All Filters</button>
+        <span className="text-xs ml-auto" style={{ color: F.muted }}>{hasSubmitted ? `${filtered.length} entries shown` : "0 entries shown"}</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
           <thead>
             <tr style={{ background: "#f5f6f7", borderBottom: `1px solid ${F.border}`, color: F.muted }}>
+              {displayPreferences.showRowNumbers && <th className="p-3">#</th>}
               <th className="p-3">Time</th>
               <th className="p-3">Username</th>
               <th className="p-3">System</th>
@@ -75,8 +207,9 @@ function HistoryTab() {
             </tr>
           </thead>
           <tbody className="divide-y" style={{ borderColor: F.border }}>
-            {pwLogs.map((log) => (
+            {(hasSubmitted ? filtered : []).map((log, i) => (
               <tr key={log.id} className="hover:bg-[var(--app-subtle)]">
+                {displayPreferences.showRowNumbers && <td className="p-3 text-gray-500">{i + 1}</td>}
                 <td className="p-3 text-gray-500 whitespace-nowrap">{new Date(log.timestamp).toLocaleString()}</td>
                 <td className="p-3 font-semibold" style={{ color: F.text }}>{log.targetObject}</td>
                 <td className="p-3">{log.system}</td>
@@ -92,8 +225,9 @@ function HistoryTab() {
   );
 }
 
-export function PasswordReset() {
+export function PasswordReset({ displayPreferences }: { displayPreferences?: TableDisplayPreferences }) {
   const { systems, logAction } = useAppContext();
+  const prefs = displayPreferences ?? { alternateRowStriping: true, freezeFirstColumn: false, showRowNumbers: false };
   const [activeTab, setActiveTab] = useState<"reset" | "history">("reset");
   const [selectedSystem, setSelectedSystem] = useState("");
   const [username, setUsername] = useState("");
@@ -283,7 +417,7 @@ export function PasswordReset() {
         </>
       )}
 
-      {activeTab === "history" && <HistoryTab />}
+      {activeTab === "history" && <HistoryTab displayPreferences={prefs} />}
     </div>
   );
 }

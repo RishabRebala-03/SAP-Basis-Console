@@ -3,6 +3,7 @@ import { ClipboardList, Download, ChevronUp, ChevronDown, ChevronLeft, ChevronRi
 import { useAppContext, AuditLog, AuditModule, AuditStatus } from "../contexts/AppContext";
 import { ValueHelpInput } from "./ValueHelpInput";
 import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
+import type { TableDisplayPreferences } from "./pages/SettingsPage";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000",
@@ -30,8 +31,15 @@ type SortField = "timestamp" | "module" | "action" | "targetObject" | "system" |
 const PAGE_SIZES = [10, 25, 50];
 
 
-export function AuditLogs({ onViewDetail }: { onViewDetail: (log: AuditLog) => void }) {
+export function AuditLogs({
+  onViewDetail,
+  displayPreferences,
+}: {
+  onViewDetail: (log: AuditLog) => void;
+  displayPreferences?: TableDisplayPreferences;
+}) {
   const { auditLogs } = useAppContext();
+  const prefs = displayPreferences ?? { alternateRowStriping: true, freezeFirstColumn: false, showRowNumbers: false };
   const [search, setSearch] = useState("");
   const [moduleFilter, setModuleFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
@@ -350,6 +358,7 @@ export function AuditLogs({ onViewDetail }: { onViewDetail: (log: AuditLog) => v
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ background: "#f5f6f7", borderBottom: `1px solid ${F.border}` }}>
+                  {prefs.showRowNumbers && <th className="px-4 py-3 text-left text-xs" style={{ color: F.muted, fontWeight: 600 }}>#</th>}
                   {([
                     ["timestamp", "Timestamp"],
                     ["module", "Module"],
@@ -378,7 +387,7 @@ export function AuditLogs({ onViewDetail }: { onViewDetail: (log: AuditLog) => v
               <tbody>
                 {filtered.length === 0 && (
                   <tr>
-                    <td colSpan={12} className="px-4 py-12 text-center text-sm" style={{ color: F.muted }}>
+                    <td colSpan={prefs.showRowNumbers ? 13 : 12} className="px-4 py-12 text-center text-sm" style={{ color: F.muted }}>
                       No audit logs match the specified search and filter criteria.
                     </td>
                   </tr>
@@ -398,8 +407,16 @@ export function AuditLogs({ onViewDetail }: { onViewDetail: (log: AuditLog) => v
                       key={log.id}
                       onClick={() => onViewDetail(log)}
                       className="hover:bg-blue-50/40 transition-colors cursor-pointer"
-                      style={{ borderBottom: `1px solid ${F.border}` }}
+                      style={{
+                        borderBottom: `1px solid ${F.border}`,
+                        background: prefs.alternateRowStriping ? undefined : "#ffffff",
+                      }}
                     >
+                      {prefs.showRowNumbers && (
+                        <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: F.muted }}>
+                          {(page - 1) * pageSize + paginated.indexOf(log) + 1}
+                        </td>
+                      )}
                       <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: F.text }}>
                         {new Date(log.timestamp).toLocaleString()}
                       </td>

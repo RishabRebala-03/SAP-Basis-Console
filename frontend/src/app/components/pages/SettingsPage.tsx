@@ -45,6 +45,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   },
 };
 
+export type TableDisplayPreferences = AppSettings["displayPreferences"];
+
 type Section = "security" | "notifications" | "display";
 
 const SECTIONS: { id: Section; label: string; icon: typeof Globe }[] = [
