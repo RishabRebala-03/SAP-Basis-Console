@@ -253,6 +253,62 @@ def extend_validity():
     except Exception as e:
         return jsonify({"error": "SAP OData Failure", "message": str(e)}), 500
 
+@sap_bp.route("/delete-user", methods=["POST"])
+@jwt_required()
+@role_required(["Super Admin", "Basis Admin"])
+@audit_action("delete_user")
+def delete_user():
+    """Deletes a single user in the selected SAP system."""
+    json_data = request.get_json() or {}
+    system_id = json_data.get("system_id") or json_data.get("systemId") or request.headers.get("X-SAP-System", "SHD")
+    username = (json_data.get("username") or json_data.get("Username") or "").strip()
+
+    if not username:
+        return jsonify({"error": "Validation Error", "message": "SAP Username is required"}), 400
+
+    try:
+        result = sap_service.delete_user(system_id, username)
+        return jsonify(result), 200
+    except Exception as e:
+        return jsonify({"error": "SAP OData Failure", "message": str(e)}), 500
+
+@sap_bp.route("/bulk-delete", methods=["POST"])
+@jwt_required()
+@role_required(["Super Admin", "Basis Admin"])
+@audit_action("bulk_delete_user")
+def bulk_delete_user():
+    """Deletes multiple users in one request."""
+    json_data = request.get_json() or {}
+    system_id = json_data.get("system_id") or json_data.get("systemId") or request.headers.get("X-SAP-System", "SHD")
+    usernames = json_data.get("usernames") or []
+
+    if isinstance(usernames, str):
+        usernames = [u.strip() for u in usernames.split(",") if u.strip()]
+
+    if not usernames:
+        return jsonify({"error": "Validation Error", "message": "At least one SAP Username is required"}), 400
+
+    results = []
+    for username in usernames:
+        try:
+            result = sap_service.delete_user(system_id, username)
+            results.append({
+                "username": result.get("Username", username),
+                "status": "Success",
+                "message": result.get("Message", "User deleted successfully.")
+            })
+        except Exception as e:
+            results.append({
+                "username": username,
+                "status": "Failed",
+                "message": str(e)
+            })
+
+    return jsonify({
+        "message": "Bulk user deletion completed.",
+        "results": results
+    }), 200
+
 @sap_bp.route("/template", methods=["GET"])
 @jwt_required()
 def download_template():
@@ -268,6 +324,21 @@ def download_template():
     except Exception as e:
         return jsonify({"error": "Internal Error", "message": str(e)}), 500
 
+@sap_bp.route("/delete-template", methods=["GET"])
+@jwt_required()
+def download_delete_template():
+    """Downloads the standard Excel bulk user deletion template."""
+    try:
+        file_stream = excel_processor.generate_delete_template()
+        return send_file(
+            file_stream,
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            as_attachment=True,
+            download_name="SAP_Bulk_User_Delete_Template.xlsx"
+        )
+    except Exception as e:
+        return jsonify({"error": "Internal Error", "message": str(e)}), 500
+
 @sap_bp.route("/bulk-create/preview", methods=["POST"])
 @jwt_required()
 @role_required(["Super Admin", "Basis Admin"])
@@ -279,6 +350,21 @@ def bulk_create_preview():
     excel_file = request.files["file"]
     try:
         records = excel_processor.parse_and_validate_excel(excel_file.stream)
+        return jsonify(records), 200
+    except Exception as e:
+        return jsonify({"error": "Parsing Failure", "message": str(e)}), 400
+
+@sap_bp.route("/bulk-delete/preview", methods=["POST"])
+@jwt_required()
+@role_required(["Super Admin", "Basis Admin"])
+def bulk_delete_preview():
+    """Uploads Excel and returns rows validation review before deletion."""
+    if "file" not in request.files:
+        return jsonify({"error": "Missing File", "message": "No Excel workbook uploaded"}), 400
+
+    excel_file = request.files["file"]
+    try:
+        records = excel_processor.parse_and_validate_delete_excel(excel_file.stream)
         return jsonify(records), 200
     except Exception as e:
         return jsonify({"error": "Parsing Failure", "message": str(e)}), 400
@@ -365,6 +451,62 @@ def bulk_create_process():
             "results": results
         }), 200
 
+    except Exception as e:
+        return jsonify({"error": "Report Generation Failure", "message": str(e)}), 500
+
+@sap_bp.route("/bulk-delete/process", methods=["POST"])
+@jwt_required()
+@role_required(["Super Admin", "Basis Admin"])
+@audit_action("bulk_delete_user")
+def bulk_delete_process():
+    """Executes bulk user deletion and generates a download report."""
+    json_data = request.get_json()
+    if not json_data or "system_id" not in json_data or "users" not in json_data:
+        return jsonify({"error": "Bad Request", "message": "system_id and users list are required"}), 400
+
+    system_id = json_data["system_id"]
+    users = json_data["users"]
+
+    results = []
+    db = current_app.db
+    valid_users = []
+    valid_indices = []
+
+    for idx, user in enumerate(users):
+        errors = user.get("errors", [])
+        if not user.get("is_valid", True) or errors:
+            results.append({"status": "Failed", "message": f"Pre-validation error: {', '.join(errors)}"})
+        else:
+            valid_users.append({"username": user.get("username", "")})
+            valid_indices.append(idx)
+            results.append(None)
+
+    if valid_users:
+        for idx, user in zip(valid_indices, valid_users):
+            try:
+                res = sap_service.delete_user(system_id, user["username"])
+                results[idx] = {"status": "Success", "message": res.get("Message", "User deleted successfully")}
+            except Exception as e:
+                results[idx] = {"status": "Failed", "message": str(e)}
+
+    try:
+        report_stream = excel_processor.generate_processing_report(
+            [{"username": u.get("username", ""), "last_name": "", "valid_from": "", "valid_to": "", "profiles": [], "roles": []} for u in users],
+            results
+        )
+        report_id = str(uuid.uuid4())
+        db.uploaded_files.insert_one({
+            "report_id": report_id,
+            "system_id": system_id,
+            "created_at": datetime.utcnow(),
+            "file_data": report_stream.getvalue()
+        })
+
+        return jsonify({
+            "message": "Bulk deletion complete.",
+            "report_id": report_id,
+            "results": results
+        }), 200
     except Exception as e:
         return jsonify({"error": "Report Generation Failure", "message": str(e)}), 500
 

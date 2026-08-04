@@ -11,6 +11,7 @@ ODATA_OPERATIONS = {
     "reset_password": {"method": "POST", "entity_set": "UserPasswordResetSet", "purpose": "Reset SAP password"},
     "create_user": {"method": "POST", "entity_set": "UserCreationSet", "purpose": "Create or maintain one SAP user"},
     "maintain_user": {"method": "POST", "entity_set": "UserCreationSet", "purpose": "Maintain roles, profiles, and validity"},
+    "delete_user": {"method": "DELETE", "entity_set": "UserCreationSet", "purpose": "Delete one SAP user"},
     "bulk_create": {"method": "POST", "entity_set": "UserCreateBulkHdrSet", "purpose": "Bulk user creation header"},
 }
 
@@ -582,3 +583,25 @@ class SAPService:
                     results.append({"status": "Failed", "message": str(ex_single)})
 
         return results
+
+    def delete_user(self, system_id, username):
+        """Deletes a single SAP user."""
+        client = self._get_client(system_id)
+        uname_upper = username.strip().upper()
+        payload = {
+            "Username": uname_upper,
+            "Status": "",
+            "Message": ""
+        }
+        res = self._request_operation(client, "delete_user", payload)
+        data = res.get("d", res) if isinstance(res, dict) else {}
+        msg = "User deleted successfully."
+        status_code = "S"
+        if isinstance(data, dict):
+            status_code, msg = self._sap_status(data, msg)
+
+        return {
+            "Username": uname_upper,
+            "Status": status_code,
+            "Message": msg or f"User {uname_upper} deleted successfully."
+        }
