@@ -39,6 +39,10 @@ const TIME_RANGES = [
   { id: "all", label: "All time", days: Infinity },
 ];
 
+function normalizeFilterValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
 interface Props {
   onNavigate: (view: DashNav) => void;
 }
@@ -83,7 +87,7 @@ export function Analytics({ onNavigate }: Props) {
   const [statusFilter, setStatusFilter] = useState("All");
 
   const uniqueSystems = useMemo(
-    () => ["All", ...Array.from(new Set(auditLogs.map((l) => l.system).filter((s) => s !== "—")))],
+    () => ["All", ...Array.from(new Set(auditLogs.map((l) => l.system).filter((s) => s && s !== "—")))].sort((a, b) => a.localeCompare(b)),
     [auditLogs]
   );
 
@@ -93,8 +97,8 @@ export function Analytics({ onNavigate }: Props) {
   const logs = useMemo(() => auditLogs.filter((l) => {
     const ageD = (now - new Date(l.timestamp).getTime()) / 86_400_000;
     const inRange = rangeDays === Infinity || ageD <= rangeDays;
-    const inSys = systemFilter === "All" || l.system === systemFilter;
-    const inStatus = statusFilter === "All" || l.status === statusFilter;
+    const inSys = systemFilter === "All" || normalizeFilterValue(l.system) === normalizeFilterValue(systemFilter);
+    const inStatus = statusFilter === "All" || normalizeFilterValue(l.status) === normalizeFilterValue(statusFilter);
     return inRange && inSys && inStatus;
   }), [auditLogs, rangeDays, systemFilter, statusFilter, now]);
 
@@ -187,7 +191,7 @@ export function Analytics({ onNavigate }: Props) {
       </div>
 
       {/* Collapsible filters */}
-      <div className="rounded-lg overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
+      <div className="rounded-lg overflow-visible relative z-20" style={{ background: F.white, border: `1px solid ${F.border}` }}>
         <button onClick={() => setShowFilters((s) => !s)} className="w-full flex items-center gap-2 px-5 py-3 text-left" style={{ background: "#fafafa" }}>
           <Filter size={14} style={{ color: F.primary }} />
           <span className="text-sm" style={{ color: F.text }}>Filters</span>
@@ -196,7 +200,7 @@ export function Analytics({ onNavigate }: Props) {
           <ChevronDown size={16} style={{ color: F.muted, transform: showFilters ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
         </button>
         {showFilters && (
-          <div className="px-5 py-4 flex flex-wrap items-end gap-5" style={{ borderTop: `1px solid ${F.border}` }}>
+          <div className="px-5 py-4 flex flex-wrap items-end gap-5 relative z-30" style={{ borderTop: `1px solid ${F.border}` }}>
             <div className="flex flex-col gap-1.5">
               <label className="text-xs" style={{ color: F.muted }}>Time Range</label>
               <div className="flex gap-1">
@@ -274,7 +278,7 @@ export function Analytics({ onNavigate }: Props) {
                 <linearGradient id={`${uid}gWarning`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={F.warning} stopOpacity={0.35} /><stop offset="100%" stopColor={F.warning} stopOpacity={0.02} /></linearGradient>
                 <linearGradient id={`${uid}gFailed`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={F.error} stopOpacity={0.35} /><stop offset="100%" stopColor={F.error} stopOpacity={0.02} /></linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--app-border)" vertical={false} opacity={0.45} />
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: F.muted }} axisLine={{ stroke: F.border }} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: F.muted }} axisLine={false} tickLine={false} allowDecimals={false} />
               <Tooltip content={<ChartTooltip />} />
@@ -296,7 +300,7 @@ export function Analytics({ onNavigate }: Props) {
             ) : (
               <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={moduleData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--app-border)" vertical={false} opacity={0.45} />
                   <XAxis dataKey="name" tick={{ fontSize: 10, fill: F.muted }} axisLine={{ stroke: F.border }} tickLine={false} interval={0} angle={-12} textAnchor="end" height={50} />
                   <YAxis tick={{ fontSize: 11, fill: F.muted }} axisLine={false} tickLine={false} allowDecimals={false} />
                   <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(0,112,242,0.06)" }} />
@@ -370,7 +374,7 @@ export function Analytics({ onNavigate }: Props) {
           ) : (
             <ResponsiveContainer width="100%" height={Math.max(180, systemData.length * 46)}>
               <BarChart data={systemData} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eee" horizontal={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--app-border)" horizontal={false} opacity={0.45} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: F.muted }} axisLine={false} tickLine={false} allowDecimals={false} />
                 <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: F.text }} axisLine={false} tickLine={false} width={48} />
                 <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(0,112,242,0.06)" }} />

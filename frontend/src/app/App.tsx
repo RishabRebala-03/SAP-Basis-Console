@@ -395,16 +395,24 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
               )}
               {activeView === "single-user" && <SingleUserCreation />}
               {activeView === "bulk-user" && <BulkUserCreation />}
-              {activeView === "password-reset" && <PasswordReset />}
-              {activeView === "lock-unlock" && <LockUnlockUser />}
+              {activeView === "password-reset" && (
+                <PasswordReset displayPreferences={appSettings.displayPreferences} />
+              )}
+              {activeView === "lock-unlock" && (
+                <LockUnlockUser displayPreferences={appSettings.displayPreferences} />
+              )}
               {activeView === "data-management" && (
                 <DataManagement
+                  displayPreferences={appSettings.displayPreferences}
                   onViewDetail={(sys) => setPageView({ type: "system-detail", system: sys })}
                   onAddSystem={() => setPageView({ type: "add-system" })}
                 />
               )}
               {activeView === "audit-logs" && (
-                <AuditLogs onViewDetail={(log) => setPageView({ type: "audit-detail", log })} />
+                <AuditLogs
+                  displayPreferences={appSettings.displayPreferences}
+                  onViewDetail={(log) => setPageView({ type: "audit-detail", log })}
+                />
               )}
             </div>
           </main>
