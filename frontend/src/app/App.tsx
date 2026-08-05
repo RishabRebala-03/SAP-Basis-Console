@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from "react";
-import { UserPlus, Upload, KeyRound, Lock, ChevronRight, Bell, Settings, Menu, X, Database, ClipboardList, CheckCircle2, AlertCircle, Info, User, LogOut, LayoutDashboard, BarChart3 } from "lucide-react";
+import { UserPlus, Upload, KeyRound, Lock, ChevronRight, Bell, Settings, Menu, X, Database, ClipboardList, CheckCircle2, AlertCircle, Info, User, LogOut, LayoutDashboard, BarChart3, Trash2 } from "lucide-react";
 import { AppProvider } from "./contexts/AppContext";
 import { AuditLog, SapSystem } from "./contexts/AppContext";
 import { SingleUserCreation } from "./components/SingleUserCreation";
 import { BulkUserCreation } from "./components/BulkUserCreation";
+import { UserDeletion } from "./components/UserDeletion";
 import { PasswordReset } from "./components/PasswordReset";
 import { LockUnlockUser } from "./components/LockUnlockUser";
 import { DataManagement } from "./components/DataManagement";
@@ -19,7 +20,7 @@ import { Analytics } from "./components/Analytics";
 import { logoutApi, getCurrentUser, User as AuthUser } from "../api/authApi";
 import logoImage from "../imports/image.png";
 
-type ActiveView = "dashboard" | "analytics" | "single-user" | "bulk-user" | "password-reset" | "lock-unlock" | "data-management" | "audit-logs";
+type ActiveView = "dashboard" | "analytics" | "single-user" | "single-delete" | "bulk-delete" | "bulk-user" | "password-reset" | "lock-unlock" | "data-management" | "audit-logs";
 type PageView =
   | { type: "main" }
   | { type: "settings" }
@@ -40,7 +41,9 @@ const NAV_GROUPS = [
     label: "User Management",
     items: [
       { id: "single-user" as ActiveView, label: "Single User Creation", icon: UserPlus },
+      { id: "single-delete" as ActiveView, label: "Single User Deletion", icon: Trash2 },
       { id: "bulk-user" as ActiveView, label: "Bulk User Creation", icon: Upload },
+      { id: "bulk-delete" as ActiveView, label: "Bulk User Deletion", icon: Upload },
       { id: "password-reset" as ActiveView, label: "Password Reset", icon: KeyRound },
       { id: "lock-unlock" as ActiveView, label: "Lock / Unlock User", icon: Lock },
     ],
@@ -394,6 +397,8 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
                 <Analytics onNavigate={(v) => setActiveView(v as ActiveView)} />
               )}
               {activeView === "single-user" && <SingleUserCreation />}
+              {activeView === "single-delete" && <UserDeletion variant="single" />}
+              {activeView === "bulk-delete" && <UserDeletion variant="bulk" />}
               {activeView === "bulk-user" && <BulkUserCreation />}
               {activeView === "password-reset" && (
                 <PasswordReset displayPreferences={appSettings.displayPreferences} />

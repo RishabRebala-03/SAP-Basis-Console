@@ -55,6 +55,8 @@ const SESSION_ID = "SES-" + Math.random().toString(36).slice(2, 10).toUpperCase(
 
 const ACTION_LABELS: Record<string, { module: AuditModule; action: string }> = {
   create_user:      { module: "Single User",    action: "Create User" },
+  delete_user:      { module: "Single User",    action: "Delete User" },
+  bulk_delete_user: { module: "Single User",    action: "Bulk Delete Users" },
   bulk_create:      { module: "Bulk User",      action: "Bulk Import" },
   reset_password:   { module: "Password Reset", action: "Reset Password" },
   lock_user:        { module: "Lock/Unlock",    action: "Lock User" },

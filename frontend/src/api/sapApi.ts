@@ -53,6 +53,16 @@ export interface BulkCreatePayload {
   }>;
 }
 
+export interface DeleteUserPayload {
+  system_id: string;
+  username: string;
+}
+
+export interface BulkDeletePayload {
+  system_id: string;
+  usernames: string[];
+}
+
 import { refreshTokenApi } from "./authApi";
 
 const BASE_URL = "/api/sap";
@@ -149,6 +159,74 @@ export async function processBulkCreateApi(payload: BulkCreatePayload) {
     body: JSON.stringify(payload),
   });
   return await safeParseResponse(res, "Bulk user creation completed");
+}
+
+export async function bulkDeletePreviewApi(file: File): Promise<any[]> {
+  const token = localStorage.getItem("token");
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  let res = await fetch(`${BASE_URL}/bulk-delete/preview`, {
+    method: "POST",
+    headers,
+    body: formData,
+  });
+
+  if (res.status === 401) {
+    const storedRefresh = localStorage.getItem("refresh_token");
+    if (storedRefresh) {
+      const newToken = await refreshTokenApi();
+      if (newToken) {
+        headers["Authorization"] = `Bearer ${newToken}`;
+        res = await fetch(`${BASE_URL}/bulk-delete/preview`, {
+          method: "POST",
+          headers,
+          body: formData,
+        });
+      } else {
+        window.dispatchEvent(new Event("auth:session-expired"));
+      }
+    }
+  }
+
+  const text = await res.text();
+  let data: any;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(text || "Failed to parse server response");
+  }
+  if (!res.ok) {
+    throw new Error(data?.message || data?.error || `Preview failed (HTTP ${res.status})`);
+  }
+  return data;
+}
+
+export async function deleteSingleUserApi(payload: DeleteUserPayload) {
+  const res = await fetchWithAuth(`${BASE_URL}/delete-user`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return await safeParseResponse(res, "User deletion completed");
+}
+
+export async function processBulkDeleteApi(payload: BulkDeletePayload) {
+  const res = await fetchWithAuth(`${BASE_URL}/bulk-delete`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return await safeParseResponse(res, "Bulk user deletion completed");
+}
+
+export async function processBulkDeleteSheetApi(payload: { system_id: string; users: Array<{ username: string; is_valid?: boolean; errors?: string[] }> }) {
+  const res = await fetchWithAuth(`${BASE_URL}/bulk-delete/process`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  return await safeParseResponse(res, "Bulk user deletion completed");
 }
 
 /**
@@ -255,4 +333,3 @@ export async function revokeSessionApi(sessionId: string): Promise<void> {
   });
   await safeParseResponse(res, "Failed to revoke session");
 }
-
