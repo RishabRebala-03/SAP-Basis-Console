@@ -58,7 +58,7 @@ function useHistoryFilters(entries: AuditLog[]) {
   return { filters, set, clearAll, submitFilters, hasSubmitted, filtered, activeCount: Object.values(filters).filter(Boolean).length - 2 };
 }
 
-export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
+export function UserDeletion({ variant, embedded = false }: { variant: "single" | "bulk"; embedded?: boolean }) {
   const { systems, logAction, auditLogs } = useAppContext();
   const [selectedSystem, setSelectedSystem] = useState("");
   const [singleUsername, setSingleUsername] = useState("");
@@ -203,19 +203,47 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
     URL.revokeObjectURL(url);
   };
 
+  const deletionValidCount = users.filter((u) => u.status === "valid").length;
+  const deletionInvalidCount = users.filter((u) => u.status === "invalid").length;
+  const deletionProcessedCount = users.filter((u) => u.status === "processed").length;
+  const deletionFailedCount = users.filter((u) => u.status === "failed").length;
+  const deletionStatusBadge = (status: typeof users[number]["status"]) => {
+    const map = {
+      valid: { label: "Valid", bg: "#f1fdf6", color: F.success },
+      invalid: { label: "Invalid", bg: "#fff2f2", color: F.error },
+      processed: { label: "Success", bg: "#f1fdf6", color: F.success },
+      failed: { label: "Failed", bg: "#fff2f2", color: F.error },
+    };
+    const s = map[status];
+    return <span className="px-2 py-0.5 text-xs rounded" style={{ background: s.bg, color: s.color }}>{s.label}</span>;
+  };
+  const downloadDeleteReport = () => {
+    const rows = users.map((u) => `${u.row},${u.username},${u.status},${u.errorMessage}`);
+    const csv = ["Row,Username,Status,Error", ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "sap_bulk_deletion_report.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1"><Trash2 size={20} style={{ color: F.primary }} /><h1 className="text-xl" style={{ color: F.text }}>User Deletion</h1></div>
-          <p className="text-sm" style={{ color: F.muted }}>{variant === "single" ? "Remove one SAP user at a time." : "Remove multiple SAP users in one batch."}</p>
+      {!embedded && (
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1"><Trash2 size={20} style={{ color: F.primary }} /><h1 className="text-xl" style={{ color: F.text }}>User Deletion</h1></div>
+            <p className="text-sm" style={{ color: F.muted }}>{variant === "single" ? "Remove one SAP user at a time." : "Remove multiple SAP users in one batch."}</p>
+          </div>
         </div>
-      </div>
-
-      <SystemSelector systems={systems} selectedId={selectedSystem} onChange={setSelectedSystem} />
+      )}
 
       {variant === "single" && (
         <>
+          <SystemSelector systems={systems} selectedId={selectedSystem} onChange={setSelectedSystem} />
+
           <div className="flex gap-0 mb-6" style={{ borderBottom: `2px solid ${F.border}` }}>
             <button onClick={() => setHistoryActive(false)} className="flex items-center gap-2 px-5 py-2.5 text-sm transition-all" style={{ color: !historyActive ? F.primary : F.muted, fontWeight: !historyActive ? "600" : "400", borderBottom: !historyActive ? `2px solid ${F.primary}` : "2px solid transparent", marginBottom: "-2px", background: "transparent" }}><Trash2 size={15} /> User Deletion</button>
             <button onClick={() => setHistoryActive(true)} className="flex items-center gap-2 px-5 py-2.5 text-sm transition-all" style={{ color: historyActive ? F.primary : F.muted, fontWeight: historyActive ? "600" : "400", borderBottom: historyActive ? `2px solid ${F.primary}` : "2px solid transparent", marginBottom: "-2px", background: "transparent" }}><History size={15} /> History</button>
@@ -398,7 +426,8 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
 
       {variant === "bulk" && (
         <>
-          <div className="mb-6 flex items-start justify-between">
+          {!embedded && (
+            <div className="mb-6 flex items-start justify-between">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Upload size={20} style={{ color: F.primary }} />
@@ -413,7 +442,19 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
             >
               <Download size={14} /> Download Template
             </button>
-          </div>
+            </div>
+          )}
+          {embedded && !historyActive && (
+            <div className="mb-4 flex justify-end">
+              <button
+                onClick={downloadTemplate}
+                className="flex items-center gap-2 px-4 py-2 text-sm rounded"
+                style={{ border: `1px solid ${F.primary}`, color: F.primary, background: F.white }}
+              >
+                <Download size={14} /> Download Template
+              </button>
+            </div>
+          )}
 
           <div className="flex gap-0 mb-6" style={{ borderBottom: `2px solid ${F.border}` }}>
             <button
@@ -421,7 +462,7 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
               className="flex items-center gap-2 px-5 py-2.5 text-sm transition-all"
               style={{ color: !historyActive ? F.primary : F.muted, fontWeight: !historyActive ? "600" : "400", borderBottom: !historyActive ? `2px solid ${F.primary}` : "2px solid transparent", marginBottom: "-2px", background: "transparent" }}
             >
-              <Upload size={15} /> Bulk User Deletion
+              <Upload size={15} /> Bulk Deletion
             </button>
             <button
               onClick={() => setHistoryActive(true)}
@@ -434,8 +475,7 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
 
           {!historyActive && (
             <>
-              <div className="rounded" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-                <div className="p-5">
+              <SystemSelector systems={systems} selectedId={selectedSystem} onChange={setSelectedSystem} />
                   {bulkResults.some((r) => r.status === "Failed") && (
                     <div className="mb-4 flex items-start gap-3 px-4 py-3 rounded" style={{ background: "#fff2f2", border: `1px solid ${F.error}` }}>
                       <AlertCircle size={18} style={{ color: F.error, flexShrink: 0, marginTop: "2px" }} />
@@ -466,6 +506,15 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
                     </div>
                   )}
 
+                  {uploadState === "parsing" && (
+                    <div className="rounded flex flex-col items-center justify-center gap-4 py-14" style={{ background: F.white, border: `2px dashed ${F.border}` }}>
+                      <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: "#e8f2ff" }}>
+                        <span className="animate-spin border-4 border-blue-200 border-t-blue-500 rounded-full w-8 h-8" />
+                      </div>
+                      <p className="text-sm" style={{ color: F.text }}>Parsing and validating Excel file...</p>
+                    </div>
+                  )}
+
                   {uploadState === "idle" && (
                     <div
                       className="rounded flex flex-col items-center justify-center gap-4 py-14 cursor-pointer transition-all"
@@ -493,13 +542,26 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
                     </div>
                   )}
 
-                  {(uploadState === "parsing" || uploadState === "preview" || uploadState === "processing" || uploadState === "done") && (
+                  {(uploadState === "preview" || uploadState === "processing" || uploadState === "done") && (
                     <div>
                       <div className="rounded mb-4 flex items-center gap-3 px-4 py-3" style={{ background: F.white, border: `1px solid ${F.border}` }}>
                         <FileSpreadsheet size={18} style={{ color: F.primary }} />
                         <span className="text-sm flex-1" style={{ color: F.text }}>{fileName}</span>
-                        <span className="text-xs" style={{ color: F.muted }}>{users.length} record{users.length !== 1 ? "s" : ""} found ({users.filter((u) => u.status === "valid").length} valid)</span>
+                        <span className="text-xs" style={{ color: F.muted }}>{users.length} record{users.length !== 1 ? "s" : ""} found ({deletionValidCount} valid)</span>
                         <button onClick={handleResetSheet} className="p-1 rounded hover:bg-gray-100" style={{ color: F.muted }}><X size={15} /></button>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+                        {[
+                          { label: "Total Records", value: users.length, color: F.primary, bg: "#e8f2ff" },
+                          { label: uploadState === "done" ? "Processed" : "Valid", value: uploadState === "done" ? deletionProcessedCount : deletionValidCount, color: F.success, bg: "#f1fdf6" },
+                          { label: uploadState === "done" ? "Failed" : "Invalid", value: uploadState === "done" ? deletionFailedCount : deletionInvalidCount, color: F.error, bg: "#fff2f2" },
+                          { label: "Skipped", value: uploadState === "done" ? deletionInvalidCount : 0, color: F.warning, bg: "#fff8f0" },
+                        ].map((card) => (
+                          <div key={card.label} className="rounded px-4 py-3" style={{ background: card.bg, border: `1px solid ${card.color}30` }}>
+                            <p className="text-xs mb-1" style={{ color: F.muted }}>{card.label}</p>
+                            <p className="text-2xl" style={{ color: card.color }}>{card.value}</p>
+                          </div>
+                        ))}
                       </div>
 
                       {uploadState === "processing" && (
@@ -517,7 +579,7 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
                       {uploadState === "done" && (
                         <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded" style={{ background: "#f1fdf6", border: `1px solid ${F.success}` }}>
                           <CheckCircle2 size={16} style={{ color: F.success }} />
-                          <p className="text-sm" style={{ color: F.success }}>Processing complete. Deletion results are ready for review.</p>
+                          <p className="text-sm" style={{ color: F.success }}>Processing complete. <strong>{deletionProcessedCount}</strong> users deleted, <strong>{deletionFailedCount}</strong> failed.</p>
                         </div>
                       )}
 
@@ -525,7 +587,7 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
                         <div className="px-4 py-3 flex items-center justify-between" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
                           <h3 className="text-sm" style={{ color: F.text }}>User Preview</h3>
                           {uploadState === "done" && (
-                            <button onClick={() => {}} className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded" style={{ border: `1px solid ${F.primary}`, color: F.primary, background: F.white }}>
+                            <button onClick={downloadDeleteReport} className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded" style={{ border: `1px solid ${F.primary}`, color: F.primary, background: F.white }}>
                               <Download size={12} /> Download Report
                             </button>
                           )}
@@ -545,13 +607,7 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
                                 <tr key={user.row} style={{ borderBottom: `1px solid ${F.border}`, background: user.status === "invalid" || user.status === "failed" ? "#fff9f9" : i % 2 === 0 ? F.white : "#fafafa" }}>
                                   <td className="px-4 py-2.5 text-xs" style={{ color: F.muted }}>{user.row}</td>
                                   <td className="px-4 py-2.5 text-xs" style={{ color: F.text }}>{user.username || <span style={{ color: F.error }}>—</span>}</td>
-                                  <td className="px-4 py-2.5">
-                                    {user.status === "valid"
-                                      ? <span className="px-2 py-0.5 text-xs rounded" style={{ background: "#f1fdf6", color: F.success }}>Valid</span>
-                                      : user.status === "processed"
-                                        ? <span className="px-2 py-0.5 text-xs rounded" style={{ background: "#f1fdf6", color: F.success }}>Success</span>
-                                        : <span className="px-2 py-0.5 text-xs rounded" style={{ background: "#fff2f2", color: F.error }}>Failed</span>}
-                                  </td>
+                                  <td className="px-4 py-2.5">{deletionStatusBadge(user.status)}</td>
                                   <td className="px-4 py-2.5 text-xs" style={{ color: user.errorMessage ? F.error : F.muted }}>{user.errorMessage || "—"}</td>
                                 </tr>
                               ))}
@@ -567,7 +623,7 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
                           </button>
                           {uploadState === "preview" && users.some((u) => u.status === "valid") && (
                             <button onClick={handleProcessSheet} className="flex items-center gap-2 px-5 py-2 text-sm rounded text-white" style={{ background: F.primary }}>
-                              <Play size={14} /> Process {users.filter((u) => u.status === "valid").length} Valid Records
+                              <Play size={14} /> Process {deletionValidCount} Valid Records
                             </button>
                           )}
                         </div>
@@ -582,8 +638,6 @@ export function UserDeletion({ variant }: { variant: "single" | "bulk" }) {
                       )}
                     </div>
                   )}
-                </div>
-              </div>
             </>
           )}
 

@@ -400,7 +400,7 @@ function HistoryTab() {
 }
 
 // ── Main Component ───────────────────────────────────────────────────────────
-export function SingleUserCreation() {
+export function SingleUserCreation({ embedded = false }: { embedded?: boolean }) {
   const { systems, logAction } = useAppContext();
   const [activeTab, setActiveTab] = useState<"creation" | "history">("creation");
   const [selectedSystem, setSelectedSystem] = useState("");
@@ -487,12 +487,14 @@ export function SingleUserCreation() {
 
   return (
     <div>
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1"><UserPlus size={20} style={{ color: F.primary }} /><h1 className="text-xl" style={{ color: F.text }}>Single User Creation</h1></div>
-          <p className="text-sm" style={{ color: F.muted }}>Create a new SAP user account with roles and validity periods.</p>
+      {!embedded && (
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1"><UserPlus size={20} style={{ color: F.primary }} /><h1 className="text-xl" style={{ color: F.text }}>Single User Creation</h1></div>
+            <p className="text-sm" style={{ color: F.muted }}>Create a new SAP user account with roles and validity periods.</p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-0 mb-6" style={{ borderBottom: `2px solid ${F.border}` }}>
