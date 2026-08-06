@@ -342,7 +342,7 @@ function HistoryTab() {
   );
 }
 
-export function BulkUserCreation() {
+export function BulkUserCreation({ embedded = false }: { embedded?: boolean }) {
   const { systems, logAction } = useAppContext();
   const [activeTab, setActiveTab] = useState<"creation" | "history">("creation");
   const [selectedSystem, setSelectedSystem] = useState("");
@@ -473,13 +473,20 @@ export function BulkUserCreation() {
 
   return (
     <div>
-      <div className="mb-6 flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-1"><Users size={20} style={{ color: F.primary }} /><h1 className="text-xl" style={{ color: F.text }}>Bulk User Creation</h1></div>
-          <p className="text-sm" style={{ color: F.muted }}>Upload an Excel file to provision multiple SAP users at once.</p>
+      {!embedded && (
+        <div className="mb-6 flex items-start justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1"><Users size={20} style={{ color: F.primary }} /><h1 className="text-xl" style={{ color: F.text }}>Bulk User Creation</h1></div>
+            <p className="text-sm" style={{ color: F.muted }}>Upload an Excel file to provision multiple SAP users at once.</p>
+          </div>
+          <button onClick={downloadTemplate} className="flex items-center gap-2 px-4 py-2 text-sm rounded" style={{ border: `1px solid ${F.primary}`, color: F.primary, background: F.white }}><Download size={14} /> Download Template</button>
         </div>
-        <button onClick={downloadTemplate} className="flex items-center gap-2 px-4 py-2 text-sm rounded" style={{ border: `1px solid ${F.primary}`, color: F.primary, background: F.white }}><Download size={14} /> Download Template</button>
-      </div>
+      )}
+      {embedded && activeTab === "creation" && (
+        <div className="mb-4 flex justify-end">
+          <button onClick={downloadTemplate} className="flex items-center gap-2 px-4 py-2 text-sm rounded" style={{ border: `1px solid ${F.primary}`, color: F.primary, background: F.white }}><Download size={14} /> Download Template</button>
+        </div>
+      )}
 
       <div className="flex gap-0 mb-6" style={{ borderBottom: `2px solid ${F.border}` }}>
         <button id="tab-bulk-creation" onClick={() => setActiveTab("creation")} className="flex items-center gap-2 px-5 py-2.5 text-sm transition-all" style={tabBtn(activeTab === "creation")}><Users size={15} /> Bulk Creation</button>

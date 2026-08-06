@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { UserPlus, Upload, KeyRound, Lock, ChevronRight, Bell, Settings, Menu, X, Database, ClipboardList, CheckCircle2, AlertCircle, Info, User, LogOut, LayoutDashboard, BarChart3, Trash2 } from "lucide-react";
+import { UserPlus, Upload, KeyRound, Lock, ChevronRight, Bell, Settings, Menu, X, Database, ClipboardList, CheckCircle2, AlertCircle, Info, User, LogOut, LayoutDashboard, BarChart3, Trash2, Users } from "lucide-react";
 import { AppProvider } from "./contexts/AppContext";
 import { AuditLog, SapSystem } from "./contexts/AppContext";
 import { SingleUserCreation } from "./components/SingleUserCreation";
@@ -20,7 +20,7 @@ import { Analytics } from "./components/Analytics";
 import { logoutApi, getCurrentUser, User as AuthUser } from "../api/authApi";
 import logoImage from "../imports/image.png";
 
-type ActiveView = "dashboard" | "analytics" | "single-user" | "single-delete" | "bulk-delete" | "bulk-user" | "password-reset" | "lock-unlock" | "data-management" | "audit-logs";
+type ActiveView = "dashboard" | "analytics" | "single-user" | "bulk-user" | "password-reset" | "lock-unlock" | "data-management" | "audit-logs";
 type PageView =
   | { type: "main" }
   | { type: "settings" }
@@ -40,10 +40,8 @@ const NAV_GROUPS = [
   {
     label: "User Management",
     items: [
-      { id: "single-user" as ActiveView, label: "Single User Creation", icon: UserPlus },
-      { id: "single-delete" as ActiveView, label: "Single User Deletion", icon: Trash2 },
-      { id: "bulk-user" as ActiveView, label: "Bulk User Creation", icon: Upload },
-      { id: "bulk-delete" as ActiveView, label: "Bulk User Deletion", icon: Upload },
+      { id: "single-user" as ActiveView, label: "Single User", icon: UserPlus },
+      { id: "bulk-user" as ActiveView, label: "Bulk User", icon: Users },
       { id: "password-reset" as ActiveView, label: "Password Reset", icon: KeyRound },
       { id: "lock-unlock" as ActiveView, label: "Lock / Unlock User", icon: Lock },
     ],
@@ -194,6 +192,86 @@ function LiveClock() {
     <span className="text-xs hidden md:block" style={{ color: "rgba(255,255,255,0.55)", fontVariantNumeric: "tabular-nums", letterSpacing: "0.01em" }}>
       {dateStr} · {timeStr}
     </span>
+  );
+}
+
+function OperationTab({
+  active,
+  icon: Icon,
+  label,
+  description,
+  onClick,
+}: {
+  active: boolean;
+  icon: React.ElementType;
+  label: string;
+  description: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-start gap-3 rounded px-4 py-3 text-left transition-all"
+      style={{
+        background: active ? "var(--app-active)" : "var(--app-surface)",
+        border: active ? "1px solid #0070f2" : "1px solid var(--app-border)",
+        boxShadow: active ? "0 1px 3px rgba(0,112,242,0.12)" : "none",
+      }}
+    >
+      <span className="mt-0.5 flex h-8 w-8 items-center justify-center rounded" style={{ background: active ? "#0070f2" : "var(--app-bg)", color: active ? "#fff" : "var(--app-muted)" }}>
+        <Icon size={16} />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold" style={{ color: active ? "#0070f2" : "var(--app-text)" }}>{label}</span>
+        <span className="mt-0.5 block text-xs" style={{ color: "var(--app-muted)" }}>{description}</span>
+      </span>
+    </button>
+  );
+}
+
+function SingleUserManagement() {
+  const [operation, setOperation] = useState<"create" | "delete">("create");
+
+  return (
+    <div>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <UserPlus size={20} style={{ color: "#0070f2" }} />
+            <h1 className="text-xl" style={{ color: "var(--app-text)" }}>Single User</h1>
+          </div>
+          <p className="text-sm" style={{ color: "var(--app-muted)" }}>Create or delete one SAP user account at a time.</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-2">
+        <OperationTab active={operation === "create"} icon={UserPlus} label="Create User" description="Add one SAP account with roles and validity." onClick={() => setOperation("create")} />
+        <OperationTab active={operation === "delete"} icon={Trash2} label="Delete User" description="Remove one SAP account from a selected system." onClick={() => setOperation("delete")} />
+      </div>
+      {operation === "create" ? <SingleUserCreation embedded /> : <UserDeletion variant="single" embedded />}
+    </div>
+  );
+}
+
+function BulkUserManagement() {
+  const [operation, setOperation] = useState<"create" | "delete">("create");
+
+  return (
+    <div>
+      <div className="mb-6 flex items-start justify-between">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Users size={20} style={{ color: "#0070f2" }} />
+            <h1 className="text-xl" style={{ color: "var(--app-text)" }}>Bulk User</h1>
+          </div>
+          <p className="text-sm" style={{ color: "var(--app-muted)" }}>Create or delete multiple SAP users in batch workflows.</p>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-3 mb-6 sm:grid-cols-2">
+        <OperationTab active={operation === "create"} icon={Upload} label="Bulk Create" description="Upload a template to provision multiple users." onClick={() => setOperation("create")} />
+        <OperationTab active={operation === "delete"} icon={Trash2} label="Bulk Delete" description="Upload or enter a list to remove users in batch." onClick={() => setOperation("delete")} />
+      </div>
+      {operation === "create" ? <BulkUserCreation embedded /> : <UserDeletion variant="bulk" embedded />}
+    </div>
   );
 }
 
@@ -396,10 +474,8 @@ function Shell({ user, onLogout }: { user: AuthUser | null; onLogout: () => void
               {activeView === "analytics" && (
                 <Analytics onNavigate={(v) => setActiveView(v as ActiveView)} />
               )}
-              {activeView === "single-user" && <SingleUserCreation />}
-              {activeView === "single-delete" && <UserDeletion variant="single" />}
-              {activeView === "bulk-delete" && <UserDeletion variant="bulk" />}
-              {activeView === "bulk-user" && <BulkUserCreation />}
+              {activeView === "single-user" && <SingleUserManagement />}
+              {activeView === "bulk-user" && <BulkUserManagement />}
               {activeView === "password-reset" && (
                 <PasswordReset displayPreferences={appSettings.displayPreferences} />
               )}
