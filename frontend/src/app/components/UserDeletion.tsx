@@ -13,14 +13,16 @@ const inputCls = "px-3 py-1.5 text-xs rounded outline-none w-full";
 const inputStyle = { border: `1px solid ${F.border}`, background: F.white, color: F.text };
 
 function SystemSelector({ systems, selectedId, onChange }: { systems: ReturnType<typeof useAppContext>["systems"]; selectedId: string; onChange: (id: string) => void; }) {
-  const active = systems.filter((s) => s.status === "Active");
+  // Keep systems selectable when the backend omits status or returns it with different casing.
+  const active = systems.filter((s) => !s.status || String(s.status).toLowerCase() === "active");
+  const selectable = active.length > 0 ? active : systems;
   return (
     <div className="mb-5 flex items-center gap-3 p-3 rounded" style={{ background: "#e8f2ff", border: `1px solid #0070f230` }}>
       <Server size={15} style={{ color: F.primary, flexShrink: 0 }} />
       <label className="text-sm flex-shrink-0" style={{ color: F.primary }}>Target System:</label>
       <select value={selectedId} onChange={(e) => onChange(e.target.value)} className="flex-1 px-3 py-1.5 text-sm rounded outline-none" style={{ border: `1px solid #0070f240`, background: F.white, color: F.text }}>
         <option value="">— Select SAP System —</option>
-        {active.map((s) => <option key={s.id} value={s.id}>{s.systemId} – {s.systemName} (Client {s.client})</option>)}
+        {selectable.map((s) => <option key={s.id} value={s.id}>{s.systemId} – {s.systemName} (Client {s.client})</option>)}
       </select>
     </div>
   );
@@ -242,12 +244,12 @@ export function UserDeletion({ variant, embedded = false }: { variant: "single" 
 
       {variant === "single" && (
         <>
-          <SystemSelector systems={systems} selectedId={selectedSystem} onChange={setSelectedSystem} />
-
           <div className="flex gap-0 mb-6" style={{ borderBottom: `2px solid ${F.border}` }}>
             <button onClick={() => setHistoryActive(false)} className="flex items-center gap-2 px-5 py-2.5 text-sm transition-all" style={{ color: !historyActive ? F.primary : F.muted, fontWeight: !historyActive ? "600" : "400", borderBottom: !historyActive ? `2px solid ${F.primary}` : "2px solid transparent", marginBottom: "-2px", background: "transparent" }}><Trash2 size={15} /> User Deletion</button>
             <button onClick={() => setHistoryActive(true)} className="flex items-center gap-2 px-5 py-2.5 text-sm transition-all" style={{ color: historyActive ? F.primary : F.muted, fontWeight: historyActive ? "600" : "400", borderBottom: historyActive ? `2px solid ${F.primary}` : "2px solid transparent", marginBottom: "-2px", background: "transparent" }}><History size={15} /> History</button>
           </div>
+
+          <SystemSelector systems={systems} selectedId={selectedSystem} onChange={setSelectedSystem} />
 
           {!historyActive && (
         <div className="rounded" style={{ background: F.white, border: `1px solid ${F.border}` }}>
