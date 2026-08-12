@@ -1,143 +1,214 @@
 # SAP Basis Console
 
-An enterprise-grade web application for SAP Basis Administration and User Lifecycle Management. Built with React 18, TypeScript, Vite, Tailwind CSS, and Radix UI components, this application provides Basis administrators with a consolidated dashboard for monitoring SAP systems, provisioning users, resetting passwords, executing bulk onboarding operations, and maintaining complete audit trails.
+SAP Basis Console is a React/TypeScript web console backed by a Flask API for SAP user administration. It provides authenticated operators with SAP system selection, user search and lifecycle operations, bulk Excel workflows, dashboard metrics, and audit history.
 
----
+## Current architecture
 
-## Executive Summary
+```text
+Browser (React + Vite)
+        │ /api/*
+        ▼
+Flask application (backend/run.py)
+        ├── MongoDB: users, sessions, SAP systems, audit logs
+        └── SAP Gateway OData: ZBSUSERODATA_SRV
+```
 
-SAP Basis Console streamlines administrative workflows across SAP system landscapes. It replaces fragmented GUI transactions with a consolidated, modern web interface that ensures policy enforcement, audit readiness, and operational efficiency across Development, Quality Assurance, Production, and Sandbox environments.
+The frontend is served by Vite during development. The backend is a separate Flask service; a reverse proxy or equivalent configuration should route `/api` requests from the frontend to the backend.
 
----
+## Features implemented
 
-## Core Capabilities
+- JWT login, refresh, logout, forgot-password, and reset-password flows.
+- Role-aware access for `Super Admin`, `Basis Admin`, and `Viewer`.
+- SAP system listing for `SHD`, `EMP`, `EMQ`, and `EMD`.
+- SAP user search, creation, password reset, lock/unlock, role assignment, profile assignment, validity extension, and deletion.
+- Bulk user creation and deletion using Excel upload, validation previews, processing, and downloadable reports.
+- Dashboard statistics and seven-day chart data.
+- Filterable audit logs, activity history, and CSV export.
+- SAP OData requests with SAP client headers, CSRF handling, retries, timeout control, and an explicit mock mode for tests.
 
-### Landscape Overview and Analytics
-* **Centralized System Metrics**: Real-time monitoring of active SAP systems, registered user accounts, lock states, and environment health.
-* **Telemetry and Reporting**: Visualizations covering user creation trends, lock/unlock frequency, module activity breakdown, and environment allocation.
-* **Performance Monitoring**: System response latency metrics and operation success/failure rates.
+## Technology
 
-### User Lifecycle Management
-* **Single User Provisioning**: Standardized SAP user creation supporting personal address data, logon parameters, user groups, role/profile assignments, and custom parameter values (with F4 Value Help support).
-* **Bulk User Onboarding**: Multi-user onboarding via CSV import or interactive grid editor with inline validation, duplicate checking, and execution logs.
-* **Password Administration**: Secure password reset tool equipped with configurable strength rules, automated password generation, and forced password change toggles.
-* **Account Lock Management**: Single and batch account locking/unlocking with audit reason logging (e.g., Security Violation, Inactivity, System Maintenance, User Request).
-
-### Governance and Auditability
-* **System Registry**: Inventory management for SAP SID instances across Development (`DEV`), Quality Assurance (`QAS`), Production (`PRD`), and Sandbox (`SBX`) environments. Includes connection testing and status control.
-* **Audit Trail Management**: Comprehensive logging of administrative actions for compliance (e.g., SOX and internal audit standards). Supports multi-criteria filtering by date range, module, target system, status, and originator IP address.
-* **Detailed Audit Drill-Down**: Full forensic audit view containing session identifiers, execution duration, RFC error codes, and structured Before/After state comparisons.
-
-### System Configuration and User Experience
-* **Enterprise UI Architecture**: Design palette aligned with SAP Fiori guidelines, featuring high-contrast modes, responsive layout drawer navigation, and accessible UI controls.
-* **Notification Engine**: In-app alert system for critical system events, bulk job completion notifications, security warnings, and scheduled maintenance schedules.
-* **Administrator Preferences**: Configurable RFC timeout limits, target SAP client defaults, security policies, and session controls.
-
----
-
-## Technology Stack
-
-| Layer | Technology |
+| Area | Technology |
 |---|---|
-| **Frontend Framework** | React 18, TypeScript |
-| **Build System & Server** | Vite 6 |
-| **Styling & Design System** | Tailwind CSS v4, Custom SAP Fiori CSS Tokens |
-| **UI Components & Icons** | Radix UI, Lucide Icons |
-| **Data Visualization** | Recharts |
-| **Animation Engine** | Framer Motion |
-| **State & Form Management** | React Context API, Custom Hooks, React Hook Form |
+| Frontend | React 18, TypeScript, Vite 6 |
+| UI | Tailwind CSS 4, Radix UI, MUI, Lucide, Recharts |
+| Backend | Python, Flask 3 |
+| Authentication | Flask-JWT-Extended |
+| Database | MongoDB via PyMongo |
+| SAP integration | HTTP/OData via `requests` against `ZBSUSERODATA_SRV` |
+| Bulk processing | `openpyxl`, `pandas` |
+| Tests | pytest, mongomock |
 
----
+## Repository layout
 
-## Project Structure
-
-```
-SAP-Basis-Console/
-├── README.md                 # Project documentation
-└── frontend/                 # Frontend React Application
-    ├── public/               # Static assets & HTML template
-    ├── src/
-    │   ├── app/
-    │   │   ├── components/   # Application modules & view pages
-    │   │   │   ├── pages/    # View pages (Audit detail, System detail, Settings, Profile, Sign-in)
-    │   │   │   ├── ui/       # Shared UI primitives (Buttons, Modals, Inputs, Cards)
-    │   │   │   ├── Analytics.tsx
-    │   │   │   ├── AuditLogs.tsx
-    │   │   │   ├── BulkUserCreation.tsx
-    │   │   │   ├── Dashboard.tsx
-    │   │   │   ├── DataManagement.tsx
-    │   │   │   ├── LockUnlockUser.tsx
-    │   │   │   ├── PasswordReset.tsx
-    │   │   │   └── SingleUserCreation.tsx
-    │   │   ├── contexts/     # Application state & SAP mock data context
-    │   │   └── App.tsx       # Root layout & view router
-    │   ├── imports/          # Design tokens & exported component utilities
-    │   ├── styles/           # CSS stylesheets
-    │   ├── index.css         # Global Tailwind styles & custom utility classes
-    │   └── main.tsx          # Application entry point
-    ├── index.html            # Vite HTML template
-    ├── package.json          # Dependencies & scripts
-    ├── postcss.config.mjs    # PostCSS configuration
-    └── vite.config.ts        # Vite configuration
+```text
+.
+├── backend/
+│   ├── app/
+│   │   ├── auth/          # Login, token, and password recovery routes
+│   │   ├── routes/        # SAP, dashboard, and audit blueprints
+│   │   ├── sap/           # OData client and SAP service layer
+│   │   ├── excel/         # Excel templates, parsing, validation, reports
+│   │   ├── models/        # User, SAP system, and audit models
+│   │   ├── repositories/  # MongoDB access
+│   │   ├── schemas/       # Request validation schemas
+│   │   └── config/        # Environment-backed configuration
+│   ├── run.py             # Flask entry point
+│   ├── seed.py            # MongoDB indexes and development seed data
+│   ├── requirements.txt
+│   └── tests/
+├── frontend/
+│   ├── src/api/           # Auth, SAP, and audit API clients
+│   └── src/app/           # Pages, components, context, and UI
+└── README.md
 ```
 
----
+## Prerequisites
 
-## Getting Started
+- Node.js 18 or later and npm.
+- Python 3.11+ recommended.
+- MongoDB available at the configured URI.
+- Access to the SAP Gateway service when live integration is enabled.
 
-### Prerequisites
+## Configuration
 
-* **Node.js**: Version 18.0.0 or higher
-* **Package Manager**: npm (included with Node.js), pnpm, or yarn
+Create a `.env` file in the project root or backend working directory. The backend loads it with `python-dotenv`.
 
-### Installation and Setup
+```dotenv
+SECRET_KEY=replace-with-a-secret
+JWT_SECRET_KEY=replace-with-a-different-secret
+MONGO_URI=mongodb://localhost:27017/sap_basis_console
+MONGO_DB=sap_basis_console
+SAP_MOCK=false
+SAP_CLIENT=100
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/RishabRebala-03/SAP-Basis-Console.git
-   cd SAP-Basis-Console
-   ```
+SAP_SHD_URL=http://<host>:<port>/sap/opu/odata/SAP/ZBSUSERODATA_SRV
+SAP_SHD_USER=<service-user>
+SAP_SHD_PASS=<service-password>
+SAP_EMP_URL=http://<host>:<port>/sap/opu/odata/SAP/ZBSUSERODATA_SRV
+SAP_EMP_USER=<service-user>
+SAP_EMP_PASS=<service-password>
+SAP_EMQ_URL=http://<host>:<port>/sap/opu/odata/SAP/ZBSUSERODATA_SRV
+SAP_EMQ_USER=<service-user>
+SAP_EMQ_PASS=<service-password>
+SAP_EMD_URL=http://<host>:<port>/sap/opu/odata/SAP/ZBSUSERODATA_SRV
+SAP_EMD_USER=<service-user>
+SAP_EMD_PASS=<service-password>
+```
 
-2. Navigate to the frontend workspace:
-   ```bash
-   cd frontend
-   ```
+`SAP_MOCK=true` is intended for tests and local development. Live mode uses the configured URLs and credentials, sends CSRF-protected mutating requests, retries selected transient HTTP errors, and uses a 30-second SAP request timeout. Do not commit credentials or use the development defaults in a real environment.
 
-3. Install project dependencies:
-   ```bash
-   npm install
-   ```
+## Run locally
 
-4. Launch the local development server:
-   ```bash
-   npm run dev
-   ```
-
-5. Access the application in your web browser at `http://localhost:5173`.
-
-### Production Build
-
-To assemble a production bundle:
+From the repository root:
 
 ```bash
-npm run build
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+python backend/seed.py
+python backend/run.py
 ```
 
-The compiled assets will be placed in the `frontend/dist/` directory.
+In a second terminal:
 
----
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-## Architecture Roadmap
+The Vite development server normally runs at `http://localhost:5173`; the Flask API defaults to `http://127.0.0.1:5000`. Set `HOST` and `PORT` to change the backend bind address.
 
-The application currently operates with a client-side state provider (`AppContext`) managing simulated SAP landscape data. Planned architectural extensions include:
+For production-style serving, run the Flask app with Gunicorn, for example:
 
-* **Backend Service Gateway**: Implementation of a dedicated Node.js or Python FastAPI API service layer.
-* **SAP RFC / BAPI Connectivity**: Direct integration with SAP NetWeaver and S/4HANA systems using RFC connectors (`node-rfc` / `PyRFC`) to invoke standard SAP BAPIs (`BAPI_USER_CREATE1`, `BAPI_USER_LOCK`, `BAPI_USER_UNLOCK`, `BAPI_USER_CHANGE_PASSWORD`).
-* **Enterprise Authentication**: SSO and SAML 2.0 / OAuth2 integration with enterprise identity providers (Azure Active Directory, Okta, SAP IAS).
-* **Role-Based Access Control (RBAC)**: Fine-grained administrative permission tiers (e.g., Read-Only Auditor, Junior Basis Administrator, Lead Administrator).
-* **Automated System Health Checks**: Scheduled polling of SAP application servers (`RFC_PING`).
+```bash
+gunicorn -b 127.0.0.1:5000 backend.run:app
+```
 
----
+Build the frontend with `npm run build` from `frontend/`; output is written to `frontend/dist/`.
+
+## API overview
+
+All protected endpoints require `Authorization: Bearer <access-token>`. The API is rooted at `/api`.
+
+### Authentication
+
+| Method | Endpoint | Purpose |
+|---|---|---|
+| POST | `/api/auth/login` | Issue access and refresh tokens |
+| POST | `/api/auth/refresh` | Issue a new access token |
+| POST | `/api/auth/logout` | Revoke a refresh-token session |
+| POST | `/api/auth/forgot-password` | Generate a development reset token |
+| POST | `/api/auth/reset-password` | Apply a password reset token |
+
+### SAP operations
+
+`GET /api/sap/systems` lists active systems. The SAP operation endpoints are:
+
+```text
+GET  /api/sap/user-search
+POST /api/sap/create-user
+POST /api/sap/reset-password
+POST /api/sap/lock
+POST /api/sap/unlock
+POST /api/sap/assign-role
+POST /api/sap/assign-profile
+POST /api/sap/extend-validity
+POST /api/sap/delete-user
+POST /api/sap/bulk-delete
+GET  /api/sap/template
+GET  /api/sap/delete-template
+POST /api/sap/bulk-create/preview
+POST /api/sap/bulk-create/process
+POST /api/sap/bulk-delete/preview
+POST /api/sap/bulk-delete/process
+GET  /api/sap/bulk-create/report/<report_id>
+```
+
+Most SAP requests identify the target with `system_id` (or `systemId`); `X-SAP-System` is also accepted by the backend. Mutating SAP and audit operations are role-protected and are recorded in MongoDB.
+
+### Dashboard and audit
+
+```text
+GET  /api/dashboard/stats
+GET  /api/dashboard/chart
+POST /api/audit
+GET  /api/audit
+GET  /api/activity                 # add format=csv for CSV download
+```
+
+Audit filters include username, SAP system, action, status, and date range (`YYYY-MM-DD`).
+
+## SAP integration details
+
+The service targets the custom SAP Gateway service `ZBSUSERODATA_SRV` and uses these entity sets/actions:
+
+| Operation | OData resource |
+|---|---|
+| Search/lock state | `UserLockSet` |
+| Lock/unlock | `UserLockSet` actions `Lock` / `UnLock` |
+| Password reset | `UserPasswordResetSet` |
+| Single-user maintenance | `UserCreationSet` |
+| Bulk creation | `UserCreateBulkHdrSet` and `UserCreateBulkItmSet` |
+
+SAP dates are normalized to `YYYYMMDD`. The service expects SAP responses with a status/message convention (`Status: S` for success and `Status: E` for an SAP error), and returns the SAP response to the API caller after validation.
+
+## Tests
+
+Run the backend test suite from the repository root:
+
+```bash
+pytest backend/tests
+```
+
+The test configuration uses `mongomock` and sets `SAP_MOCK=true`, so tests do not require a live MongoDB or SAP system.
+
+## Development notes
+
+- Keep secrets in environment variables; never commit SAP credentials, JWT secrets, or production connection strings.
+- The backend currently exposes system listing only for the SAP system registry. Frontend helpers for system create/update/delete and session listing exist, but matching backend routes are not currently implemented.
+- `backend/sap_metadata.xml` and related metadata files document the SAP service used by the integration.
 
 ## License
 
