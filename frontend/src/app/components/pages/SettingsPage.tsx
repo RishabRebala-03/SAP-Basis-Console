@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, Shield, Bell, Monitor, ChevronRight, ToggleLeft, ToggleRight, Save, CheckCircle2 } from "lucide-react";
 
 const F = {
@@ -96,13 +96,22 @@ export function SettingsPage({ settings, onChange, onBack }: {
 }) {
   const [active, setActive] = useState<Section>("display");
   const [saved, setSaved] = useState(false);
+  const [draftSettings, setDraftSettings] = useState<AppSettings>(settings);
+
+  useEffect(() => {
+    setDraftSettings(settings);
+  }, [settings]);
 
   const handleSave = () => {
+    onChange(draftSettings);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const set = (k: keyof AppSettings) => (v: string | boolean) => onChange({ [k]: v });
+  const set = (k: keyof AppSettings) => (v: string | boolean) => {
+    setSaved(false);
+    setDraftSettings((current) => ({ ...current, [k]: v }));
+  };
 
   return (
     <div className="min-h-full" style={{ background: F.bg }}>
@@ -167,10 +176,10 @@ export function SettingsPage({ settings, onChange, onBack }: {
                   <p className="text-xs mt-0.5" style={{ color: F.muted }}>Localization, formatting, and regional preferences.</p>
                 </div>
                 <div className="px-6">
-                  <SelectField label="Language" sub="Interface display language" value={settings.language} options={["English (US)", "English (UK)", "German (DE)", "French (FR)", "Japanese (JP)", "Chinese (Simplified)"]} onChange={set("language") as (v: string) => void} />
-                  <SelectField label="Date Format" sub="How dates are displayed throughout the application" value={settings.dateFormat} options={["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD", "DD-MMM-YYYY"]} onChange={set("dateFormat") as (v: string) => void} />
-                  <SelectField label="Time Zone" sub="Time zone for displaying timestamps" value={settings.timezone} options={["UTC-8 (Pacific)", "UTC-5 (Eastern)", "UTC+0 (London)", "UTC+1 (Berlin/Paris)", "UTC+3 (Moscow)", "UTC+5:30 (India)", "UTC+8 (Singapore/HK)", "UTC+9 (Tokyo)"]} onChange={set("timezone") as (v: string) => void} />
-                  <SelectField label="Default System" sub="Pre-selected system in provisioning modules" value={settings.defaultSystem || "None"} options={["None", "SHD - Development", "EMP - Development", "EMQ - Development", "EMD - Development"]} onChange={set("defaultSystem") as (v: string) => void} />
+                  <SelectField label="Language" sub="Interface display language" value={draftSettings.language} options={["English (US)", "English (UK)", "German (DE)", "French (FR)", "Japanese (JP)", "Chinese (Simplified)"]} onChange={set("language") as (v: string) => void} />
+                  <SelectField label="Date Format" sub="How dates are displayed throughout the application" value={draftSettings.dateFormat} options={["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD", "DD-MMM-YYYY"]} onChange={set("dateFormat") as (v: string) => void} />
+                  <SelectField label="Time Zone" sub="Time zone for displaying timestamps" value={draftSettings.timezone} options={["UTC-8 (Pacific)", "UTC-5 (Eastern)", "UTC+0 (London)", "UTC+1 (Berlin/Paris)", "UTC+3 (Moscow)", "UTC+5:30 (India)", "UTC+8 (Singapore/HK)", "UTC+9 (Tokyo)"]} onChange={set("timezone") as (v: string) => void} />
+                  <SelectField label="Default System" sub="Pre-selected system in provisioning modules" value={draftSettings.defaultSystem || "None"} options={["None", "SHD - Development", "EMP - Development", "EMQ - Development", "EMD - Development"]} onChange={set("defaultSystem") as (v: string) => void} />
                 </div>
               </div>
             )}
@@ -181,8 +190,8 @@ export function SettingsPage({ settings, onChange, onBack }: {
                   <p className="text-xs mt-0.5" style={{ color: F.muted }}>Session management and audit trail configuration.</p>
                 </div>
                 <div className="px-6">
-                  <SelectField label="Session Timeout" sub="Automatically log out after inactivity" value={settings.sessionTimeout} options={["15 minutes", "30 minutes", "1 hour", "2 hours", "4 hours", "8 hours"]} onChange={set("sessionTimeout") as (v: string) => void} />
-                  <SelectField label="Audit Log Retention" sub="Duration to retain audit log entries" value={settings.auditRetention} options={["30 days", "60 days", "90 days", "180 days", "1 year", "Indefinite"]} onChange={set("auditRetention") as (v: string) => void} />
+                  <SelectField label="Session Timeout" sub="Automatically log out after inactivity" value={draftSettings.sessionTimeout} options={["15 minutes", "30 minutes", "1 hour", "2 hours", "4 hours", "8 hours"]} onChange={set("sessionTimeout") as (v: string) => void} />
+                  <SelectField label="Audit Log Retention" sub="Duration to retain audit log entries" value={draftSettings.auditRetention} options={["30 days", "60 days", "90 days", "180 days", "1 year", "Indefinite"]} onChange={set("auditRetention") as (v: string) => void} />
                   <div className="py-4" style={{ borderBottom: `1px solid ${F.border}` }}>
                     <p className="text-sm mb-3" style={{ color: F.text }}>Current Session</p>
                     <div className="grid grid-cols-2 gap-3">
@@ -212,24 +221,30 @@ export function SettingsPage({ settings, onChange, onBack }: {
                   <p className="text-xs mt-0.5" style={{ color: F.muted }}>Configure how and when you receive alerts.</p>
                 </div>
                 <div className="px-6">
-                  <ToggleField label="Email Alerts" sub="Receive provisioning results and failures by email" value={settings.emailAlerts} onChange={set("emailAlerts") as (v: boolean) => void} />
-                  <ToggleField label="Browser Notifications" sub="Show desktop push notifications for completed actions" value={settings.browserNotifs} onChange={set("browserNotifs") as (v: boolean) => void} />
+                  <ToggleField label="Email Alerts" sub="Receive provisioning results and failures by email" value={draftSettings.emailAlerts} onChange={set("emailAlerts") as (v: boolean) => void} />
+                  <ToggleField label="Browser Notifications" sub="Show desktop push notifications for completed actions" value={draftSettings.browserNotifs} onChange={set("browserNotifs") as (v: boolean) => void} />
                   <div className="py-4" style={{ borderBottom: `1px solid ${F.border}` }}>
                     <p className="text-sm mb-3" style={{ color: F.text }}>Notification Triggers</p>
                     <div className="flex flex-col gap-2">
                       {([
-                        ["User creation success", settings.notificationTriggers.userCreationSuccess, "userCreationSuccess"],
-                        ["User creation failure", settings.notificationTriggers.userCreationFailure, "userCreationFailure"],
-                        ["Bulk import completion", settings.notificationTriggers.bulkImportCompletion, "bulkImportCompletion"],
-                        ["Password reset", settings.notificationTriggers.passwordReset, "passwordReset"],
-                        ["Wrong-password unlock events", settings.notificationTriggers.wrongPasswordUnlockEvents, "wrongPasswordUnlockEvents"],
-                        ["System registry changes", settings.notificationTriggers.systemRegistryChanges, "systemRegistryChanges"],
+                        ["User creation success", draftSettings.notificationTriggers.userCreationSuccess, "userCreationSuccess"],
+                        ["User creation failure", draftSettings.notificationTriggers.userCreationFailure, "userCreationFailure"],
+                        ["Bulk import completion", draftSettings.notificationTriggers.bulkImportCompletion, "bulkImportCompletion"],
+                        ["Password reset", draftSettings.notificationTriggers.passwordReset, "passwordReset"],
+                        ["Wrong-password unlock events", draftSettings.notificationTriggers.wrongPasswordUnlockEvents, "wrongPasswordUnlockEvents"],
+                        ["System registry changes", draftSettings.notificationTriggers.systemRegistryChanges, "systemRegistryChanges"],
                       ] as const).map(([label, value, key]) => (
                         <div key={label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
                           <span className="text-sm" style={{ color: F.text }}>{label}</span>
                           <Toggle
                             value={value}
-                            onChange={(next) => onChange({ notificationTriggers: { ...settings.notificationTriggers, [key]: next } })}
+                            onChange={(next) => {
+                              setSaved(false);
+                              setDraftSettings((current) => ({
+                                ...current,
+                                notificationTriggers: { ...current.notificationTriggers, [key]: next },
+                              }));
+                            }}
                           />
                         </div>
                       ))}
@@ -246,21 +261,27 @@ export function SettingsPage({ settings, onChange, onBack }: {
                   <p className="text-xs mt-0.5" style={{ color: F.muted }}>UI density, theme, and layout preferences.</p>
                 </div>
                 <div className="px-6">
-                  <SelectField label="Display Density" sub="Controls spacing and padding throughout the UI" value={settings.density} options={["Compact", "Comfortable", "Spacious"]} onChange={set("density") as (v: string) => void} />
-                  <SelectField label="Theme" sub="Application colour theme (Light is the SAP Horizon default)" value={settings.theme} options={["Light", "Dark"]} onChange={set("theme") as (v: string) => void} />
+                  <SelectField label="Display Density" sub="Controls spacing and padding throughout the UI" value={draftSettings.density} options={["Compact", "Comfortable", "Spacious"]} onChange={set("density") as (v: string) => void} />
+                  <SelectField label="Theme" sub="Application colour theme (Light is the SAP Horizon default)" value={draftSettings.theme} options={["Light", "Dark"]} onChange={set("theme") as (v: string) => void} />
                   <div className="py-4" style={{ borderBottom: `1px solid ${F.border}` }}>
                     <p className="text-sm mb-3" style={{ color: F.text }}>Table Preferences</p>
                     <div className="flex flex-col gap-3">
                       {([
-                        ["Alternate row striping", settings.displayPreferences.alternateRowStriping, "alternateRowStriping"],
-                        ["Freeze first column on scroll", settings.displayPreferences.freezeFirstColumn, "freezeFirstColumn"],
-                        ["Show row numbers", settings.displayPreferences.showRowNumbers, "showRowNumbers"],
+                        ["Alternate row striping", draftSettings.displayPreferences.alternateRowStriping, "alternateRowStriping"],
+                        ["Freeze first column on scroll", draftSettings.displayPreferences.freezeFirstColumn, "freezeFirstColumn"],
+                        ["Show row numbers", draftSettings.displayPreferences.showRowNumbers, "showRowNumbers"],
                       ] as const).map(([label, value, key]) => (
                         <div key={label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
                           <span className="text-sm" style={{ color: F.text }}>{label}</span>
                           <Toggle
                             value={value}
-                            onChange={(next) => onChange({ displayPreferences: { ...settings.displayPreferences, [key]: next } })}
+                            onChange={(next) => {
+                              setSaved(false);
+                              setDraftSettings((current) => ({
+                                ...current,
+                                displayPreferences: { ...current.displayPreferences, [key]: next },
+                              }));
+                            }}
                           />
                         </div>
                       ))}
