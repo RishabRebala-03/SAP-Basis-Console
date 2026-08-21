@@ -101,7 +101,7 @@ export function SettingsPage({ settings, onChange, onBack }: {
       <div className="p-6 max-w-6xl mx-auto">
         {/* Page Title */}
         <div className="mb-6">
-          <h1 className="text-xl" style={{ color: F.text }}>Application Settings</h1>
+          <h1 className="text-xl" style={{ color: F.text,fontWeight:700 }}>Application Settings</h1>
           <p className="text-sm mt-1" style={{ color: F.muted }}>Configure application preferences, security policies, and display options.</p>
         </div>
 
@@ -150,8 +150,8 @@ export function SettingsPage({ settings, onChange, onBack }: {
 
             {active === "security" && (
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-                  <h2 className="text-base" style={{ color: F.text }}>Security Settings</h2>
+                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`,background: "#1d2d3e",}}>
+                  <h2 className="text-base" style={{ color: "white" }}>Security Settings</h2>
                   <p className="text-xs mt-0.5" style={{ color: F.muted }}>Session management and audit trail configuration.</p>
                 </div>
                 <div className="px-6">
@@ -181,15 +181,15 @@ export function SettingsPage({ settings, onChange, onBack }: {
 
             {active === "notifications" && (
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-                  <h2 className="text-base" style={{ color: F.text }}>Notification Preferences</h2>
+                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#1d2d3e",}}>
+                  <h2 className="text-base" style={{ color: "white" }}>Notification Preferences</h2>
                   <p className="text-xs mt-0.5" style={{ color: F.muted }}>Configure how and when you receive alerts.</p>
                 </div>
                 <div className="px-6">
                   <ToggleField label="Email Alerts" sub="Receive provisioning results and failures by email" value={settings.emailAlerts} onChange={set("emailAlerts") as (v: boolean) => void} />
                   <ToggleField label="Browser Notifications" sub="Show desktop push notifications for completed actions" value={settings.browserNotifs} onChange={set("browserNotifs") as (v: boolean) => void} />
                   <div className="py-4" style={{ borderBottom: `1px solid ${F.border}` }}>
-                    <p className="text-sm mb-3" style={{ color: F.text }}>Notification Triggers</p>
+                    <p className="text-sm mb-3" style={{ color: F.text, }}>Notification Triggers</p>
                     <div className="flex flex-col gap-2">
                       {[
                         { label: "User creation success", default: true },
@@ -212,8 +212,8 @@ export function SettingsPage({ settings, onChange, onBack }: {
 
             {active === "display" && (
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-                  <h2 className="text-base" style={{ color: F.text }}>Display & Appearance</h2>
+                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#1d2d3e", }}>
+                  <h2 className="text-base" style={{ color:"white" }}>Display & Appearance</h2>
                   <p className="text-xs mt-0.5" style={{ color: F.muted }}>UI density, theme, and layout preferences.</p>
                 </div>
                 <div className="px-6">
