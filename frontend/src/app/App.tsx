@@ -1,7 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-<<<<<<< Updated upstream
-import { Users, UserPlus, Upload, KeyRound, Lock, ChevronRight, Bell, Settings, Menu, X, Database, ClipboardList, CheckCircle2, AlertCircle, Info, User, LogOut, LayoutDashboard, BarChart3 } from "lucide-react";
-=======
 import {
   UserPlus,
   Upload,
@@ -24,11 +21,11 @@ import {
   Users,
 } from "lucide-react";
 
->>>>>>> Stashed changes
 import { AppProvider } from "./contexts/AppContext";
 import { AuditLog, SapSystem } from "./contexts/AppContext";
 import { SingleUserCreation } from "./components/SingleUserCreation";
 import { BulkUserCreation } from "./components/BulkUserCreation";
+import { UserDeletion } from "./components/UserDeletion";
 import { PasswordReset } from "./components/PasswordReset";
 import { LockUnlockUser } from "./components/LockUnlockUser";
 import { DataManagement } from "./components/DataManagement";
@@ -42,17 +39,15 @@ import {
 import { ProfilePage } from "./components/pages/ProfilePage";
 import { SystemDetailPage } from "./components/pages/SystemDetailPage";
 import { SignInPage } from "./components/pages/SignInPage";
+import { SystemFormPage } from "./components/DataManagement";
 import { Dashboard } from "./components/Dashboard";
 import { Analytics } from "./components/Analytics";
-<<<<<<< Updated upstream
-=======
 import {
   logoutApi,
   getCurrentUser,
   User as AuthUser,
 } from "../api/authApi";
 import logoImage from "../imports/image.png";
->>>>>>> Stashed changes
 
 type ActiveView =
   | "dashboard"
@@ -69,7 +64,8 @@ type PageView =
   | { type: "settings" }
   | { type: "profile" }
   | { type: "audit-detail"; log: AuditLog }
-  | { type: "system-detail"; system: SapSystem };
+  | { type: "system-detail"; system: SapSystem }
+  | { type: "add-system" };
 
 /* =========================================================
    NAVIGATION GROUPS
@@ -95,12 +91,6 @@ const NAV_GROUPS = [
   {
     label: "User Management",
     items: [
-<<<<<<< Updated upstream
-      { id: "single-user" as ActiveView, label: "Single User Creation", icon: UserPlus },
-      { id: "bulk-user" as ActiveView, label: "Bulk User Creation", icon: Upload },
-      { id: "password-reset" as ActiveView, label: "Password Reset", icon: KeyRound },
-      { id: "lock-unlock" as ActiveView, label: "Lock / Unlock User", icon: Lock },
-=======
       {
         id: "single-user" as ActiveView,
         label: "Single User",
@@ -121,7 +111,6 @@ const NAV_GROUPS = [
         label: "Lock / Unlock",
         icon: Lock,
       },
->>>>>>> Stashed changes
     ],
   },
 
@@ -144,17 +133,6 @@ const NAV_GROUPS = [
 
 const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
 
-<<<<<<< Updated upstream
-/* ── Notification data ── */
-interface Notification { id: string; type: "warning" | "info" | "success" | "error"; title: string; body: string; time: string; read: boolean; }
-const INITIAL_NOTIFS: Notification[] = [
-  { id: "n1", type: "warning", title: "3 users pending activation", body: "Users provisioned today are awaiting role assignment in PRD/100.", time: "2 min ago", read: false },
-  { id: "n2", type: "error",   title: "Failed bulk import detected", body: "2 records failed in the last bulk user creation job (QAS/200).", time: "1 hr ago", read: false },
-  { id: "n3", type: "info",    title: "System SBX: Scheduled maintenance", body: "SBX environment will be unavailable Sat 02:00–06:00 UTC.", time: "3 hrs ago", read: false },
-  { id: "n4", type: "success", title: "Password policy updated", body: "Minimum length increased to 10 characters effective today.", time: "Yesterday", read: true },
-  { id: "n5", type: "info",    title: "New system BW1 registered", body: "SAP BW Production system was added to the system registry.", time: "2 days ago", read: true },
-];
-=======
 /* =========================================================
    NOTIFICATION DATA
 ========================================================= */
@@ -170,7 +148,6 @@ interface Notification {
 
 const INITIAL_NOTIFS: Notification[] = [];
 
->>>>>>> Stashed changes
 const notifIcon = (type: Notification["type"]) => {
   if (type === "warning") {
     return (
@@ -262,14 +239,6 @@ function NotificationsPanel({
   ).length;
 
   return (
-<<<<<<< Updated upstream
-    <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ width: "360px", background: "#fff", border: "1px solid #d9d9d9", top: "44px" }}>
-      <div className="flex items-center justify-between px-4 py-3" style={{ borderBottom: "1px solid #d9d9d9", background: "#fafafa" }}>
-        <div className="flex items-center gap-2">
-          <Bell size={15} style={{ color: "#0070f2" }} />
-          <span className="text-sm" style={{ color: "#32363a" }}>Notifications</span>
-          {unread > 0 && <span className="px-1.5 py-0.5 rounded-full text-xs text-white" style={{ background: "#bb0000" }}>{unread}</span>}
-=======
     <div
       ref={ref}
       className="absolute right-0 rounded shadow-2xl overflow-hidden z-50"
@@ -313,7 +282,6 @@ function NotificationsPanel({
               {unread}
             </span>
           )}
->>>>>>> Stashed changes
         </div>
 
         <div className="flex items-center gap-2">
@@ -340,30 +308,6 @@ function NotificationsPanel({
           </button>
         </div>
       </div>
-<<<<<<< Updated upstream
-      <div className="overflow-y-auto" style={{ maxHeight: "360px" }}>
-        {notifs.map((n) => (
-          <button
-            key={n.id}
-            onClick={() => onRead(n.id)}
-            className="w-full flex items-start gap-3 px-4 py-3 text-left transition-colors"
-            style={{ borderBottom: "1px solid #e4e4e4", background: n.read ? "#fafafa" : "#f0f6ff" }}
-          >
-            <div className="mt-0.5 flex-shrink-0">{notifIcon(n.type)}</div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2">
-                <p className="text-sm" style={{ color: "#32363a" }}>{n.title}</p>
-                {!n.read && <span className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" style={{ background: "#0070f2" }} />}
-              </div>
-              <p className="text-xs mt-0.5" style={{ color: "#74777a" }}>{n.body}</p>
-              <p className="text-xs mt-1" style={{ color: "#a0a0a8" }}>{n.time}</p>
-            </div>
-          </button>
-        ))}
-      </div>
-      <div className="px-4 py-2.5 text-center" style={{ borderTop: "1px solid #d9d9d9", background: "#fafafa" }}>
-        <span className="text-xs" style={{ color: "#74777a" }}>{notifs.length} notifications · {unread} unread</span>
-=======
 
       <div
         className="overflow-y-auto"
@@ -470,26 +414,11 @@ function NotificationsPanel({
           {notifs.length} notifications ·{" "}
           {unread} unread
         </span>
->>>>>>> Stashed changes
       </div>
     </div>
   );
 }
 
-<<<<<<< Updated upstream
-/* ── Profile Menu Dropdown ── */
-function ProfileMenu({ onProfile, onLogout }: { onProfile: () => void; onLogout: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useOutsideClick(ref, () => {/* handled by parent toggle */});
-  return (
-    <div ref={ref} className="absolute right-0 rounded shadow-2xl overflow-hidden z-50" style={{ top: "48px", width: "200px", background: "#fff", border: "1px solid #d9d9d9" }}>
-      <div className="px-4 py-3" style={{ background: "linear-gradient(135deg, #1d2d3e 0%, #0d1e2e 100%)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0" style={{ background: "#0070f2" }}>AD</div>
-          <div>
-            <p className="text-sm text-white">ADMIN</p>
-            <p className="text-xs" style={{ color: "rgba(255,255,255,0.5)" }}>admin@corp.local</p>
-=======
 /* =========================================================
    PROFILE MENU
 ========================================================= */
@@ -574,7 +503,6 @@ function ProfileMenu({
             >
               {role}
             </span>
->>>>>>> Stashed changes
           </div>
         </div>
       </div>
@@ -582,12 +510,6 @@ function ProfileMenu({
       <div className="py-1">
         <button
           onClick={onProfile}
-<<<<<<< Updated upstream
-          className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-gray-50 transition-colors"
-        >
-          <User size={14} style={{ color: "#74777a" }} />
-          <span className="text-sm" style={{ color: "#32363a" }}>My Profile</span>
-=======
           className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
           style={{
             color: "var(--app-text)",
@@ -617,7 +539,6 @@ function ProfileMenu({
           >
             My Profile
           </span>
->>>>>>> Stashed changes
         </button>
 
         <div
@@ -628,12 +549,6 @@ function ProfileMenu({
         >
           <button
             onClick={onLogout}
-<<<<<<< Updated upstream
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-red-50 transition-colors"
-          >
-            <LogOut size={14} style={{ color: "#bb0000" }} />
-            <span className="text-sm" style={{ color: "#bb0000" }}>Log Out</span>
-=======
             className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
             style={{
               color: "#bb0000",
@@ -663,7 +578,6 @@ function ProfileMenu({
             >
               Log Out
             </span>
->>>>>>> Stashed changes
           </button>
         </div>
       </div>
@@ -719,19 +633,6 @@ function LiveClock() {
   );
 }
 
-<<<<<<< Updated upstream
-/* ── Shell ── */
-function Shell({ onLogout }: { onLogout: () => void }) {
-  const [activeView, setActiveView] = useState<ActiveView>("dashboard");
-  const [pageView, setPageView] = useState<PageView>({ type: "main" });
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [notifs, setNotifs] = useState<Notification[]>(INITIAL_NOTIFS);
-  const [appSettings, setAppSettings] = useState<AppSettings>(DEFAULT_SETTINGS);
-  const profileRef = useRef<HTMLDivElement>(null);
-  useOutsideClick(profileRef, () => setProfileOpen(false));
-=======
 /* =========================================================
    OPERATION TAB
 ========================================================= */
@@ -969,7 +870,6 @@ function BulkUserManagement() {
 /* =========================================================
    SHELL
 ========================================================= */
->>>>>>> Stashed changes
 
 function Shell({
   user,
@@ -991,14 +891,6 @@ function Shell({
   const [sidebarOpen, setSidebarOpen] =
     useState(true);
 
-<<<<<<< Updated upstream
-  const isSubPage = pageView.type !== "main";
-
-  return (
-    <div className="min-h-screen flex flex-col" style={{ background: "#f5f6f7", fontFamily: "'72', '72full', Arial, Helvetica, sans-serif" }}>
-      {/* Shell Bar */}
-      <header style={{ background: "#1d2d3e", height: "44px", position: "relative", zIndex: 30 }} className="flex items-center px-4 gap-3 flex-shrink-0 shadow-md">
-=======
   const [notifOpen, setNotifOpen] =
     useState(false);
 
@@ -1136,7 +1028,6 @@ function Shell({
         }}
         className="flex items-center px-4 gap-3 flex-shrink-0 shadow-md"
       >
->>>>>>> Stashed changes
         {!isSubPage && (
           <button
             onClick={() =>
@@ -1158,12 +1049,6 @@ function Shell({
         <div className="h-5 w-px bg-white/20" />
 
         <div className="flex items-center gap-2">
-<<<<<<< Updated upstream
-          <div className="w-6 h-6 rounded flex items-center justify-center" style={{ background: "#0070f2" }}>
-            <Users size={13} className="text-white" />
-          </div>
-          <span className="text-white text-sm">SAP Basis Provisioning Console</span>
-=======
           <img
             src={logoImage}
             alt="Naxrita"
@@ -1178,7 +1063,6 @@ function Shell({
           >
             SAP Basis Provisioning Console
           </span>
->>>>>>> Stashed changes
         </div>
 
         <div className="flex-1" />
@@ -1193,27 +1077,6 @@ function Shell({
 
           <div className="relative">
             <button
-<<<<<<< Updated upstream
-              onClick={() => { setNotifOpen((o) => !o); }}
-              className="p-2 rounded hover:bg-white/10 transition-colors relative"
-              style={{ color: notifOpen ? "#fff" : "rgba(255,255,255,0.7)" }}
-            >
-              <Bell size={16} />
-              {unreadCount > 0 && (
-                <span className="absolute top-1 right-1 w-4 h-4 rounded-full flex items-center justify-center text-white" style={{ background: "#bb0000", fontSize: "9px" }}>
-                  {unreadCount}
-                </span>
-              )}
-            </button>
-            {notifOpen && <NotificationsPanel notifs={notifs} onRead={readNotif} onReadAll={readAll} onClose={() => setNotifOpen(false)} />}
-          </div>
-
-          {/* Settings — full page */}
-          <button
-            onClick={() => setPageView({ type: "settings" })}
-            className="p-2 rounded hover:bg-white/10 transition-colors"
-            style={{ color: pageView.type === "settings" ? "#fff" : "rgba(255,255,255,0.7)" }}
-=======
               onClick={() =>
                 setNotifOpen(
                   (o) => !o
@@ -1257,17 +1120,10 @@ function Shell({
               })
             }
             className="p-1.5 rounded hover:bg-white/10 text-white/80 hover:text-white transition-colors"
->>>>>>> Stashed changes
           >
             <Settings size={16} />
           </button>
 
-<<<<<<< Updated upstream
-          <div className="h-5 w-px bg-white/20 mx-1" />
-
-          {/* Profile dropdown */}
-          <div className="relative" ref={profileRef}>
-=======
           {/* =================================================
               PROFILE
           ================================================= */}
@@ -1276,7 +1132,6 @@ function Shell({
             className="relative"
             ref={profileRef}
           >
->>>>>>> Stashed changes
             <button
               onClick={() =>
                 setProfileOpen(
@@ -1291,10 +1146,6 @@ function Shell({
                     : "transparent",
               }}
             >
-<<<<<<< Updated upstream
-              <div className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs" style={{ background: "#0070f2" }}>AD</div>
-              <span className="text-white/80 text-sm hidden sm:block">Admin</span>
-=======
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-semibold"
                 style={{
@@ -1308,15 +1159,10 @@ function Shell({
               <span className="text-white/80 text-sm hidden sm:block">
                 {displayUser}
               </span>
->>>>>>> Stashed changes
             </button>
 
             {profileOpen && (
               <ProfileMenu
-<<<<<<< Updated upstream
-                onProfile={() => { setProfileOpen(false); setPageView({ type: "profile" }); }}
-                onLogout={() => { setProfileOpen(false); onLogout(); }}
-=======
                 user={user}
                 onProfile={() => {
                   setProfileOpen(false);
@@ -1329,7 +1175,6 @@ function Shell({
                   setProfileOpen(false);
                   onLogout();
                 }}
->>>>>>> Stashed changes
               />
             )}
           </div>
@@ -1343,9 +1188,6 @@ function Shell({
       {pageView.type ===
         "settings" && (
         <div className="flex-1 overflow-auto">
-<<<<<<< Updated upstream
-          <SettingsPage settings={appSettings} onChange={(p) => setAppSettings((s) => ({ ...s, ...p }))} onBack={goMain} />
-=======
           <SettingsPage
             settings={appSettings}
             onChange={(p) =>
@@ -1356,7 +1198,6 @@ function Shell({
             }
             onBack={goMain}
           />
->>>>>>> Stashed changes
         </div>
       )}
 
@@ -1401,46 +1242,6 @@ function Shell({
         </div>
       )}
 
-<<<<<<< Updated upstream
-      {/* Main layout (sidebar + content) */}
-      {pageView.type === "main" && (
-        <div className="flex flex-1 overflow-hidden" style={{ height: "calc(100vh - 44px)" }}>
-          {/* Side Navigation */}
-          <aside
-            style={{ width: sidebarOpen ? "260px" : "0px", background: "#ffffff", borderRight: "1px solid #d9d9d9", transition: "width 0.2s ease", overflow: "hidden", flexShrink: 0 }}
-            className="flex flex-col"
-          >
-            <div style={{ minWidth: "260px", overflowY: "auto" }}>
-              <div className="px-4 py-3" style={{ borderBottom: "1px solid #e4e4e4", background: "#f5f6f7" }}>
-                <p className="text-xs" style={{ color: "#74777a" }}>Current Session</p>
-                <p className="text-sm" style={{ color: "#32363a" }}>ADMIN · 10.42.8.201</p>
-              </div>
-              <div className="px-3 py-3 flex flex-col gap-5">
-                {NAV_GROUPS.map((group) => (
-                  <div key={group.label}>
-                    <p className="text-xs px-2 pb-2" style={{ color: "#74777a", letterSpacing: "0.04em", textTransform: "uppercase" }}>
-                      {group.label}
-                    </p>
-                    <nav className="flex flex-col gap-0.5">
-                      {group.items.map((item) => {
-                        const isActive = activeView === item.id;
-                        return (
-                          <button
-                            key={item.id}
-                            onClick={() => setActiveView(item.id)}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded text-left w-full transition-colors"
-                            style={{ background: isActive ? "#e8f2ff" : "transparent", borderLeft: isActive ? "3px solid #0070f2" : "3px solid transparent" }}
-                          >
-                            <item.icon size={15} style={{ color: isActive ? "#0070f2" : "#74777a", flexShrink: 0 }} />
-                            <span className="text-sm" style={{ color: isActive ? "#0070f2" : "#32363a" }}>{item.label}</span>
-                            {isActive && <ChevronRight size={13} className="ml-auto" style={{ color: "#0070f2" }} />}
-                          </button>
-                        );
-                      })}
-                    </nav>
-                  </div>
-                ))}
-=======
       {/* =====================================================
           ADD SYSTEM PAGE
       ===================================================== */}
@@ -1689,7 +1490,6 @@ function Shell({
                     </div>
                   )
                 )}
->>>>>>> Stashed changes
               </div>
             </div>
           </aside>
@@ -1699,14 +1499,6 @@ function Shell({
           ================================================= */}
 
           <main className="flex-1 overflow-auto">
-<<<<<<< Updated upstream
-            <div className="px-6 py-2 flex items-center gap-1.5 text-sm flex-shrink-0" style={{ borderBottom: "1px solid #d9d9d9", background: "#ffffff" }}>
-              <button onClick={() => setActiveView("dashboard")} className="hover:underline transition-colors" style={{ color: "#0070f2" }}>SAP Basis</button>
-              <ChevronRight size={12} style={{ color: "#74777a" }} />
-              <button onClick={() => setActiveView(activeGroup.items[0].id)} className="hover:underline transition-colors" style={{ color: "#0070f2" }}>{activeGroup.label}</button>
-              <ChevronRight size={12} style={{ color: "#74777a" }} />
-              <span style={{ color: "#32363a" }}>{activeItem.label}</span>
-=======
 
             {/* =================================================
                 BREADCRUMB
@@ -1779,7 +1571,6 @@ function Shell({
               >
                 {activeItem.label}
               </span>
->>>>>>> Stashed changes
             </div>
 
             {/* =================================================
@@ -1823,17 +1614,6 @@ function Shell({
                   }
                 />
               )}
-<<<<<<< Updated upstream
-              {activeView === "single-user" && <SingleUserCreation />}
-              {activeView === "bulk-user" && <BulkUserCreation />}
-              {activeView === "password-reset" && <PasswordReset />}
-              {activeView === "lock-unlock" && <LockUnlockUser />}
-              {activeView === "data-management" && (
-                <DataManagement onViewDetail={(sys) => setPageView({ type: "system-detail", system: sys })} />
-              )}
-              {activeView === "audit-logs" && (
-                <AuditLogs onViewDetail={(log) => setPageView({ type: "audit-detail", log })} />
-=======
 
               {/* SINGLE USER */}
 
@@ -1911,7 +1691,6 @@ function Shell({
                     })
                   }
                 />
->>>>>>> Stashed changes
               )}
             </div>
           </main>
@@ -1926,15 +1705,6 @@ function Shell({
 ========================================================= */
 
 function AppRoot() {
-<<<<<<< Updated upstream
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  if (!isLoggedIn) {
-    return <SignInPage onSignIn={() => setIsLoggedIn(true)} />;
-  }
-
-  return <Shell onLogout={() => setIsLoggedIn(false)} />;
-=======
   const [currentUser, setCurrentUser] =
     useState<AuthUser | null>(() =>
       getCurrentUser()
@@ -2000,7 +1770,6 @@ function AppRoot() {
       onLogout={handleLogout}
     />
   );
->>>>>>> Stashed changes
 }
 
 /* =========================================================

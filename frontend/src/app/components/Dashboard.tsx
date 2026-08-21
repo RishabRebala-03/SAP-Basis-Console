@@ -36,11 +36,6 @@ import logoImage from "../../imports/image.png";
    ========================================================= */
 
 const F = {
-<<<<<<< Updated upstream
-  primary: "#0070f2", success: "#107e3e", error: "#bb0000",
-  warning: "#e9730c", purple: "#6a1b9a", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff",
-=======
   primary: "#0070f2",
   success: "#107e3e",
   error: "#bb0000",
@@ -52,7 +47,6 @@ const F = {
   border: "var(--app-border)",
   bg: "var(--app-bg)",
   white: "var(--app-surface)",
->>>>>>> Stashed changes
 };
 
 /* =========================================================
@@ -232,12 +226,6 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-<<<<<<< Updated upstream
-    <div className="rounded-lg overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-      <div className="flex items-center gap-2 px-5 py-3" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-        <span style={{ color: F.muted }}>{icon}</span>
-        <h3 className="text-sm" style={{ color: F.text }}>{title}</h3>
-=======
     <div
       className="rounded-lg overflow-hidden"
       style={{
@@ -280,7 +268,6 @@ function Panel({
           {title}
         </h3>
 
->>>>>>> Stashed changes
         <div className="flex-1" />
 
         {action}
@@ -451,11 +438,6 @@ export function Dashboard({
      CLEAR FILTERS
      ======================================================= */
 
-<<<<<<< Updated upstream
-  const filtersActive = range !== "7d" || systemFilter !== "All";
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-=======
   const clearFilters = () => {
     setRange("24h");
 
@@ -463,7 +445,6 @@ export function Dashboard({
 
     setStatusFilter("All");
   };
->>>>>>> Stashed changes
 
   /* =======================================================
      KPI DATA
@@ -539,12 +520,6 @@ export function Dashboard({
      ======================================================= */
 
   const kpis = [
-<<<<<<< Updated upstream
-    { label: "Total Operations", value: total, sub: TIME_RANGES.find((r) => r.id === range)!.label, icon: Activity, color: F.primary, bg: "#e8f2ff", trend: "+12%", up: true, nav: "audit-logs" as DashNav },
-    { label: "Users Provisioned", value: usersCreated, sub: "Create User actions", icon: UserPlus, color: F.success, bg: "#f1fdf6", trend: "+8%", up: true, nav: "single-user" as DashNav },
-    { label: "Success Rate", value: `${successRate}%`, sub: `${success} of ${total} succeeded`, icon: CheckCircle2, color: F.purple, bg: "#f3e5f5", trend: failed ? `${failed} failed` : "no errors", up: !failed, nav: "audit-logs" as DashNav },
-    { label: "Active Systems", value: activeSystems, sub: `${systems.length} registered`, icon: Server, color: F.warning, bg: "#fff8f0", trend: "stable", up: true, nav: "data-management" as DashNav },
-=======
     {
       label:
         "Total Operations",
@@ -663,7 +638,6 @@ export function Dashboard({
       nav:
         "data-management" as DashNav,
     },
->>>>>>> Stashed changes
   ];
 
   /* =======================================================
@@ -671,14 +645,6 @@ export function Dashboard({
      ======================================================= */
 
   const actions = [
-<<<<<<< Updated upstream
-    { id: "single-user" as DashNav, label: "Single User Creation", desc: "Provision one user with roles & validity", icon: UserPlus, color: F.primary, bg: "#e8f2ff" },
-    { id: "bulk-user" as DashNav, label: "Bulk User Creation", desc: "Import users from an Excel sheet", icon: Upload, color: F.purple, bg: "#f3e5f5" },
-    { id: "password-reset" as DashNav, label: "Password Reset", desc: "Generate a temporary password", icon: KeyRound, color: F.warning, bg: "#fff8f0" },
-    { id: "lock-unlock" as DashNav, label: "Lock / Unlock User", desc: "Toggle account access state", icon: Lock, color: F.error, bg: "#fff2f2" },
-    { id: "data-management" as DashNav, label: "Data Management", desc: "Manage SAP system registry", icon: Database, color: F.success, bg: "#f1fdf6" },
-    { id: "audit-logs" as DashNav, label: "Audit Logs", desc: "Search, filter & export activity", icon: ClipboardList, color: F.muted, bg: "#f5f6f7" },
-=======
     {
       id:
         "single-user" as DashNav,
@@ -798,7 +764,6 @@ export function Dashboard({
       bg:
         "#f5f6f7",
     },
->>>>>>> Stashed changes
   ];
 
   /* =======================================================
@@ -964,13 +929,6 @@ export function Dashboard({
               />
 
               <div>
-<<<<<<< Updated upstream
-                <p className="text-sm" style={{ color: "rgba(255,255,255,0.55)" }}>{greeting}, Admin</p>
-                <h1 className="text-white" style={{ fontWeight: 300, letterSpacing: "0.01em" }}>Basis Provisioning Overview</h1>
-                <p className="text-sm mt-1" style={{ color: "rgba(255,255,255,0.5)" }}>
-                  {total} operations · {successRate}% success · {activeSystems} active systems
-                </p>
-=======
                 <p
                   className="text-sm"
                   style={{
@@ -1000,7 +958,6 @@ export function Dashboard({
                 >
                   Welcome Back
                 </h1>
->>>>>>> Stashed changes
               </div>
             </div>
 
@@ -1065,11 +1022,6 @@ export function Dashboard({
         {/* FILTER HEADER */}
 
         <button
-<<<<<<< Updated upstream
-          onClick={() => setShowFilters((s) => !s)}
-          className="w-full flex items-center gap-2 px-5 py-3 text-left"
-          style={{ background: "#fafafa" }}
-=======
           type="button"
           onClick={() =>
             setShowFilters(
@@ -1089,7 +1041,6 @@ export function Dashboard({
             background:
               "var(--app-subtle)",
           }}
->>>>>>> Stashed changes
         >
           <Filter
             size={14}
@@ -1112,55 +1063,6 @@ export function Dashboard({
           {/* ACTIVE */}
 
           {filtersActive && (
-<<<<<<< Updated upstream
-            <span className="px-2 py-0.5 rounded-full text-xs text-white" style={{ background: F.primary }}>Active</span>
-          )}
-          <div className="flex-1" />
-          <span className="text-xs" style={{ color: F.muted }}>{TIME_RANGES.find((r) => r.id === range)!.label}{systemFilter !== "All" ? ` · ${systemFilter}` : ""}</span>
-          <ChevronDown size={16} style={{ color: F.muted, transform: showFilters ? "rotate(180deg)" : "none", transition: "transform 0.2s" }} />
-        </button>
-        {showFilters && (
-          <div className="px-5 py-4 flex flex-wrap items-end gap-5" style={{ borderTop: `1px solid ${F.border}` }}>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs" style={{ color: F.muted }}>Time Range</label>
-              <div className="flex gap-1">
-                {TIME_RANGES.map((r) => (
-                  <button
-                    key={r.id}
-                    onClick={() => setRange(r.id)}
-                    className="px-3 py-1.5 rounded text-xs transition-colors"
-                    style={{
-                      background: range === r.id ? F.primary : F.bg,
-                      color: range === r.id ? "#fff" : F.text,
-                      border: `1px solid ${range === r.id ? F.primary : F.border}`,
-                    }}
-                  >
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs" style={{ color: F.muted }}>System</label>
-              <select
-                value={systemFilter}
-                onChange={(e) => setSystemFilter(e.target.value)}
-                className="px-3 py-1.5 rounded text-sm outline-none"
-                style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text, minWidth: "140px" }}
-              >
-                {uniqueSystems.map((s) => <option key={s} value={s}>{s === "All" ? "All Systems" : s}</option>)}
-              </select>
-            </div>
-            {filtersActive && (
-              <button
-                onClick={() => { setRange("7d"); setSystemFilter("All"); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors"
-                style={{ border: `1px solid ${F.border}`, background: F.white, color: F.muted }}
-              >
-                <X size={12} /> Reset
-              </button>
-            )}
-=======
             <span
               className="
                 px-2
@@ -1517,7 +1419,6 @@ export function Dashboard({
 
               Clear All Filters
             </button>
->>>>>>> Stashed changes
           </div>
         )}
       </div>
@@ -1928,27 +1829,6 @@ export function Dashboard({
                 range.
               </p>
             ) : (
-<<<<<<< Updated upstream
-              <div className="flex flex-col">
-                {recent.map((l, i) => {
-                  const mod = MODULE_META[l.module];
-                  const sta = STATUS_META[l.status];
-                  const ts = new Date(l.timestamp);
-                  return (
-                    <button
-                      key={l.id}
-                      onClick={() => onViewAudit(l)}
-                      className="flex items-center gap-3 py-3 text-left transition-colors hover:bg-gray-50 rounded px-2 -mx-2"
-                      style={{ borderBottom: i < recent.length - 1 ? `1px solid ${F.border}` : "none" }}
-                    >
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: mod.bg }}>
-                        {sta.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm truncate" style={{ color: F.text }}>{l.action}</p>
-                          <span className="px-1.5 py-0.5 rounded text-xs flex-shrink-0" style={{ background: mod.bg, color: mod.color }}>{l.module}</span>
-=======
               <div
                 className="
                   flex
@@ -2021,7 +1901,6 @@ export function Dashboard({
                           {
                             sta.icon
                           }
->>>>>>> Stashed changes
                         </div>
 
                         <div

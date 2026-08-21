@@ -37,17 +37,13 @@ import {
 } from "../contexts/AppContext";
 
 import { DashNav } from "./Dashboard";
+import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 
 /* =========================================================
    COLORS
    ========================================================= */
 
 const F = {
-<<<<<<< Updated upstream
-  primary: "#0070f2", success: "#107e3e", error: "#bb0000",
-  warning: "#e9730c", purple: "#6a1b9a", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff",
-=======
   primary: "#0070f2",
   success: "#107e3e",
   error: "#bb0000",
@@ -59,7 +55,6 @@ const F = {
   border: "var(--app-border)",
   bg: "var(--app-bg)",
   white: "var(--app-surface)",
->>>>>>> Stashed changes
 };
 
 /* =========================================================
@@ -159,8 +154,6 @@ const TIME_RANGES = [
   },
 ];
 
-<<<<<<< Updated upstream
-=======
 /* =========================================================
    NORMALIZE FILTER
    ========================================================= */
@@ -173,7 +166,6 @@ function normalizeFilterValue(value: string) {
    PROPS
    ========================================================= */
 
->>>>>>> Stashed changes
 interface Props {
   onNavigate: (view: DashNav) => void;
 }
@@ -375,9 +367,6 @@ export function Analytics({
      ======================================================= */
 
   const uniqueSystems = useMemo(
-<<<<<<< Updated upstream
-    () => ["All", ...Array.from(new Set(auditLogs.map((l) => l.system).filter((s) => s !== "—")))],
-=======
     () => {
       const systemsList = Array.from(
         new Set(
@@ -398,7 +387,6 @@ export function Analytics({
         ...systemsList,
       ];
     },
->>>>>>> Stashed changes
     [auditLogs]
   );
 
@@ -420,17 +408,6 @@ export function Analytics({
 
   const now = Date.now();
 
-<<<<<<< Updated upstream
-  const logs = useMemo(() => auditLogs.filter((l) => {
-    const ageD = (now - new Date(l.timestamp).getTime()) / 86_400_000;
-    const inRange = rangeDays === Infinity || ageD <= rangeDays;
-    const inSys = systemFilter === "All" || l.system === systemFilter;
-    const inStatus = statusFilter === "All" || l.status === statusFilter;
-    return inRange && inSys && inStatus;
-  }), [auditLogs, rangeDays, systemFilter, statusFilter, now]);
-
-  const filtersActive = range !== "30d" || systemFilter !== "All" || statusFilter !== "All";
-=======
   /* =======================================================
      FILTER LOGS
      ======================================================= */
@@ -542,7 +519,6 @@ export function Analytics({
     setSystemFilter("All");
     setStatusFilter("All");
   };
->>>>>>> Stashed changes
 
   /* =========================================================
      OPERATIONS OVER TIME
@@ -1261,14 +1237,6 @@ export function Analytics({
         </button>
       </div>
 
-<<<<<<< Updated upstream
-      {/* Collapsible filters */}
-      <div className="rounded-lg overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-        <button onClick={() => setShowFilters((s) => !s)} className="w-full flex items-center gap-2 px-5 py-3 text-left" style={{ background: "#fafafa" }}>
-          <Filter size={14} style={{ color: F.primary }} />
-          <span className="text-sm" style={{ color: F.text }}>Filters</span>
-          {filtersActive && <span className="px-2 py-0.5 rounded-full text-xs text-white" style={{ background: F.primary }}>Active</span>}
-=======
       {/* =====================================================
           FILTERS
           ===================================================== */}
@@ -1348,7 +1316,6 @@ export function Analytics({
             </span>
           )}
 
->>>>>>> Stashed changes
           <div className="flex-1" />
 
           <ChevronDown
@@ -1371,41 +1338,6 @@ export function Analytics({
         {/* FILTER BODY */}
 
         {showFilters && (
-<<<<<<< Updated upstream
-          <div className="px-5 py-4 flex flex-wrap items-end gap-5" style={{ borderTop: `1px solid ${F.border}` }}>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs" style={{ color: F.muted }}>Time Range</label>
-              <div className="flex gap-1">
-                {TIME_RANGES.map((r) => (
-                  <button key={r.id} onClick={() => setRange(r.id)} className="px-3 py-1.5 rounded text-xs transition-colors"
-                    style={{ background: range === r.id ? F.primary : F.bg, color: range === r.id ? "#fff" : F.text, border: `1px solid ${range === r.id ? F.primary : F.border}` }}>
-                    {r.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs" style={{ color: F.muted }}>System</label>
-              <select value={systemFilter} onChange={(e) => setSystemFilter(e.target.value)} className="px-3 py-1.5 rounded text-sm outline-none"
-                style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text, minWidth: "140px" }}>
-                {uniqueSystems.map((s) => <option key={s} value={s}>{s === "All" ? "All Systems" : s}</option>)}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs" style={{ color: F.muted }}>Status</label>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-1.5 rounded text-sm outline-none"
-                style={{ border: `1px solid ${F.border}`, background: F.white, color: F.text, minWidth: "140px" }}>
-                {["All", "Success", "Warning", "Failed"].map((s) => <option key={s} value={s}>{s === "All" ? "All Statuses" : s}</option>)}
-              </select>
-            </div>
-            {filtersActive && (
-              <button onClick={() => { setRange("30d"); setSystemFilter("All"); setStatusFilter("All"); }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors"
-                style={{ border: `1px solid ${F.border}`, background: F.white, color: F.muted }}>
-                <X size={12} /> Reset
-              </button>
-            )}
-=======
           <div
             className="
               px-5
@@ -1609,7 +1541,6 @@ export function Analytics({
 
               Clear All Filters
             </button>
->>>>>>> Stashed changes
           </div>
         )}
       </div>
@@ -1891,16 +1822,6 @@ export function Analytics({
                   />
                 </linearGradient>
               </defs>
-<<<<<<< Updated upstream
-              <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: F.muted }} axisLine={{ stroke: F.border }} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: F.muted }} axisLine={false} tickLine={false} allowDecimals={false} />
-              <Tooltip content={<ChartTooltip />} />
-              <Legend wrapperStyle={{ fontSize: "12px" }} />
-              <Area type="monotone" dataKey="Success" stackId="1" stroke={F.success} fill={`url(#${uid}gSuccess)`} strokeWidth={2} />
-              <Area type="monotone" dataKey="Warning" stackId="1" stroke={F.warning} fill={`url(#${uid}gWarning)`} strokeWidth={2} />
-              <Area type="monotone" dataKey="Failed" stackId="1" stroke={F.error} fill={`url(#${uid}gFailed)`} strokeWidth={2} />
-=======
 
               <CartesianGrid
                 strokeDasharray="3 3"
@@ -2018,7 +1939,6 @@ export function Analytics({
                 fill={`url(#${uid}gFailed)`}
                 strokeWidth={2}
               />
->>>>>>> Stashed changes
             </AreaChart>
           </ResponsiveContainer>
         )}
@@ -2068,16 +1988,6 @@ export function Analytics({
                 No data.
               </p>
             ) : (
-<<<<<<< Updated upstream
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={moduleData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#eee" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 10, fill: F.muted }} axisLine={{ stroke: F.border }} tickLine={false} interval={0} angle={-12} textAnchor="end" height={50} />
-                  <YAxis tick={{ fontSize: 11, fill: F.muted }} axisLine={false} tickLine={false} allowDecimals={false} />
-                  <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(0,112,242,0.06)" }} />
-                  <Bar dataKey="value" name="Operations" radius={[4, 4, 0, 0]} cursor="pointer" onClick={() => onNavigate("audit-logs")}>
-                    {moduleData.map((d) => <Cell key={`${uid}-mod-${d.name}`} fill={d.color} />)}
-=======
               <ResponsiveContainer
                 width="100%"
                 height={280}
@@ -2163,7 +2073,6 @@ export function Analytics({
                         />
                       )
                     )}
->>>>>>> Stashed changes
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
@@ -2500,15 +2409,6 @@ export function Analytics({
               data.
             </p>
           ) : (
-<<<<<<< Updated upstream
-            <ResponsiveContainer width="100%" height={Math.max(180, systemData.length * 46)}>
-              <BarChart data={systemData} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#eee" horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: F.muted }} axisLine={false} tickLine={false} allowDecimals={false} />
-                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: F.text }} axisLine={false} tickLine={false} width={48} />
-                <Tooltip content={<ChartTooltip />} cursor={{ fill: "rgba(0,112,242,0.06)" }} />
-                <Bar dataKey="value" name="Operations" fill={F.purple} radius={[0, 4, 4, 0]} cursor="pointer" onClick={() => onNavigate("data-management")} barSize={20} />
-=======
             <ResponsiveContainer
               width="100%"
               height={Math.max(
@@ -2589,7 +2489,6 @@ export function Analytics({
                   }
                   barSize={20}
                 />
->>>>>>> Stashed changes
               </BarChart>
             </ResponsiveContainer>
           )}

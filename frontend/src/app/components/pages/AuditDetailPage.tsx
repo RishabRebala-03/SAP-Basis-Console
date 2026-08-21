@@ -23,11 +23,6 @@ import {
 
 
 const F = {
-<<<<<<< Updated upstream
-  primary: "#0070f2", success: "#107e3e", error: "#bb0000",
-  warning: "#e9730c", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff",
-=======
   primary: "#0070f2",
   success: "#107e3e",
   error: "#bb0000",
@@ -41,7 +36,6 @@ const F = {
 
   // Navy blue section header
   navy: "#1d2d3e",
->>>>>>> Stashed changes
 };
 
 
