@@ -480,15 +480,13 @@ export function ProfilePage({
                 }}
               >
                 <div
-                  className="px-5 py-3 flex items-center gap-2"
+                  className="px-5 py-3 flex items-center gap-3"
                   style={{
                     borderBottom:
                       `1px solid ${F.border}`,
-                    
-  color: "#ffffff",
-  background: "#1d2d3e",
-}}
-                  
+                    backgroundColor: "#14263D",
+  color: "white"
+                  }}
                 >
                   <User
                     size={14}
@@ -549,7 +547,7 @@ export function ProfilePage({
                 RIGHT SIDE
                 ONLY THESE TWO ARE NOW SIDE-BY-SIDE
             =================================================== */}
-            <div className="lg:col-span-1 grid grid-cols-2 gap-4 min-w-135">
+            <div className="lg:col-span-1 grid grid-cols-2 gap-4 min-w-0">
 
               {/* =================================================
                   ACCOUNT STATUS
@@ -567,12 +565,9 @@ export function ProfilePage({
                   style={{
                     borderBottom:
                       `1px solid ${F.border}`,
-                    background: "#fafafa",
-                   
-  color: "#ffffff",
-  background: "#1d2d3e",
-}}
-                
+                    backgroundColor: "#14263D",
+  color: "white"
+                  }}
                 >
                   <Shield
                     size={14}
@@ -628,7 +623,7 @@ export function ProfilePage({
                   <div>
                     <p
                       className="text-xs"
-                      style={{ color: "white" }}
+                      style={{ color: F.muted }}
                     >
                       Active Sessions
                     </p>
@@ -664,11 +659,8 @@ export function ProfilePage({
                   style={{
                     borderBottom:
                       `1px solid ${F.border}`,
-                    background: "#fafafa",
-                   
-  color: "#ffffff",
-  background: "#1d2d3e",
-
+                    backgroundColor: "#14263D",
+  color: "white"
                   }}
                 >
                   <Clock
@@ -817,15 +809,14 @@ export function ProfilePage({
               style={{
                 borderBottom:
                   `1px solid ${F.border}`,
-                background: "#fafafa",
-                color: "#ffffff",
-  background: "#1d2d3e",
+                backgroundColor: "#14263D",
+  color: "white"
               }}
             >
               <div className="flex items-center gap-2">
                 <Shield
                   size={14}
-                  style={{ color: "white" }}
+                  style={{ color: "white"}}
                 />
 
                 <h3
@@ -967,7 +958,6 @@ export function ProfilePage({
               background: F.white,
               border:
                 `1px solid ${F.border}`,
-                
             }}
           >
             <div
@@ -975,9 +965,8 @@ export function ProfilePage({
               style={{
                 borderBottom:
                   `1px solid ${F.border}`,
-                
-                color: "#ffffff",
-  background: "#1d2d3e",
+                backgroundColor: "#14263D",
+  color: "white"
               }}
             >
               <Monitor
@@ -987,7 +976,7 @@ export function ProfilePage({
 
               <h3
                 className="text-sm"
-                style={{ color: "white" }}
+                style={{ color: "white"}}
               >
                 Active Sessions
               </h3>
@@ -1029,9 +1018,8 @@ export function ProfilePage({
               style={{
                 borderBottom:
                   `1px solid ${F.border}`,
-                
-                color: "#ffffff",
-  background: "#1d2d3e",
+                backgroundColor: "#14263D",
+  color: "white"
               }}
             >
               <Activity

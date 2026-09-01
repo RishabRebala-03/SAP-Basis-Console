@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 
 import logoImage from "../../../imports/image.png";
-
 import {
   loginApi,
   forgotPasswordApi,
@@ -25,7 +24,7 @@ const F = {
   primaryDark: "#0057d2",
   error: "#bb0000",
   success: "#107e3e",
-  text: "#1a2733",
+  text: "#172b4d",
   muted: "#5b738b",
   border: "#d9d9d9",
   bg: "#f7f8fa",
@@ -37,42 +36,39 @@ export function SignInPage({
 }: {
   onSignIn: (user?: User) => void;
 }) {
-  /* =========================================================
-     FORCE LOGIN PAGE TO LIGHT MODE
-     ========================================================= */
-
+  /* -------------------------------------------------------
+     FORCE LIGHT MODE
+  ------------------------------------------------------- */
   useEffect(() => {
     const root = document.documentElement;
 
-    const previousTheme = root.dataset.theme;
-    const previousDark = root.classList.contains("dark");
+    const prevTheme = root.dataset.theme;
+    const prevClass = root.classList.contains("dark");
 
     root.dataset.theme = "light";
     root.classList.remove("dark");
 
     return () => {
-      if (previousTheme) {
-        root.dataset.theme = previousTheme;
-      } else {
-        delete root.dataset.theme;
+      if (prevTheme) {
+        root.dataset.theme = prevTheme;
       }
 
-      if (previousDark) {
+      if (prevClass) {
         root.classList.add("dark");
       }
     };
   }, []);
 
-  /* =========================================================
-     STATE
-     ========================================================= */
-
+  /* -------------------------------------------------------
+     STATES
+  ------------------------------------------------------- */
   const [viewMode, setViewMode] = useState<
     "signin" | "forgot" | "reset"
   >("signin");
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+
   const [email, setEmail] = useState("");
   const [resetToken, setResetToken] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -81,12 +77,12 @@ export function SignInPage({
 
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
   const [loading, setLoading] = useState(false);
 
-  /* =========================================================
+  /* -------------------------------------------------------
      SIGN IN
-     ========================================================= */
-
+  ------------------------------------------------------- */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -105,7 +101,6 @@ export function SignInPage({
       });
 
       setLoading(false);
-
       onSignIn(data.user);
     } catch (err: any) {
       setLoading(false);
@@ -117,10 +112,9 @@ export function SignInPage({
     }
   };
 
-  /* =========================================================
+  /* -------------------------------------------------------
      FORGOT PASSWORD
-     ========================================================= */
-
+  ------------------------------------------------------- */
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -157,10 +151,9 @@ export function SignInPage({
     }
   };
 
-  /* =========================================================
+  /* -------------------------------------------------------
      RESET PASSWORD
-     ========================================================= */
-
+  ------------------------------------------------------- */
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -200,321 +193,484 @@ export function SignInPage({
     }
   };
 
-  /* =========================================================
-     COMMON INPUT STYLES
-     ========================================================= */
-
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    height: "52px",
-    boxSizing: "border-box",
+  /* -------------------------------------------------------
+     INPUT STYLES
+  ------------------------------------------------------- */
+  const inputStyle = {
     border: `1px solid ${error ? F.error : F.border}`,
-    borderRadius: "9px",
     background: F.white,
     color: F.text,
-    outline: "none",
-    fontSize: "14px",
-    lineHeight: "20px",
-    padding: "0 14px",
-    transition:
-      "border-color 0.15s ease, box-shadow 0.15s ease",
   };
 
   const onFocus = (
     e: React.FocusEvent<HTMLInputElement>
   ) => {
-    e.currentTarget.style.borderColor = F.primary;
+    e.target.style.borderColor = F.primary;
 
-    e.currentTarget.style.boxShadow =
-      "0 0 0 3px rgba(0,112,242,0.12)";
+    e.target.style.boxShadow =
+      "0 0 0 4px rgba(0,112,242,0.12), 0 4px 14px rgba(0,112,242,0.08)";
   };
 
   const onBlur = (
     e: React.FocusEvent<HTMLInputElement>
   ) => {
-    e.currentTarget.style.borderColor =
-      error ? F.error : F.border;
+    e.target.style.borderColor = error
+      ? F.error
+      : F.border;
 
-    e.currentTarget.style.boxShadow = "none";
+    e.target.style.boxShadow = "none";
   };
-
-  /* =========================================================
-     COMMON BUTTON STYLE
-     ========================================================= */
-
-  const buttonStyle: React.CSSProperties = {
-    width: "100%",
-    height: "50px",
-    boxSizing: "border-box",
-    border: "none",
-    borderRadius: "9px",
-    color: F.white,
-    fontSize: "14px",
-    fontWeight: 600,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-    cursor: loading ? "not-allowed" : "pointer",
-  };
-
-  /* =========================================================
-     ERROR MESSAGE
-     ========================================================= */
-
-  const ErrorMessage = () => {
-    if (!error) return null;
-
-    return (
-      <div
-        style={{
-          width: "100%",
-          boxSizing: "border-box",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "10px 12px",
-          borderRadius: "8px",
-          background: "#fff2f2",
-          border: "1px solid #bb000030",
-          color: F.error,
-          fontSize: "12px",
-          lineHeight: "18px",
-        }}
-      >
-        <AlertCircle
-          size={14}
-          style={{ flexShrink: 0 }}
-        />
-
-        <span>{error}</span>
-      </div>
-    );
-  };
-
-  /* =========================================================
-     LOADING SPINNER
-     ========================================================= */
-
-  const LoadingSpinner = () => (
-    <span
-      style={{
-        width: "16px",
-        height: "16px",
-        border: "2px solid rgba(255,255,255,0.9)",
-        borderTopColor: "transparent",
-        borderRadius: "50%",
-        display: "inline-block",
-        animation: "spin 0.8s linear infinite",
-      }}
-    />
-  );
-
-  /* =========================================================
-     PAGE
-     ========================================================= */
 
   return (
     <>
-      {/* Spinner animation */}
+      {/* =====================================================
+          PROFESSIONAL ANIMATIONS
+      ====================================================== */}
       <style>
         {`
-          @keyframes spin {
-            from {
-              transform: rotate(0deg);
+          @keyframes brandFloat {
+            0%, 100% {
+              transform: translateY(0px);
             }
-            to {
-              transform: rotate(360deg);
+
+            50% {
+              transform: translateY(-8px);
             }
           }
 
-          * {
-            box-sizing: border-box;
+          @keyframes logoGlow {
+            0%, 100% {
+              filter:
+                drop-shadow(0 4px 24px rgba(64,178,240,0.25))
+                drop-shadow(0 2px 12px rgba(138,62,210,0.18));
+            }
+
+            50% {
+              filter:
+                drop-shadow(0 8px 40px rgba(64,178,240,0.55))
+                drop-shadow(0 4px 22px rgba(138,62,210,0.42));
+            }
+          }
+
+          @keyframes glowMove {
+            0%, 100% {
+              transform: translate(0, 0) scale(1);
+              opacity: 0.7;
+            }
+
+            50% {
+              transform: translate(35px, -25px) scale(1.08);
+              opacity: 1;
+            }
+          }
+
+          @keyframes glowMoveReverse {
+            0%, 100% {
+              transform: translate(0, 0) scale(1);
+              opacity: 0.65;
+            }
+
+            50% {
+              transform: translate(-30px, 25px) scale(1.1);
+              opacity: 1;
+            }
+          }
+
+          @keyframes leftContentIn {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+
+          @keyframes rightContentIn {
+            from {
+              opacity: 0;
+              transform: translateX(25px);
+            }
+
+            to {
+              opacity: 1;
+              transform: translateX(0);
+            }
+          }
+
+          @keyframes lineExpand {
+            from {
+              width: 0;
+              opacity: 0;
+            }
+
+            to {
+              width: 55px;
+              opacity: 1;
+            }
+          }
+
+          @keyframes shimmer {
+            0% {
+              background-position: 200% 0;
+            }
+
+            100% {
+              background-position: -200% 0;
+            }
+          }
+
+          @keyframes pulseGlow {
+            0%, 100% {
+              box-shadow:
+                0 8px 22px rgba(0,112,242,0.25);
+            }
+
+            50% {
+              box-shadow:
+                0 10px 30px rgba(0,112,242,0.40);
+            }
+          }
+
+          @keyframes securityPulse {
+            0%, 100% {
+              opacity: 0.75;
+            }
+
+            50% {
+              opacity: 1;
+            }
+          }
+
+          .brand-animation {
+            animation:
+              leftContentIn 0.9s ease-out both;
+          }
+
+          .logo-animation {
+            animation:
+              brandFloat 4s ease-in-out infinite,
+              logoGlow 3s ease-in-out infinite;
+          }
+
+          .brand-title-animation {
+            animation:
+              leftContentIn 1s ease-out 0.15s both;
+          }
+
+          .brand-subtitle-animation {
+            animation:
+              leftContentIn 1s ease-out 0.3s both;
+          }
+
+          .brand-description-animation {
+            animation:
+              leftContentIn 1s ease-out 0.45s both;
+          }
+
+          .right-animation {
+            animation:
+              rightContentIn 0.8s ease-out both;
+          }
+
+          .animated-line {
+            animation:
+              lineExpand 0.8s ease-out 0.35s both;
+          }
+
+          .login-button {
+            background:
+              linear-gradient(
+                110deg,
+                #0070f2 0%,
+                #126cf2 30%,
+                #6b2ff2 65%,
+                #0070f2 100%
+              );
+
+            background-size: 250% 100%;
+
+            transition:
+              transform 0.25s ease,
+              box-shadow 0.25s ease,
+              background-position 0.5s ease;
+
+            animation:
+              pulseGlow 3s ease-in-out infinite;
+          }
+
+          .login-button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            background-position: 100% 0;
+            box-shadow:
+              0 12px 28px rgba(0,112,242,0.38);
+          }
+
+          .login-button:active:not(:disabled) {
+            transform: translateY(0);
+          }
+
+          .login-button:disabled {
+            cursor: not-allowed;
+          }
+
+          .security-animation {
+            animation:
+              securityPulse 2.5s ease-in-out infinite;
+          }
+
+          .mobile-logo-animation {
+            animation:
+              leftContentIn 0.7s ease-out both;
+          }
+
+          @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+            }
           }
         `}
       </style>
 
+      {/* =====================================================
+          MAIN PAGE
+      ====================================================== */}
       <div
+        className="min-h-screen w-full flex"
         style={{
-          minHeight: "100vh",
-          width: "100%",
-          display: "flex",
           fontFamily:
-            "'72', '72full', Arial, Helvetica, sans-serif",
+            "'Georgia', 'Times New Roman', serif",
           background: F.bg,
-          overflow: "hidden",
         }}
       >
-        {/* =====================================================
-            LEFT BRAND PANEL
-            ===================================================== */}
 
+        {/* ===================================================
+            LEFT BRAND PANEL
+        ==================================================== */}
         <div
-          className="hidden lg:flex"
+          className="hidden lg:flex flex-col items-center justify-center w-1/2 relative overflow-hidden"
           style={{
-            width: "50%",
-            minWidth: "50%",
-            height: "100vh",
-            position: "relative",
-            overflow: "hidden",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
+            /*
+              KEEPING YOUR PREVIOUS BACKGROUND
+              --------------------------------
+              Dark blue / purple gradient + grid
+            */
             background:
               "linear-gradient(145deg, #06091a 0%, #0c1230 45%, #160826 100%)",
           }}
         >
-          {/* BLUE GLOW */}
 
+          {/* -----------------------------------------------
+              ORIGINAL BLUE GLOW
+          ------------------------------------------------ */}
           <div
+            className="absolute pointer-events-none"
             style={{
-              position: "absolute",
-              pointerEvents: "none",
               top: "18%",
               left: "-10%",
               width: "520px",
               height: "520px",
+
               background:
                 "radial-gradient(circle, rgba(64,178,240,0.18) 0%, transparent 68%)",
+
               filter: "blur(8px)",
+
+              animation:
+                "glowMove 7s ease-in-out infinite",
             }}
           />
 
-          {/* PURPLE GLOW */}
-
+          {/* -----------------------------------------------
+              ORIGINAL PURPLE GLOW
+          ------------------------------------------------ */}
           <div
+            className="absolute pointer-events-none"
             style={{
-              position: "absolute",
-              pointerEvents: "none",
               bottom: "10%",
               right: "-14%",
               width: "480px",
               height: "480px",
+
               background:
                 "radial-gradient(circle, rgba(138,62,210,0.22) 0%, transparent 68%)",
+
               filter: "blur(8px)",
+
+              animation:
+                "glowMoveReverse 8s ease-in-out infinite",
             }}
           />
 
-          {/* GRID */}
-
+          {/* -----------------------------------------------
+              ORIGINAL GRID
+          ------------------------------------------------ */}
           <div
+            className="absolute inset-0 pointer-events-none"
             style={{
-              position: "absolute",
-              inset: 0,
               opacity: 0.035,
-              pointerEvents: "none",
+
               backgroundImage:
                 "linear-gradient(rgba(255,255,255,1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,1) 1px, transparent 1px)",
+
               backgroundSize: "52px 52px",
             }}
           />
 
-          {/* BRAND CONTENT */}
-
+          {/* -----------------------------------------------
+              BRAND CONTENT
+          ------------------------------------------------ */}
           <div
-            style={{
-              position: "relative",
-              zIndex: 10,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              textAlign: "center",
-              padding: "0 56px",
-              userSelect: "none",
-            }}
+            className="relative z-10 flex flex-col items-center text-center px-14 select-none brand-animation"
           >
-            {/* LOGO */}
 
+            {/* LOGO */}
             <img
               src={logoImage}
               alt="Naxrita"
+              className="logo-animation"
               style={{
                 width: "200px",
-                height: "200px",
-                objectFit: "contain",
-                filter:
-                  "drop-shadow(0 4px 32px rgba(64,178,240,0.38)) drop-shadow(0 2px 12px rgba(138,62,210,0.28))",
+                height: "auto",
+                marginBottom: "2.1rem",
               }}
             />
 
             {/* NAXRITA */}
-
             <div
+              className="brand-title-animation"
               style={{
                 fontFamily:
-                  "'Times New Roman', Times, serif",
-                fontSize: "3.5rem",
-                fontWeight: 600,
-                letterSpacing: "0.18em",
+                  "'Georgia', 'Times New Roman', serif",
+
+                fontSize: "2.35rem",
+
+                fontWeight: 700,
+
+                letterSpacing: "0.48em",
+
                 textTransform: "uppercase",
+
                 color: "#ffffff",
+
                 lineHeight: 1,
-                textAlign: "center",
-                marginTop: "-10px",
-                marginBottom: "20px",
-                whiteSpace: "nowrap",
+
+                paddingLeft: "0.48em",
+
+                textShadow:
+                  "0 2px 18px rgba(255,255,255,0.12)",
               }}
             >
               NAXRITA
             </div>
 
-            {/* TAGLINE */}
-
+            {/* -------------------------------------------
+                MOTO
+            -------------------------------------------- */}
             <div
+              className="brand-subtitle-animation"
               style={{
+                marginTop: "0.9rem",
+
                 fontFamily:
-                  "Arial, Helvetica, sans-serif",
-                fontSize: "1rem",
-                fontWeight: 400,
-                letterSpacing: "0.25em",
+                  "'Georgia', 'Times New Roman', serif",
+
+                fontSize: "0.82rem",
+
+                fontWeight: 700,
+
+                letterSpacing: "0.32em",
+
                 textTransform: "uppercase",
-                color: "#aaaaaa",
-                textAlign: "center",
+
+                color: "rgba(255,255,255,0.82)",
+
+                paddingLeft: "0.32em",
+
+                textShadow:
+                  "0 2px 10px rgba(0,0,0,0.25)",
               }}
             >
               WE COMMIT, WE DELIVER
             </div>
 
-            {/* DIVIDER */}
-
+            {/* -------------------------------------------
+                GRADIENT DIVIDER
+            -------------------------------------------- */}
             <div
+              className="animated-line"
               style={{
-                width: "48px",
-                height: "1px",
-                margin: "24px auto",
+                height: "2px",
+
+                margin:
+                  "1.65rem auto 1.4rem",
+
                 background:
-                  "linear-gradient(90deg, transparent, rgba(64,178,240,0.6), rgba(138,62,210,0.6), transparent)",
+                  "linear-gradient(90deg, #20d4ff, #8a3ed2)",
+
+                borderRadius: "20px",
+
+                boxShadow:
+                  "0 0 14px rgba(64,178,240,0.35)",
               }}
             />
 
-            {/* CONSOLE TITLE */}
-
+            {/* -------------------------------------------
+                PRODUCT TITLE
+            -------------------------------------------- */}
             <div
+              className="brand-subtitle-animation"
               style={{
-                color: "rgba(255,255,255,0.4)",
-                fontSize: "10px",
-                fontWeight: 400,
-                letterSpacing: "0.32em",
+                fontFamily:
+                  "'Georgia', 'Times New Roman', serif",
+
+                color:
+                  "rgba(255,255,255,0.58)",
+
+                fontSize: "0.7rem",
+
+                fontWeight: 700,
+
+                letterSpacing: "0.30em",
+
                 textTransform: "uppercase",
-                paddingLeft: "0.32em",
+
+                paddingLeft: "0.30em",
               }}
             >
-              SAP Basis Provisioning Console
+              SAP BASIS PROVISIONING CONSOLE
             </div>
 
-            {/* DESCRIPTION */}
-
+            {/* -------------------------------------------
+                DESCRIPTION
+            -------------------------------------------- */}
             <p
+              className="brand-description-animation"
               style={{
-                marginTop: "36px",
-                marginBottom: 0,
-                maxWidth: "280px",
-                color: "rgba(255,255,255,0.25)",
-                fontSize: "12px",
-                fontWeight: 300,
+                marginTop: "2rem",
+
+                maxWidth: "310px",
+
+                color:
+                  "rgba(255,255,255,0.45)",
+
+                fontFamily:
+                  "'Georgia', 'Times New Roman', serif",
+
+                fontSize: "0.86rem",
+
+                fontWeight: 400,
+
                 lineHeight: 1.8,
-                letterSpacing: "0.015em",
+
+                letterSpacing: "0.01em",
+
                 textAlign: "center",
               }}
             >
@@ -524,171 +680,199 @@ export function SignInPage({
             </p>
           </div>
 
-          {/* COPYRIGHT */}
-
+          {/* =================================================
+              LEFT FOOTER
+          ================================================== */}
           <div
-            style={{
-              position: "absolute",
-              bottom: "32px",
-              left: 0,
-              right: 0,
-              textAlign: "center",
-              color: "rgba(255,255,255,0.18)",
-              fontSize: "10px",
-              letterSpacing: "0.12em",
-            }}
-          >
-            © 2026 NAXRITA · ENTERPRISE EDITION
-          </div>
+  className="absolute bottom-6 left-1/2 -translate-x-1/2"
+  style={{
+    color: "rgba(255,255,255,0.30)",
+    fontFamily: "'Georgia', 'Times New Roman', serif",
+    fontSize: "0.68rem",
+    fontWeight: 600,
+    letterSpacing: "0.10em",
+    borderLeft: "2px solid rgba(64,178,240,0.7)",
+    paddingLeft: "10px",
+    textAlign: "center",
+    whiteSpace: "nowrap",
+  }}
+>
+  © 2026 NAXRITA · ENTERPRISE EDITION
+</div>
         </div>
 
-        {/* =====================================================
-            RIGHT FORM PANEL
-            ===================================================== */}
-
+        {/* ===================================================
+            RIGHT LOGIN PANEL
+        ==================================================== */}
         <div
+          className="flex-1 flex flex-col items-center justify-center px-6 py-10 relative overflow-hidden"
           style={{
-            width: "50%",
-            minWidth: 0,
-            height: "100vh",
-            position: "relative",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "40px 32px",
-            background: F.bg,
-            overflowY: "auto",
+            background: "#f7f9fc",
           }}
         >
-          {/* =================================================
-              FORM WRAPPER
-              ================================================= */}
 
+          {/* -----------------------------------------------
+              SUBTLE RIGHT BACKGROUND LIGHT
+          ------------------------------------------------ */}
           <div
+            className="absolute pointer-events-none"
             style={{
-              width: "100%",
-              maxWidth: "420px",
-              margin: "0 auto",
-            }}
-          >
-            {/* =================================================
-                MOBILE LOGO
-                ================================================= */}
+              top: "-180px",
+              right: "-180px",
 
-            <div
-              className="lg:hidden"
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                marginBottom: "32px",
-              }}
-            >
-              
+              width: "450px",
+              height: "450px",
+
+              borderRadius: "50%",
+
+              background:
+                "radial-gradient(circle, rgba(0,112,242,0.06), transparent 68%)",
+
+              animation:
+                "glowMove 9s ease-in-out infinite",
+            }}
+          />
+
+          {/* -----------------------------------------------
+              FORM CONTENT
+          ------------------------------------------------ */}
+          <div
+            className="w-full max-w-sm relative z-10 right-animation"
+          >
+
+            {/* MOBILE LOGO */}
+            <div className="lg:hidden flex items-center gap-3 mb-8 mobile-logo-animation">
+
+              <img
+                src={logoImage}
+                alt="Naxrita"
+                style={{
+                  width: "42px",
+                  height: "auto",
+                }}
+              />
 
               <div>
-                
+                <div
+                  style={{
+                    color: F.text,
+                    fontFamily:
+                      "'Georgia', 'Times New Roman', serif",
+                    fontWeight: 700,
+                    letterSpacing: "0.08em",
+                  }}
+                >
+                  NAXRITA
+                </div>
+
+                <div
+                  className="text-xs"
+                  style={{
+                    color: F.muted,
+                  }}
+                >
+                  SAP Basis Provisioning Console
+                </div>
               </div>
             </div>
 
-            {/* =================================================
-                SUCCESS MESSAGE
-                ================================================= */}
-
+            {/* SUCCESS MESSAGE */}
             {successMsg && (
               <div
+                className="flex items-start gap-2 px-3.5 py-3 rounded-lg text-xs mb-5"
                 style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: "8px",
-                  padding: "12px 14px",
-                  borderRadius: "8px",
-                  marginBottom: "20px",
                   background: "#f1fdf6",
-                  border: `1px solid ${F.success}40`,
+                  border:
+                    `1px solid ${F.success}40`,
                   color: F.success,
-                  fontSize: "12px",
-                  lineHeight: "18px",
                 }}
               >
                 <CheckCircle2
                   size={16}
-                  style={{
-                    flexShrink: 0,
-                    marginTop: "1px",
-                  }}
+                  className="flex-shrink-0 mt-0.5"
                 />
 
-                <span>{successMsg}</span>
+                <div>{successMsg}</div>
               </div>
             )}
 
             {/* =================================================
-                SIGN IN
-                ================================================= */}
-
+                SIGN IN VIEW
+            ================================================== */}
             {viewMode === "signin" && (
               <>
-                {/* HEADING */}
+                <div className="text-center">
 
-                <div
-                  style={{
-                    width: "100%",
-                    marginBottom: "30px",
-                  }}
-                >
                   <h2
                     style={{
-                      margin: 0,
-                      color: F.text,
+                      color: "#172b4d",
+
                       fontFamily:
-                  "'Times New Roman', Times, serif",
-                      fontSize: "28px",
-                      lineHeight: "36px",
-                      fontWeight: 900,
-                      letterSpacing: "-0.4px",
+                        "'Georgia', 'Times New Roman', serif",
+
+                      fontSize: "2rem",
+
+                      letterSpacing: "-0.5px",
+
+                      fontWeight: 700,
+
+                      margin: 0,
                     }}
                   >
                     Welcome Back
                   </h2>
 
                   <p
+                    className="text-sm mt-2"
                     style={{
-                      margin: "8px 0 0 0",
                       color: F.muted,
-                      fontSize: "14px",
-                      lineHeight: "21px",
+
+                      fontFamily:
+                        "Arial, Helvetica, sans-serif",
+
+                      fontSize: "0.9rem",
                     }}
                   >
                     Sign in with your SAP administrator
                     credentials to continue.
                   </p>
-                </div>
 
-                {/* FORM */}
+                  {/* BLUE/PURPLE LINE */}
+                  <div
+                    className="animated-line"
+                    style={{
+                      height: "3px",
+
+                      width: "55px",
+
+                      margin:
+                        "1.4rem auto 2.5rem",
+
+                      borderRadius: "20px",
+
+                      background:
+                        "linear-gradient(90deg, #20a8ff, #7135e8)",
+
+                      boxShadow:
+                        "0 0 12px rgba(0,112,242,0.2)",
+                    }}
+                  />
+                </div>
 
                 <form
                   onSubmit={handleSubmit}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "20px",
-                  }}
+                  className="flex flex-col gap-5"
                 >
-                  {/* USERNAME */}
 
-                  <div style={{ width: "100%" }}>
+                  {/* USERNAME */}
+                  <div>
                     <label
+                      className="block text-xs mb-1.5"
                       style={{
-                        display: "block",
                         color: F.text,
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        marginBottom: "7px",
+                        fontFamily:
+                          "Arial, Helvetica, sans-serif",
+                        fontWeight: 700,
                       }}
                     >
                       Username
@@ -703,30 +887,29 @@ export function SignInPage({
                       }}
                       placeholder="e.g. admin"
                       autoFocus
-                      className="login-input"
-                      style={inputStyle}
+                      className="w-full px-3.5 py-3 text-sm rounded-lg outline-none transition-all"
+                      style={{
+                        ...inputStyle,
+                        fontFamily:
+                          "Arial, Helvetica, sans-serif",
+                      }}
                       onFocus={onFocus}
                       onBlur={onBlur}
                     />
                   </div>
 
                   {/* PASSWORD */}
+                  <div>
 
-                  <div style={{ width: "100%" }}>
-                    <div
-                      style={{
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginBottom: "7px",
-                      }}
-                    >
+                    <div className="flex items-center justify-between mb-1.5">
+
                       <label
+                        className="block text-xs"
                         style={{
                           color: F.text,
-                          fontSize: "13px",
-                          fontWeight: 500,
+                          fontFamily:
+                            "Arial, Helvetica, sans-serif",
+                          fontWeight: 700,
                         }}
                       >
                         Password
@@ -739,29 +922,25 @@ export function SignInPage({
                           setError("");
                           setSuccessMsg("");
                         }}
+                        className="text-xs font-medium hover:underline"
                         style={{
-                          border: "none",
-                          background: "transparent",
-                          padding: 0,
                           color: F.primary,
-                          fontSize: "12px",
-                          fontWeight: 500,
-                          cursor: "pointer",
+                          fontFamily:
+                            "Arial, Helvetica, sans-serif",
                         }}
                       >
                         Forgot password?
                       </button>
+
                     </div>
 
-                    <div
-                      style={{
-                        width: "100%",
-                        position: "relative",
-                      }}
-                    >
+                    <div className="relative">
+
                       <input
                         type={
-                          showPw ? "text" : "password"
+                          showPw
+                            ? "text"
+                            : "password"
                         }
                         value={password}
                         onChange={(e) => {
@@ -769,10 +948,11 @@ export function SignInPage({
                           setError("");
                         }}
                         placeholder="Your password"
-                        className="login-input"
+                        className="w-full px-3.5 py-3 pr-11 text-sm rounded-lg outline-none transition-all"
                         style={{
                           ...inputStyle,
-                          paddingRight: "48px",
+                          fontFamily:
+                            "Arial, Helvetica, sans-serif",
                         }}
                         onFocus={onFocus}
                         onBlur={onBlur}
@@ -783,22 +963,9 @@ export function SignInPage({
                         onClick={() =>
                           setShowPw(!showPw)
                         }
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2"
                         style={{
-                          position: "absolute",
-                          right: "14px",
-                          top: "50%",
-                          transform:
-                            "translateY(-50%)",
-                          width: "24px",
-                          height: "24px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          border: "none",
-                          background: "transparent",
                           color: F.muted,
-                          padding: 0,
-                          cursor: "pointer",
                         }}
                       >
                         {showPw ? (
@@ -807,43 +974,54 @@ export function SignInPage({
                           <Eye size={17} />
                         )}
                       </button>
+
                     </div>
                   </div>
 
                   {/* ERROR */}
-
-                  <ErrorMessage />
+                  {error && (
+                    <div
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs"
+                      style={{
+                        background: "#fff2f2",
+                        border:
+                          "1px solid #bb000030",
+                        color: F.error,
+                      }}
+                    >
+                      <AlertCircle size={14} />
+                      {error}
+                    </div>
+                  )}
 
                   {/* SIGN IN BUTTON */}
-
                   <button
                     type="submit"
                     disabled={loading}
+                    className="login-button w-full py-3.5 rounded-lg text-sm text-white flex items-center justify-center gap-2"
                     style={{
-                      ...buttonStyle,
-                      marginTop: "2px",
-                      background: loading
-                        ? "#74a8f5"
-                        : `linear-gradient(
-                            180deg,
-                            ${F.primary} 0%,
-                            ${F.primaryDark} 100%
-                          )`,
-                      boxShadow: loading
-                        ? "none"
-                        : "0 6px 16px rgba(0,112,242,0.28)",
-                      opacity: loading ? 0.9 : 1,
+                      fontFamily:
+                        "Arial, Helvetica, sans-serif",
+
+                      fontWeight: 700,
+
+                      border: "none",
+
+                      opacity:
+                        loading ? 0.85 : 1,
                     }}
                   >
                     {loading ? (
                       <>
-                        <LoadingSpinner />
-                        <span>Signing in…</span>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+
+                        Signing in…
                       </>
                     ) : (
                       <>
-                        <KeyRound size={16} />
-                        <span>Sign In</span>
+                        <KeyRound size={17} />
+
+                        Sign In
                       </>
                     )}
                   </button>
@@ -853,102 +1031,67 @@ export function SignInPage({
 
             {/* =================================================
                 FORGOT PASSWORD
-                ================================================= */}
-
+            ================================================== */}
             {viewMode === "forgot" && (
               <>
-                {/* BACK */}
-
                 <button
-                  type="button"
                   onClick={() => {
                     setViewMode("signin");
                     setError("");
                   }}
+                  className="flex items-center gap-1.5 text-xs mb-4 hover:underline"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    border: "none",
-                    background: "transparent",
-                    padding: 0,
-                    marginBottom: "18px",
                     color: F.muted,
-                    fontSize: "12px",
-                    cursor: "pointer",
                   }}
                 >
                   <ArrowLeft size={14} />
                   Back to Sign In
                 </button>
 
-                {/* HEADING */}
-
-                <div
+                <h2
                   style={{
-                    width: "100%",
-                    marginBottom: "30px",
+                    color: F.text,
+                    fontFamily:
+                      "'Georgia', 'Times New Roman', serif",
+                    fontSize: "1.7rem",
+                    fontWeight: 700,
                   }}
                 >
-                  <h2
-                    style={{
-                      margin: 0,
-                      color: F.text,
-                      fontSize: "28px",
-                      lineHeight: "36px",
-                      fontWeight: 500,
-                      letterSpacing: "-0.4px",
-                    }}
-                  >
-                    Forgot Password
-                  </h2>
+                  Forgot Password
+                </h2>
 
-                  <p
-                    style={{
-                      margin: "8px 0 0 0",
-                      color: F.muted,
-                      fontSize: "14px",
-                      lineHeight: "21px",
-                    }}
-                  >
-                    Enter your registered administrator
-                    email address to generate a password
-                    reset token.
-                  </p>
-                </div>
-
-                {/* FORM */}
+                <p
+                  className="text-sm mt-1.5 mb-8"
+                  style={{
+                    color: F.muted,
+                    fontFamily:
+                      "Arial, Helvetica, sans-serif",
+                  }}
+                >
+                  Enter your registered administrator
+                  email address to generate a password
+                  reset token.
+                </p>
 
                 <form
                   onSubmit={handleForgotPassword}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "20px",
-                  }}
+                  className="flex flex-col gap-5"
                 >
-                  {/* EMAIL */}
 
-                  <div style={{ width: "100%" }}>
+                  <div>
+
                     <label
+                      className="block text-xs mb-1.5"
                       style={{
-                        display: "block",
                         color: F.text,
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        marginBottom: "7px",
+                        fontWeight: 700,
                       }}
                     >
                       Registered Email
                     </label>
 
-                    <div
-                      style={{
-                        width: "100%",
-                        position: "relative",
-                      }}
-                    >
+                    <div className="relative">
+
                       <input
                         type="email"
                         value={email}
@@ -958,159 +1101,118 @@ export function SignInPage({
                         }}
                         placeholder="e.g. superadmin@example.com"
                         autoFocus
-                        className="login-input"
-                        style={{
-                          ...inputStyle,
-                          paddingRight: "48px",
-                        }}
+                        className="w-full px-3.5 py-3 pr-10 text-sm rounded-lg outline-none transition-all"
+                        style={inputStyle}
                         onFocus={onFocus}
                         onBlur={onBlur}
                       />
 
                       <Mail
-                        size={17}
+                        size={16}
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2"
                         style={{
-                          position: "absolute",
-                          right: "14px",
-                          top: "50%",
-                          transform:
-                            "translateY(-50%)",
                           color: F.muted,
-                          pointerEvents: "none",
                         }}
                       />
+
                     </div>
                   </div>
 
-                  {/* ERROR */}
-
-                  <ErrorMessage />
-
-                  {/* SEND BUTTON */}
+                  {error && (
+                    <div
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs"
+                      style={{
+                        background: "#fff2f2",
+                        border:
+                          "1px solid #bb000030",
+                        color: F.error,
+                      }}
+                    >
+                      <AlertCircle size={14} />
+                      {error}
+                    </div>
+                  )}
 
                   <button
                     type="submit"
                     disabled={loading}
+                    className="login-button w-full py-3.5 rounded-lg text-sm text-white flex items-center justify-center gap-2"
                     style={{
-                      ...buttonStyle,
-                      background: loading
-                        ? "#74a8f5"
-                        : `linear-gradient(
-                            180deg,
-                            ${F.primary} 0%,
-                            ${F.primaryDark} 100%
-                          )`,
-                      boxShadow: loading
-                        ? "none"
-                        : "0 6px 16px rgba(0,112,242,0.28)",
+                      fontWeight: 700,
+                      border: "none",
                     }}
                   >
                     {loading ? (
                       <>
-                        <LoadingSpinner />
-                        <span>
-                          Requesting Token…
-                        </span>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Requesting Token…
                       </>
                     ) : (
                       <>
-                        <Mail size={16} />
-                        <span>
-                          Send Reset Instructions
-                        </span>
+                        <Mail size={15} />
+                        Send Reset Instructions
                       </>
                     )}
                   </button>
+
                 </form>
               </>
             )}
 
             {/* =================================================
                 RESET PASSWORD
-                ================================================= */}
-
+            ================================================== */}
             {viewMode === "reset" && (
               <>
-                {/* BACK */}
-
                 <button
-                  type="button"
                   onClick={() => {
                     setViewMode("signin");
                     setError("");
                   }}
+                  className="flex items-center gap-1.5 text-xs mb-4 hover:underline"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
-                    border: "none",
-                    background: "transparent",
-                    padding: 0,
-                    marginBottom: "18px",
                     color: F.muted,
-                    fontSize: "12px",
-                    cursor: "pointer",
                   }}
                 >
                   <ArrowLeft size={14} />
                   Back to Sign In
                 </button>
 
-                {/* HEADING */}
-
-                <div
+                <h2
                   style={{
-                    width: "100%",
-                    marginBottom: "30px",
+                    color: F.text,
+                    fontFamily:
+                      "'Georgia', 'Times New Roman', serif",
+                    fontSize: "1.7rem",
+                    fontWeight: 700,
                   }}
                 >
-                  <h2
-                    style={{
-                      margin: 0,
-                      color: F.text,
-                      fontSize: "28px",
-                      lineHeight: "36px",
-                      fontWeight: 500,
-                      letterSpacing: "-0.4px",
-                    }}
-                  >
-                    Reset Password
-                  </h2>
+                  Reset Password
+                </h2>
 
-                  <p
-                    style={{
-                      margin: "8px 0 0 0",
-                      color: F.muted,
-                      fontSize: "14px",
-                      lineHeight: "21px",
-                    }}
-                  >
-                    Enter the reset token generated for
-                    your account and set your new password.
-                  </p>
-                </div>
-
-                {/* FORM */}
+                <p
+                  className="text-sm mt-1.5 mb-8"
+                  style={{
+                    color: F.muted,
+                  }}
+                >
+                  Enter the reset token generated for your
+                  account and set your new password.
+                </p>
 
                 <form
                   onSubmit={handleResetPassword}
-                  style={{
-                    width: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "20px",
-                  }}
+                  className="flex flex-col gap-5"
                 >
-                  {/* RESET TOKEN */}
 
-                  <div style={{ width: "100%" }}>
+                  {/* TOKEN */}
+                  <div>
+
                     <label
+                      className="block text-xs mb-1.5"
                       style={{
-                        display: "block",
                         color: F.text,
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        marginBottom: "7px",
+                        fontWeight: 700,
                       }}
                     >
                       Reset Token
@@ -1124,42 +1226,34 @@ export function SignInPage({
                         setError("");
                       }}
                       placeholder="Enter reset token UUID"
-                      className="login-input"
-                      style={{
-                        ...inputStyle,
-                        fontFamily:
-                          "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                        fontSize: "13px",
-                      }}
+                      className="w-full px-3.5 py-3 text-sm rounded-lg outline-none font-mono transition-all"
+                      style={inputStyle}
                       onFocus={onFocus}
                       onBlur={onBlur}
                     />
+
                   </div>
 
                   {/* NEW PASSWORD */}
+                  <div>
 
-                  <div style={{ width: "100%" }}>
                     <label
+                      className="block text-xs mb-1.5"
                       style={{
-                        display: "block",
                         color: F.text,
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        marginBottom: "7px",
+                        fontWeight: 700,
                       }}
                     >
                       New Password
                     </label>
 
-                    <div
-                      style={{
-                        width: "100%",
-                        position: "relative",
-                      }}
-                    >
+                    <div className="relative">
+
                       <input
                         type={
-                          showPw ? "text" : "password"
+                          showPw
+                            ? "text"
+                            : "password"
                         }
                         value={newPassword}
                         onChange={(e) => {
@@ -1169,11 +1263,8 @@ export function SignInPage({
                           setError("");
                         }}
                         placeholder="Enter new strong password"
-                        className="login-input"
-                        style={{
-                          ...inputStyle,
-                          paddingRight: "48px",
-                        }}
+                        className="w-full px-3.5 py-3 pr-11 text-sm rounded-lg outline-none transition-all"
+                        style={inputStyle}
                         onFocus={onFocus}
                         onBlur={onBlur}
                       />
@@ -1183,130 +1274,111 @@ export function SignInPage({
                         onClick={() =>
                           setShowPw(!showPw)
                         }
+                        className="absolute right-3.5 top-1/2 -translate-y-1/2"
                         style={{
-                          position: "absolute",
-                          right: "14px",
-                          top: "50%",
-                          transform:
-                            "translateY(-50%)",
-                          width: "24px",
-                          height: "24px",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          border: "none",
-                          background: "transparent",
                           color: F.muted,
-                          padding: 0,
-                          cursor: "pointer",
                         }}
                       >
                         {showPw ? (
-                          <EyeOff size={17} />
+                          <EyeOff size={16} />
                         ) : (
-                          <Eye size={17} />
+                          <Eye size={16} />
                         )}
                       </button>
+
                     </div>
                   </div>
 
                   {/* ERROR */}
+                  {error && (
+                    <div
+                      className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs"
+                      style={{
+                        background: "#fff2f2",
+                        border:
+                          "1px solid #bb000030",
+                        color: F.error,
+                      }}
+                    >
+                      <AlertCircle size={14} />
+                      {error}
+                    </div>
+                  )}
 
-                  <ErrorMessage />
-
-                  {/* RESET BUTTON */}
-
+                  {/* UPDATE BUTTON */}
                   <button
                     type="submit"
                     disabled={loading}
+                    className="login-button w-full py-3.5 rounded-lg text-sm text-white flex items-center justify-center gap-2"
                     style={{
-                      ...buttonStyle,
-                      background: loading
-                        ? "#74a8f5"
-                        : `linear-gradient(
-                            180deg,
-                            ${F.primary} 0%,
-                            ${F.primaryDark} 100%
-                          )`,
-                      boxShadow: loading
-                        ? "none"
-                        : "0 6px 16px rgba(0,112,242,0.28)",
+                      fontWeight: 700,
+                      border: "none",
                     }}
                   >
                     {loading ? (
                       <>
-                        <LoadingSpinner />
-                        <span>
-                          Resetting Password…
-                        </span>
+                        <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Resetting Password…
                       </>
                     ) : (
                       <>
-                        <Lock size={16} />
-                        <span>
-                          Update Password
-                        </span>
+                        <Lock size={15} />
+                        Update Password
                       </>
                     )}
                   </button>
+
                 </form>
               </>
             )}
 
             {/* =================================================
                 SECURITY MESSAGE
-                ================================================= */}
-
+            ================================================== */}
             <div
-              style={{
-                width: "100%",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                gap: "8px",
-                marginTop: "30px",
-              }}
+              className="flex items-center gap-2 mt-8 security-animation"
             >
               <Shield
                 size={14}
                 style={{
                   color: F.muted,
-                  flexShrink: 0,
                 }}
               />
 
               <span
+                className="text-xs"
                 style={{
                   color: F.muted,
-                  fontSize: "12px",
-                  lineHeight: "18px",
+                  fontFamily:
+                    "Arial, Helvetica, sans-serif",
                 }}
               >
                 Secured connection · Session encrypted
                 end-to-end
               </span>
             </div>
+
           </div>
 
           {/* =================================================
-              FOOTER
-              ================================================= */}
-
+              RIGHT FOOTER
+          ================================================== */}
           <p
+            className="text-xs absolute bottom-6"
             style={{
-              position: "absolute",
-              bottom: "24px",
-              left: "32px",
-              right: "32px",
-              margin: 0,
               color: F.muted,
-              fontSize: "11px",
-              lineHeight: "18px",
-              textAlign: "center",
+
+              fontFamily:
+                "Arial, Helvetica, sans-serif",
+
+              fontWeight: 500,
+
+              letterSpacing: "0.01em",
             }}
           >
             © 2026 Naxrita SAP Basis Provisioning Console
           </p>
+
         </div>
       </div>
     </>

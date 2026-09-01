@@ -1,28 +1,55 @@
-import { useState } from "react";
-import { ArrowLeft, Globe, Shield, Bell, Monitor, ChevronRight, ToggleLeft, ToggleRight, Save, CheckCircle2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowLeft, Shield, Bell, Monitor, ChevronRight, ToggleLeft, ToggleRight, Save, CheckCircle2 } from "lucide-react";
 
 const F = {
   primary: "#0070f2", success: "#107e3e", error: "#bb0000",
-  warning: "#e9730c", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff",
+  warning: "#e9730c", text: "var(--app-text)", muted: "var(--app-muted)",
+  border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)",
 };
 
 export interface AppSettings {
   language: string; dateFormat: string; timezone: string; sessionTimeout: string;
   emailAlerts: boolean; browserNotifs: boolean; density: string; theme: string;
   auditRetention: string; defaultSystem: string;
+  notificationTriggers: {
+    userCreationSuccess: boolean;
+    userCreationFailure: boolean;
+    bulkImportCompletion: boolean;
+    passwordReset: boolean;
+    wrongPasswordUnlockEvents: boolean;
+    systemRegistryChanges: boolean;
+  };
+  displayPreferences: {
+    alternateRowStriping: boolean;
+    freezeFirstColumn: boolean;
+    showRowNumbers: boolean;
+  };
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   language: "English (US)", dateFormat: "DD/MM/YYYY", timezone: "UTC+0 (London)",
   sessionTimeout: "30 minutes", emailAlerts: true, browserNotifs: false,
   density: "Comfortable", theme: "Light", auditRetention: "90 days", defaultSystem: "",
+  notificationTriggers: {
+    userCreationSuccess: true,
+    userCreationFailure: true,
+    bulkImportCompletion: true,
+    passwordReset: false,
+    wrongPasswordUnlockEvents: true,
+    systemRegistryChanges: false,
+  },
+  displayPreferences: {
+    alternateRowStriping: true,
+    freezeFirstColumn: false,
+    showRowNumbers: false,
+  },
 };
 
-type Section = "general" | "security" | "notifications" | "display";
+export type TableDisplayPreferences = AppSettings["displayPreferences"];
+
+type Section = "security" | "notifications" | "display";
 
 const SECTIONS: { id: Section; label: string; icon: typeof Globe }[] = [
-  { id: "general",       label: "General",       icon: Globe   },
   { id: "security",      label: "Security",       icon: Shield  },
   { id: "notifications", label: "Notifications",  icon: Bell    },
   { id: "display",       label: "Display",        icon: Monitor },
@@ -30,7 +57,7 @@ const SECTIONS: { id: Section; label: string; icon: typeof Globe }[] = [
 
 function Toggle({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <button onClick={() => onChange(!value)} style={{ color: value ? F.primary : F.muted }}>
+    <button type="button" onClick={() => onChange(!value)} style={{ color: value ? F.primary : F.muted }}>
       {value ? <ToggleRight size={24} /> : <ToggleLeft size={24} />}
     </button>
   );
@@ -67,15 +94,24 @@ export function SettingsPage({ settings, onChange, onBack }: {
   onChange: (patch: Partial<AppSettings>) => void;
   onBack: () => void;
 }) {
-  const [active, setActive] = useState<Section>("general");
+  const [active, setActive] = useState<Section>("display");
   const [saved, setSaved] = useState(false);
+  const [draftSettings, setDraftSettings] = useState<AppSettings>(settings);
+
+  useEffect(() => {
+    setDraftSettings(settings);
+  }, [settings]);
 
   const handleSave = () => {
+    onChange(draftSettings);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
 
-  const set = (k: keyof AppSettings) => (v: string | boolean) => onChange({ [k]: v });
+  const set = (k: keyof AppSettings) => (v: string | boolean) => {
+    setSaved(false);
+    setDraftSettings((current) => ({ ...current, [k]: v }));
+  };
 
   return (
     <div className="min-h-full" style={{ background: F.bg }}>
@@ -118,7 +154,7 @@ export function SettingsPage({ settings, onChange, onBack }: {
                     className="flex items-center gap-3 px-4 py-3 w-full text-left transition-colors"
                     style={{
                       borderBottom: `1px solid ${F.border}`,
-                      background: isActive ? "#e8f2ff" : F.white,
+                      background: isActive ? "var(--app-active)" : F.white,
                       borderLeft: `3px solid ${isActive ? F.primary : "transparent"}`,
                     }}
                   >
@@ -140,23 +176,24 @@ export function SettingsPage({ settings, onChange, onBack }: {
                   <p className="text-xs mt-0.5" style={{ color: F.muted }}>Localization, formatting, and regional preferences.</p>
                 </div>
                 <div className="px-6">
-                  <SelectField label="Language" sub="Interface display language" value={settings.language} options={["English (US)", "English (UK)", "German (DE)", "French (FR)", "Japanese (JP)", "Chinese (Simplified)"]} onChange={set("language") as (v: string) => void} />
-                  <SelectField label="Date Format" sub="How dates are displayed throughout the application" value={settings.dateFormat} options={["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD", "DD-MMM-YYYY"]} onChange={set("dateFormat") as (v: string) => void} />
-                  <SelectField label="Time Zone" sub="Time zone for displaying timestamps" value={settings.timezone} options={["UTC-8 (Pacific)", "UTC-5 (Eastern)", "UTC+0 (London)", "UTC+1 (Berlin/Paris)", "UTC+3 (Moscow)", "UTC+5:30 (India)", "UTC+8 (Singapore/HK)", "UTC+9 (Tokyo)"]} onChange={set("timezone") as (v: string) => void} />
-                  <SelectField label="Default System" sub="Pre-selected system in provisioning modules" value={settings.defaultSystem || "None"} options={["None", "PRD – Production", "QAS – Quality", "DEV – Development"]} onChange={set("defaultSystem") as (v: string) => void} />
+                  <SelectField label="Language" sub="Interface display language" value={draftSettings.language} options={["English (US)", "English (UK)", "German (DE)", "French (FR)", "Japanese (JP)", "Chinese (Simplified)"]} onChange={set("language") as (v: string) => void} />
+                  <SelectField label="Date Format" sub="How dates are displayed throughout the application" value={draftSettings.dateFormat} options={["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD", "DD-MMM-YYYY"]} onChange={set("dateFormat") as (v: string) => void} />
+                  <SelectField label="Time Zone" sub="Time zone for displaying timestamps" value={draftSettings.timezone} options={["UTC-8 (Pacific)", "UTC-5 (Eastern)", "UTC+0 (London)", "UTC+1 (Berlin/Paris)", "UTC+3 (Moscow)", "UTC+5:30 (India)", "UTC+8 (Singapore/HK)", "UTC+9 (Tokyo)"]} onChange={set("timezone") as (v: string) => void} />
+                  <SelectField label="Default System" sub="Pre-selected system in provisioning modules" value={draftSettings.defaultSystem || "None"} options={["None", "SHD - Development", "EMP - Development", "EMQ - Development", "EMD - Development"]} onChange={set("defaultSystem") as (v: string) => void} />
                 </div>
               </div>
             )}
-
             {active === "security" && (
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`,background: "#1d2d3e",}}>
+                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa", backgroundColor: "#14263D  ",
+
+  color: "white" }}>
                   <h2 className="text-base" style={{ color: "white" }}>Security Settings</h2>
                   <p className="text-xs mt-0.5" style={{ color: F.muted }}>Session management and audit trail configuration.</p>
                 </div>
                 <div className="px-6">
-                  <SelectField label="Session Timeout" sub="Automatically log out after inactivity" value={settings.sessionTimeout} options={["15 minutes", "30 minutes", "1 hour", "2 hours", "4 hours", "8 hours"]} onChange={set("sessionTimeout") as (v: string) => void} />
-                  <SelectField label="Audit Log Retention" sub="Duration to retain audit log entries" value={settings.auditRetention} options={["30 days", "60 days", "90 days", "180 days", "1 year", "Indefinite"]} onChange={set("auditRetention") as (v: string) => void} />
+                  <SelectField label="Session Timeout" sub="Automatically log out after inactivity" value={draftSettings.sessionTimeout} options={["15 minutes", "30 minutes", "1 hour", "2 hours", "4 hours", "8 hours"]} onChange={set("sessionTimeout") as (v: string) => void} />
+                  <SelectField label="Audit Log Retention" sub="Duration to retain audit log entries" value={draftSettings.auditRetention} options={["30 days", "60 days", "90 days", "180 days", "1 year", "Indefinite"]} onChange={set("auditRetention") as (v: string) => void} />
                   <div className="py-4" style={{ borderBottom: `1px solid ${F.border}` }}>
                     <p className="text-sm mb-3" style={{ color: F.text }}>Current Session</p>
                     <div className="grid grid-cols-2 gap-3">
@@ -165,7 +202,7 @@ export function SettingsPage({ settings, onChange, onBack }: {
                         ["Role", "Basis Administrator"],
                         ["Session ID", "SES-A4B7C2D1"],
                         ["Login Time", "Today 08:30 UTC"],
-                        ["IP Address", "10.42.8.201"],
+                        ["IP Address", "Unavailable"],
                         ["Auth Objects", "S_USER_GRP, S_USR_ADM, S_TCODE"],
                       ].map(([k, v]) => (
                         <div key={k} className="p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
@@ -181,27 +218,38 @@ export function SettingsPage({ settings, onChange, onBack }: {
 
             {active === "notifications" && (
               <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#1d2d3e",}}>
+                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa", backgroundColor: "#14263D  ",
+
+  color: "white" }}>
                   <h2 className="text-base" style={{ color: "white" }}>Notification Preferences</h2>
                   <p className="text-xs mt-0.5" style={{ color: F.muted }}>Configure how and when you receive alerts.</p>
                 </div>
                 <div className="px-6">
-                  <ToggleField label="Email Alerts" sub="Receive provisioning results and failures by email" value={settings.emailAlerts} onChange={set("emailAlerts") as (v: boolean) => void} />
-                  <ToggleField label="Browser Notifications" sub="Show desktop push notifications for completed actions" value={settings.browserNotifs} onChange={set("browserNotifs") as (v: boolean) => void} />
+                  <ToggleField label="Email Alerts" sub="Receive provisioning results and failures by email" value={draftSettings.emailAlerts} onChange={set("emailAlerts") as (v: boolean) => void} />
+                  <ToggleField label="Browser Notifications" sub="Show desktop push notifications for completed actions" value={draftSettings.browserNotifs} onChange={set("browserNotifs") as (v: boolean) => void} />
                   <div className="py-4" style={{ borderBottom: `1px solid ${F.border}` }}>
-                    <p className="text-sm mb-3" style={{ color: F.text, }}>Notification Triggers</p>
+                    <p className="text-sm mb-3" style={{ color: F.text }}>Notification Triggers</p>
                     <div className="flex flex-col gap-2">
-                      {[
-                        { label: "User creation success", default: true },
-                        { label: "User creation failure", default: true },
-                        { label: "Bulk import completion", default: true },
-                        { label: "Password reset", default: false },
-                        { label: "Lock / unlock events", default: true },
-                        { label: "System registry changes", default: false },
-                      ].map((item) => (
-                        <div key={item.label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
-                          <span className="text-sm" style={{ color: F.text }}>{item.label}</span>
-                          <Toggle value={item.default} onChange={() => {}} />
+                      {([
+                        ["User creation success", draftSettings.notificationTriggers.userCreationSuccess, "userCreationSuccess"],
+                        ["User creation failure", draftSettings.notificationTriggers.userCreationFailure, "userCreationFailure"],
+                        ["Bulk import completion", draftSettings.notificationTriggers.bulkImportCompletion, "bulkImportCompletion"],
+                        ["Password reset", draftSettings.notificationTriggers.passwordReset, "passwordReset"],
+                        ["Wrong-password unlock events", draftSettings.notificationTriggers.wrongPasswordUnlockEvents, "wrongPasswordUnlockEvents"],
+                        ["System registry changes", draftSettings.notificationTriggers.systemRegistryChanges, "systemRegistryChanges"],
+                      ] as const).map(([label, value, key]) => (
+                        <div key={label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
+                          <span className="text-sm" style={{ color: F.text }}>{label}</span>
+                          <Toggle
+                            value={value}
+                            onChange={(next) => {
+                              setSaved(false);
+                              setDraftSettings((current) => ({
+                                ...current,
+                                notificationTriggers: { ...current.notificationTriggers, [key]: next },
+                              }));
+                            }}
+                          />
                         </div>
                       ))}
                     </div>
@@ -211,25 +259,36 @@ export function SettingsPage({ settings, onChange, onBack }: {
             )}
 
             {active === "display" && (
-              <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, background: "#1d2d3e", }}>
-                  <h2 className="text-base" style={{ color:"white" }}>Display & Appearance</h2>
-                  <p className="text-xs mt-0.5" style={{ color: F.muted }}>UI density, theme, and layout preferences.</p>
+              <div className="rounded overflow-hidden" style={{ background: F.white, border: `1px solid ${F.border}`}}>
+                <div className="px-6 py-4" style={{ borderBottom: `1px solid ${F.border}`, backgroundColor: "#14263D  ",
+
+  color: "white" }}>
+                  <h2 className="text-base" style={{ color: "white" }}>Display & Appearance</h2>
+                  <p className="text-xs mt-0.5" style={{ color: "F.muted" }}>UI density, theme, and layout preferences.</p>
                 </div>
                 <div className="px-6">
-                  <SelectField label="Display Density" sub="Controls spacing and padding throughout the UI" value={settings.density} options={["Compact", "Comfortable", "Spacious"]} onChange={set("density") as (v: string) => void} />
-                  <SelectField label="Theme" sub="Application colour theme (Light is the SAP Horizon default)" value={settings.theme} options={["Light", "High Contrast"]} onChange={set("theme") as (v: string) => void} />
+                  <SelectField label="Display Density" sub="Controls spacing and padding throughout the UI" value={draftSettings.density} options={["Compact", "Comfortable", "Spacious"]} onChange={set("density") as (v: string) => void} />
+                  <SelectField label="Theme" sub="Application colour theme (Light is the SAP Horizon default)" value={draftSettings.theme} options={["Light", "Dark"]} onChange={set("theme") as (v: string) => void} />
                   <div className="py-4" style={{ borderBottom: `1px solid ${F.border}` }}>
                     <p className="text-sm mb-3" style={{ color: F.text }}>Table Preferences</p>
                     <div className="flex flex-col gap-3">
-                      {[
-                        { label: "Alternate row striping", value: true },
-                        { label: "Freeze first column on scroll", value: false },
-                        { label: "Show row numbers", value: false },
-                      ].map((item) => (
-                        <div key={item.label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
-                          <span className="text-sm" style={{ color: F.text }}>{item.label}</span>
-                          <Toggle value={item.value} onChange={() => {}} />
+                      {([
+                        ["Alternate row striping", draftSettings.displayPreferences.alternateRowStriping, "alternateRowStriping"],
+                        ["Freeze first column on scroll", draftSettings.displayPreferences.freezeFirstColumn, "freezeFirstColumn"],
+                        ["Show row numbers", draftSettings.displayPreferences.showRowNumbers, "showRowNumbers"],
+                      ] as const).map(([label, value, key]) => (
+                        <div key={label} className="flex items-center justify-between p-3 rounded" style={{ background: F.bg, border: `1px solid ${F.border}` }}>
+                          <span className="text-sm" style={{ color: F.text }}>{label}</span>
+                          <Toggle
+                            value={value}
+                            onChange={(next) => {
+                              setSaved(false);
+                              setDraftSettings((current) => ({
+                                ...current,
+                                displayPreferences: { ...current.displayPreferences, [key]: next },
+                              }));
+                            }}
+                          />
                         </div>
                       ))}
                     </div>

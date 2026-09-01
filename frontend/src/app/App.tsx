@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+
 import {
   UserPlus,
   Upload,
@@ -8,6 +9,7 @@ import {
   Bell,
   Settings,
   Menu,
+  X,
   Database,
   ClipboardList,
   CheckCircle2,
@@ -21,33 +23,50 @@ import {
   Users,
 } from "lucide-react";
 
-import { AppProvider } from "./contexts/AppContext";
-import { AuditLog, SapSystem } from "./contexts/AppContext";
+import {
+  AppProvider,
+  AuditLog,
+  SapSystem,
+} from "./contexts/AppContext";
+
 import { SingleUserCreation } from "./components/SingleUserCreation";
 import { BulkUserCreation } from "./components/BulkUserCreation";
 import { UserDeletion } from "./components/UserDeletion";
+
 import { PasswordReset } from "./components/PasswordReset";
+
 import { LockUnlockUser } from "./components/LockUnlockUser";
 import { DataManagement } from "./components/DataManagement";
 import { AuditLogs } from "./components/AuditLogs";
+
 import { AuditDetailPage } from "./components/pages/AuditDetailPage";
+
 import {
   SettingsPage,
   DEFAULT_SETTINGS,
   AppSettings,
 } from "./components/pages/SettingsPage";
+
 import { ProfilePage } from "./components/pages/ProfilePage";
 import { SystemDetailPage } from "./components/pages/SystemDetailPage";
 import { SignInPage } from "./components/pages/SignInPage";
+
 import { SystemFormPage } from "./components/DataManagement";
+
 import { Dashboard } from "./components/Dashboard";
 import { Analytics } from "./components/Analytics";
+
 import {
   logoutApi,
   getCurrentUser,
   User as AuthUser,
 } from "../api/authApi";
+
 import logoImage from "../imports/image.png";
+
+/* =========================================================
+   ACTIVE VIEW
+========================================================= */
 
 type ActiveView =
   | "dashboard"
@@ -59,16 +78,28 @@ type ActiveView =
   | "data-management"
   | "audit-logs";
 
+/* =========================================================
+   PAGE VIEW
+========================================================= */
+
 type PageView =
   | { type: "main" }
   | { type: "settings" }
   | { type: "profile" }
-  | { type: "audit-detail"; log: AuditLog }
-  | { type: "system-detail"; system: SapSystem }
-  | { type: "add-system" };
+  | {
+      type: "audit-detail";
+      log: AuditLog;
+    }
+  | {
+      type: "system-detail";
+      system: SapSystem;
+    }
+  | {
+      type: "add-system";
+    };
 
 /* =========================================================
-   NAVIGATION GROUPS
+   NAVIGATION
 ========================================================= */
 
 const NAV_GROUPS = [
@@ -108,7 +139,7 @@ const NAV_GROUPS = [
       },
       {
         id: "lock-unlock" as ActiveView,
-        label: "Lock / Unlock",
+        label: "Lock / Unlock User",
         icon: Lock,
       },
     ],
@@ -131,29 +162,41 @@ const NAV_GROUPS = [
   },
 ];
 
-const ALL_ITEMS = NAV_GROUPS.flatMap((g) => g.items);
+const ALL_ITEMS =
+  NAV_GROUPS.flatMap(
+    (g) => g.items
+  );
 
 /* =========================================================
-   NOTIFICATION DATA
+   NOTIFICATIONS
 ========================================================= */
 
 interface Notification {
   id: string;
-  type: "warning" | "info" | "success" | "error";
+  type:
+    | "warning"
+    | "info"
+    | "success"
+    | "error";
   title: string;
   body: string;
   time: string;
   read: boolean;
 }
 
-const INITIAL_NOTIFS: Notification[] = [];
+const INITIAL_NOTIFS: Notification[] =
+  [];
 
-const notifIcon = (type: Notification["type"]) => {
+const notifIcon = (
+  type: Notification["type"]
+) => {
   if (type === "warning") {
     return (
       <AlertCircle
         size={14}
-        style={{ color: "#e9730c" }}
+        style={{
+          color: "#e9730c",
+        }}
       />
     );
   }
@@ -162,7 +205,9 @@ const notifIcon = (type: Notification["type"]) => {
     return (
       <AlertCircle
         size={14}
-        style={{ color: "#bb0000" }}
+        style={{
+          color: "#bb0000",
+        }}
       />
     );
   }
@@ -171,7 +216,9 @@ const notifIcon = (type: Notification["type"]) => {
     return (
       <CheckCircle2
         size={14}
-        style={{ color: "#107e3e" }}
+        style={{
+          color: "#107e3e",
+        }}
       />
     );
   }
@@ -179,7 +226,9 @@ const notifIcon = (type: Notification["type"]) => {
   return (
     <Info
       size={14}
-      style={{ color: "#0070f2" }}
+      style={{
+        color: "#0070f2",
+      }}
     />
   );
 };
@@ -189,14 +238,20 @@ const notifIcon = (type: Notification["type"]) => {
 ========================================================= */
 
 function useOutsideClick(
-  ref: React.RefObject<HTMLElement | null>,
+  ref: React.RefObject<
+    HTMLElement | null
+  >,
   handler: () => void
 ) {
   useEffect(() => {
-    const listener = (e: MouseEvent) => {
+    const listener = (
+      e: MouseEvent
+    ) => {
       if (
         ref.current &&
-        !ref.current.contains(e.target as Node)
+        !ref.current.contains(
+          e.target as Node
+        )
       ) {
         handler();
       }
@@ -230,13 +285,15 @@ function NotificationsPanel({
   onReadAll: () => void;
   onClose: () => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
+  const ref =
+    useRef<HTMLDivElement>(null);
 
   useOutsideClick(ref, onClose);
 
-  const unread = notifs.filter(
-    (n) => !n.read
-  ).length;
+  const unread =
+    notifs.filter(
+      (n) => !n.read
+    ).length;
 
   return (
     <div
@@ -244,8 +301,10 @@ function NotificationsPanel({
       className="absolute right-0 rounded shadow-2xl overflow-hidden z-50"
       style={{
         width: "360px",
-        background: "var(--app-surface)",
-        border: "1px solid var(--app-border)",
+        background:
+          "var(--app-surface)",
+        border:
+          "1px solid var(--app-border)",
         top: "44px",
       }}
     >
@@ -254,19 +313,23 @@ function NotificationsPanel({
         style={{
           borderBottom:
             "1px solid var(--app-border)",
-          background: "var(--app-subtle)",
+          background:
+            "var(--app-subtle)",
         }}
       >
         <div className="flex items-center gap-2">
           <Bell
             size={15}
-            style={{ color: "#0070f2" }}
+            style={{
+              color: "#0070f2",
+            }}
           />
 
           <span
             className="text-sm"
             style={{
-              color: "var(--app-text)",
+              color:
+                "var(--app-text)",
             }}
           >
             Notifications
@@ -304,7 +367,7 @@ function NotificationsPanel({
               color: "#74777a",
             }}
           >
-            ×
+            <X size={13} />
           </button>
         </div>
       </div>
@@ -320,7 +383,8 @@ function NotificationsPanel({
             <p
               className="text-sm"
               style={{
-                color: "var(--app-text)",
+                color:
+                  "var(--app-text)",
               }}
             >
               No notifications
@@ -329,17 +393,21 @@ function NotificationsPanel({
             <p
               className="text-xs mt-1"
               style={{
-                color: "var(--app-muted)",
+                color:
+                  "var(--app-muted)",
               }}
             >
-              Real system events will appear here.
+              Real system events will
+              appear here.
             </p>
           </div>
         ) : (
           notifs.map((n) => (
             <button
               key={n.id}
-              onClick={() => onRead(n.id)}
+              onClick={() =>
+                onRead(n.id)
+              }
               className="w-full flex items-start gap-3 px-4 py-3 text-left transition-colors"
               style={{
                 borderBottom:
@@ -358,7 +426,8 @@ function NotificationsPanel({
                   <p
                     className="text-sm"
                     style={{
-                      color: "var(--app-text)",
+                      color:
+                        "var(--app-text)",
                     }}
                   >
                     {n.title}
@@ -368,7 +437,8 @@ function NotificationsPanel({
                     <span
                       className="w-2 h-2 rounded-full flex-shrink-0 mt-1.5"
                       style={{
-                        background: "#0070f2",
+                        background:
+                          "#0070f2",
                       }}
                     />
                   )}
@@ -377,7 +447,8 @@ function NotificationsPanel({
                 <p
                   className="text-xs mt-0.5"
                   style={{
-                    color: "var(--app-muted)",
+                    color:
+                      "var(--app-muted)",
                   }}
                 >
                   {n.body}
@@ -402,13 +473,15 @@ function NotificationsPanel({
         style={{
           borderTop:
             "1px solid var(--app-border)",
-          background: "var(--app-subtle)",
+          background:
+            "var(--app-subtle)",
         }}
       >
         <span
           className="text-xs"
           style={{
-            color: "var(--app-muted)",
+            color:
+              "var(--app-muted)",
           }}
         >
           {notifs.length} notifications ·{" "}
@@ -432,18 +505,19 @@ function ProfileMenu({
   onProfile: () => void;
   onLogout: () => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-
-  useOutsideClick(ref, () => {});
+  const ref =
+    useRef<HTMLDivElement>(null);
 
   const uname =
     user?.username || "ADMIN";
 
   const email =
-    user?.email || "admin@corp.local";
+    user?.email ||
+    "admin@corp.local";
 
   const role =
-    user?.role || "Super Admin";
+    user?.role ||
+    "Super Admin";
 
   const initials = uname
     .substring(0, 2)
@@ -456,8 +530,10 @@ function ProfileMenu({
       style={{
         top: "48px",
         width: "220px",
-        background: "var(--app-surface)",
-        border: "1px solid var(--app-border)",
+        background:
+          "var(--app-surface)",
+        border:
+          "1px solid var(--app-border)",
       }}
     >
       <div
@@ -473,7 +549,8 @@ function ProfileMenu({
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0 font-semibold"
             style={{
-              background: "#0070f2",
+              background:
+                "#0070f2",
             }}
           >
             {initials}
@@ -512,29 +589,25 @@ function ProfileMenu({
           onClick={onProfile}
           className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
           style={{
-            color: "var(--app-text)",
-            background: "transparent",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background =
-              "rgba(255,255,255,0.04)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background =
-              "transparent";
+            color:
+              "var(--app-text)",
+            background:
+              "transparent",
           }}
         >
           <User
             size={14}
             style={{
-              color: "var(--app-muted)",
+              color:
+                "var(--app-muted)",
             }}
           />
 
           <span
             className="text-sm font-medium"
             style={{
-              color: "var(--app-text)",
+              color:
+                "var(--app-text)",
             }}
           >
             My Profile
@@ -552,15 +625,8 @@ function ProfileMenu({
             className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
             style={{
               color: "#bb0000",
-              background: "transparent",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background =
-                "rgba(187,0,0,0.08)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background =
-                "transparent";
+              background:
+                "transparent",
             }}
           >
             <LogOut
@@ -595,27 +661,35 @@ function LiveClock() {
 
   useEffect(() => {
     const id = setInterval(
-      () => setNow(new Date()),
+      () =>
+        setNow(new Date()),
       1000
     );
 
-    return () => clearInterval(id);
+    return () =>
+      clearInterval(id);
   }, []);
 
   const dateStr =
-    now.toLocaleDateString("en-GB", {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
+    now.toLocaleDateString(
+      "en-GB",
+      {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }
+    );
 
   const timeStr =
-    now.toLocaleTimeString("en-GB", {
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    });
+    now.toLocaleTimeString(
+      "en-GB",
+      {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      }
+    );
 
   return (
     <span
@@ -625,7 +699,8 @@ function LiveClock() {
           "rgba(255,255,255,0.55)",
         fontVariantNumeric:
           "tabular-nums",
-        letterSpacing: "0.01em",
+        letterSpacing:
+          "0.01em",
       }}
     >
       {dateStr} · {timeStr}
@@ -698,7 +773,8 @@ function OperationTab({
         <span
           className="mt-0.5 block text-xs"
           style={{
-            color: "var(--app-muted)",
+            color:
+              "var(--app-muted)",
           }}
         >
           {description}
@@ -714,22 +790,21 @@ function OperationTab({
 
 function SingleUserManagement() {
   const [operation, setOperation] =
-    useState<"create" | "delete">(
-      "create"
-    );
+    useState<
+      "create" | "delete"
+    >("create");
 
   return (
     <div>
       <div className="mb-6 flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
-           
-
             <h1
               className="text-xl"
               style={{
-                color: "var(--app-text)",
-                fontWeight:700,
+                color:
+                  "var(--app-text)",
+                fontWeight: 700,
               }}
             >
               Single User
@@ -739,11 +814,12 @@ function SingleUserManagement() {
           <p
             className="text-sm"
             style={{
-              color: "var(--app-muted)",
+              color:
+                "var(--app-muted)",
             }}
           >
-            Create or delete one SAP user
-            account at a time.
+            Create or delete one SAP
+            user account at a time.
           </p>
         </div>
       </div>
@@ -794,21 +870,21 @@ function SingleUserManagement() {
 
 function BulkUserManagement() {
   const [operation, setOperation] =
-    useState<"create" | "delete">(
-      "create"
-    );
+    useState<
+      "create" | "delete"
+    >("create");
 
   return (
     <div>
       <div className="mb-6 flex items-start justify-between">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            
             <h1
               className="text-xl"
               style={{
-                color: "var(--app-text)",
-                fontWeight:700 
+                color:
+                  "var(--app-text)",
+                fontWeight: 700,
               }}
             >
               Bulk User
@@ -818,11 +894,13 @@ function BulkUserManagement() {
           <p
             className="text-sm"
             style={{
-              color: "var(--app-muted)",
+              color:
+                "var(--app-muted)",
             }}
           >
-            Create or delete multiple SAP
-            users in batch workflows.
+            Create or delete multiple
+            SAP users in batch
+            workflows.
           </p>
         </div>
       </div>
@@ -912,18 +990,21 @@ function Shell({
 
   useOutsideClick(
     profileRef,
-    () => setProfileOpen(false)
+    () =>
+      setProfileOpen(false)
   );
 
   const activeItem =
     ALL_ITEMS.find(
-      (n) => n.id === activeView
+      (n) =>
+        n.id === activeView
     )!;
 
   const activeGroup =
     NAV_GROUPS.find((g) =>
       g.items.some(
-        (i) => i.id === activeView
+        (i) =>
+          i.id === activeView
       )
     )!;
 
@@ -932,7 +1013,9 @@ function Shell({
       (n) => !n.read
     ).length;
 
-  const readNotif = (id: string) =>
+  const readNotif = (
+    id: string
+  ) =>
     setNotifs((prev) =>
       prev.map((n) =>
         n.id === id
@@ -967,10 +1050,6 @@ function Shell({
     .substring(0, 2)
     .toUpperCase();
 
-  /* =======================================================
-     THEME / DENSITY
-  ======================================================= */
-
   useEffect(() => {
     const root =
       document.documentElement;
@@ -979,10 +1058,13 @@ function Shell({
       appSettings.density.toLowerCase();
 
     const isDark =
-      appSettings.theme === "Dark";
+      appSettings.theme ===
+      "Dark";
 
     root.dataset.theme =
-      isDark ? "dark" : "light";
+      isDark
+        ? "dark"
+        : "light";
 
     root.classList.toggle(
       "dark",
@@ -1015,9 +1097,9 @@ function Shell({
           "'72', '72full', Arial, Helvetica, sans-serif",
       }}
     >
-      {/* =====================================================
-          SHELL BAR
-      ===================================================== */}
+      {/* =================================================
+          HEADER
+      ================================================= */}
 
       <header
         style={{
@@ -1030,17 +1112,24 @@ function Shell({
       >
         {!isSubPage && (
           <button
+            style={{
+              background:
+                "transparent",
+              border: "none",
+              color: "white",
+              cursor: "pointer",
+              padding: "8px",
+            }}
             onClick={() =>
               setSidebarOpen(
                 !sidebarOpen
               )
             }
             className="text-white/80 hover:text-white transition-colors p-1 rounded"
-            aria-label="Toggle sidebar"
-            title="Toggle sidebar"
           >
+            {/* ALWAYS SHOW MENU ICON */}
             <Menu
-              size={20}
+              size={24}
               strokeWidth={2}
             />
           </button>
@@ -1059,9 +1148,12 @@ function Shell({
             className="text-white text-sm"
             style={{
               fontWeight: 750,
+              letterSpacing:
+                "0.01em",
             }}
           >
-            SAP Basis Provisioning Console
+            SAP Basis
+            Provisioning Console
           </span>
         </div>
 
@@ -1070,10 +1162,7 @@ function Shell({
         <LiveClock />
 
         <div className="flex items-center gap-1 ml-3">
-
-          {/* =================================================
-              NOTIFICATIONS
-          ================================================= */}
+          {/* NOTIFICATIONS */}
 
           <div className="relative">
             <button
@@ -1103,15 +1192,15 @@ function Shell({
                 onRead={readNotif}
                 onReadAll={readAll}
                 onClose={() =>
-                  setNotifOpen(false)
+                  setNotifOpen(
+                    false
+                  )
                 }
               />
             )}
           </div>
 
-          {/* =================================================
-              SETTINGS
-          ================================================= */}
+          {/* SETTINGS */}
 
           <button
             onClick={() =>
@@ -1124,9 +1213,7 @@ function Shell({
             <Settings size={16} />
           </button>
 
-          {/* =================================================
-              PROFILE
-          ================================================= */}
+          {/* PROFILE */}
 
           <div
             className="relative"
@@ -1165,14 +1252,19 @@ function Shell({
               <ProfileMenu
                 user={user}
                 onProfile={() => {
-                  setProfileOpen(false);
+                  setProfileOpen(
+                    false
+                  );
 
                   setPageView({
                     type: "profile",
                   });
                 }}
                 onLogout={() => {
-                  setProfileOpen(false);
+                  setProfileOpen(
+                    false
+                  );
+
                   onLogout();
                 }}
               />
@@ -1181,9 +1273,9 @@ function Shell({
         </div>
       </header>
 
-      {/* =====================================================
-          SETTINGS PAGE
-      ===================================================== */}
+      {/* =================================================
+          SETTINGS
+      ================================================= */}
 
       {pageView.type ===
         "settings" && (
@@ -1191,19 +1283,19 @@ function Shell({
           <SettingsPage
             settings={appSettings}
             onChange={(p) =>
-              setAppSettings((s) => ({
-                ...s,
-                ...p,
-              }))
+              setAppSettings(
+                (s) => ({
+                  ...s,
+                  ...p,
+                })
+              )
             }
             onBack={goMain}
           />
         </div>
       )}
 
-      {/* =====================================================
-          PROFILE PAGE
-      ===================================================== */}
+      {/* PROFILE */}
 
       {pageView.type ===
         "profile" && (
@@ -1214,9 +1306,7 @@ function Shell({
         </div>
       )}
 
-      {/* =====================================================
-          AUDIT DETAIL PAGE
-      ===================================================== */}
+      {/* AUDIT DETAIL */}
 
       {pageView.type ===
         "audit-detail" && (
@@ -1228,23 +1318,21 @@ function Shell({
         </div>
       )}
 
-      {/* =====================================================
-          SYSTEM DETAIL PAGE
-      ===================================================== */}
+      {/* SYSTEM DETAIL */}
 
       {pageView.type ===
         "system-detail" && (
         <div className="flex-1 overflow-auto">
           <SystemDetailPage
-            system={pageView.system}
+            system={
+              pageView.system
+            }
             onBack={goMain}
           />
         </div>
       )}
 
-      {/* =====================================================
-          ADD SYSTEM PAGE
-      ===================================================== */}
+      {/* ADD SYSTEM */}
 
       {pageView.type ===
         "add-system" && (
@@ -1270,9 +1358,9 @@ function Shell({
         </div>
       )}
 
-      {/* =====================================================
-          MAIN LAYOUT
-      ===================================================== */}
+      {/* =================================================
+          MAIN
+      ================================================= */}
 
       {pageView.type ===
         "main" && (
@@ -1283,10 +1371,7 @@ function Shell({
               "calc(100vh - 44px)",
           }}
         >
-
-          {/* =================================================
-              NAVY BLUE SIDE NAVIGATION
-          ================================================= */}
+          {/* SIDEBAR */}
 
           <aside
             style={{
@@ -1322,7 +1407,6 @@ function Shell({
               className="navy-sidebar-scroll"
             >
               <div className="px-3 py-4 flex flex-col gap-6">
-
                 {NAV_GROUPS.map(
                   (group) => (
                     <div
@@ -1330,19 +1414,11 @@ function Shell({
                         group.label
                       }
                     >
-
-                      {/* =================================================
-                          SECTION TITLE
-                          LIGHT SKY BLUE + BOLD
-                      ================================================= */}
-
                       <p
-                        className="text-sm px-3 pb-3"
+                        className="text-xs px-3 pb-2 font-semibold"
                         style={{
                           color:
-                            "#7CCBFF",
-
-                          fontWeight: 800,
+                            "#8FA9C4",
 
                           letterSpacing:
                             "0.08em",
@@ -1351,15 +1427,8 @@ function Shell({
                             "uppercase",
                         }}
                       >
-                        {
-                          group.label
-                        }
+                        {group.label}
                       </p>
-
-                      {/* =================================================
-                          NAVIGATION ITEMS
-                          WHITE + BOLD
-                      ================================================= */}
 
                       <nav className="flex flex-col gap-1">
                         {group.items.map(
@@ -1394,9 +1463,6 @@ function Shell({
                                     isActive
                                       ? "inset 0 0 0 1px rgba(77,163,255,0.12)"
                                       : "none",
-
-                                  minHeight:
-                                    "46px",
                                 }}
                                 onMouseEnter={(
                                   e
@@ -1419,43 +1485,26 @@ function Shell({
                                   }
                                 }}
                               >
-
-                                {/* =================================================
-                                    ICON
-                                ================================================= */}
-
                                 <item.icon
-                                  size={18}
-                                  strokeWidth={
-                                    2
-                                  }
+                                  size={16}
                                   style={{
                                     color:
                                       isActive
                                         ? "#4DA3FF"
-                                        : "#FFFFFF",
+                                        : "#B7C9DC",
 
                                     flexShrink:
                                       0,
                                   }}
                                 />
 
-                                {/* =================================================
-                                    MODULE LABEL
-                                    WHITE + BOLD
-                                ================================================= */}
-
                                 <span
-                                  className="text-base"
+                                  className="text-sm font-medium"
                                   style={{
                                     color:
-                                      "#FFFFFF",
-
-                                    fontWeight:
-                                      700,
-
-                                    lineHeight:
-                                      "1.4",
+                                      isActive
+                                        ? "#FFFFFF"
+                                        : "#D7E5F5",
                                   }}
                                 >
                                   {
@@ -1463,17 +1512,10 @@ function Shell({
                                   }
                                 </span>
 
-                                {/* =================================================
-                                    ACTIVE ARROW
-                                ================================================= */}
-
                                 {isActive && (
                                   <ChevronRight
                                     size={
-                                      15
-                                    }
-                                    strokeWidth={
-                                      2.5
+                                      14
                                     }
                                     className="ml-auto"
                                     style={{
@@ -1494,22 +1536,16 @@ function Shell({
             </div>
           </aside>
 
-          {/* =================================================
-              MAIN CONTENT
-          ================================================= */}
+          {/* MAIN CONTENT */}
 
           <main className="flex-1 overflow-auto">
-
-            {/* =================================================
-                BREADCRUMB
-            ================================================= */}
+            {/* BREADCRUMB */}
 
             <div
               className="px-6 py-2 flex items-center gap-1.5 text-sm flex-shrink-0"
               style={{
                 borderBottom:
                   "1px solid var(--app-border)",
-
                 background:
                   "var(--app-surface)",
               }}
@@ -1522,8 +1558,7 @@ function Shell({
                 }
                 className="hover:underline transition-colors"
                 style={{
-                  color:
-                    "#0070f2",
+                  color: "#0070f2",
                 }}
               >
                 SAP Basis
@@ -1546,13 +1581,10 @@ function Shell({
                 }
                 className="hover:underline transition-colors"
                 style={{
-                  color:
-                    "#0070f2",
+                  color: "#0070f2",
                 }}
               >
-                {
-                  activeGroup.label
-                }
+                {activeGroup.label}
               </button>
 
               <ChevronRight
@@ -1573,14 +1605,9 @@ function Shell({
               </span>
             </div>
 
-            {/* =================================================
-                PAGE CONTENT
-            ================================================= */}
+            {/* PAGE CONTENT */}
 
             <div className="p-6">
-
-              {/* DASHBOARD */}
-
               {activeView ===
                 "dashboard" && (
                 <Dashboard
@@ -1602,8 +1629,6 @@ function Shell({
                 />
               )}
 
-              {/* ANALYTICS */}
-
               {activeView ===
                 "analytics" && (
                 <Analytics
@@ -1615,21 +1640,15 @@ function Shell({
                 />
               )}
 
-              {/* SINGLE USER */}
-
               {activeView ===
                 "single-user" && (
                 <SingleUserManagement />
               )}
 
-              {/* BULK USER */}
-
               {activeView ===
                 "bulk-user" && (
                 <BulkUserManagement />
               )}
-
-              {/* PASSWORD RESET */}
 
               {activeView ===
                 "password-reset" && (
@@ -1640,8 +1659,6 @@ function Shell({
                 />
               )}
 
-              {/* LOCK / UNLOCK */}
-
               {activeView ===
                 "lock-unlock" && (
                 <LockUnlockUser
@@ -1650,8 +1667,6 @@ function Shell({
                   }
                 />
               )}
-
-              {/* DATA MANAGEMENT */}
 
               {activeView ===
                 "data-management" && (
@@ -1674,8 +1689,6 @@ function Shell({
                   }
                 />
               )}
-
-              {/* AUDIT LOGS */}
 
               {activeView ===
                 "audit-logs" && (
@@ -1705,12 +1718,18 @@ function Shell({
 ========================================================= */
 
 function AppRoot() {
-  const [currentUser, setCurrentUser] =
-    useState<AuthUser | null>(() =>
-      getCurrentUser()
+  const [
+    currentUser,
+    setCurrentUser,
+  ] =
+    useState<AuthUser | null>(
+      () => getCurrentUser()
     );
 
-  const [isLoggedIn, setIsLoggedIn] =
+  const [
+    isLoggedIn,
+    setIsLoggedIn,
+  ] =
     useState<boolean>(() => {
       return !!localStorage.getItem(
         "token"

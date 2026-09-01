@@ -23,12 +23,12 @@ interface ValueHelpInputProps {
 }
 
 const F = {
-  primary: "#0070f2", text: "#32363a", muted: "#74777a",
-  border: "#d9d9d9", bg: "#f5f6f7", white: "#ffffff", error: "#bb0000",
+  primary: "#0070f2", text: "var(--app-text)", muted: "var(--app-muted)",
+  border: "var(--app-border)", bg: "var(--app-bg)", white: "var(--app-surface)", error: "#bb0000",
 };
 
 export function ValueHelpInput({
-  value, onChange, options, placeholder = "Search or press F4…",
+  value, onChange, options, placeholder = "Search or select…",
   error, disabled, emptyMessage = "No matching entries found.", inputStyle,
 }: ValueHelpInputProps) {
   const [open, setOpen] = useState(false);
@@ -114,13 +114,13 @@ export function ValueHelpInput({
           className="px-2.5 py-1.5 border-l flex items-center gap-1 transition-colors"
           style={{
             borderColor: F.border,
-            background: open ? "#e8f2ff" : F.bg,
+            background: open ? "var(--app-active)" : F.bg,
             color: open ? F.primary : F.muted,
           }}
-          title="Open value help (F4)"
+          title="Open suggestions"
           disabled={disabled}
         >
-          <span className="text-xs" style={{ fontWeight: 600 }}>F4</span>
+          <Search size={12} />
           <ChevronDown size={11} style={{ transform: open ? "rotate(180deg)" : "none", transition: "transform 0.15s" }} />
         </button>
       </div>
@@ -133,7 +133,7 @@ export function ValueHelpInput({
           style={{ top: "calc(100% + 4px)", background: F.white, border: `1px solid ${F.border}`, maxHeight: "320px", display: "flex", flexDirection: "column" }}
         >
           {/* Search Header */}
-          <div className="px-3 py-2.5 flex-shrink-0" style={{ borderBottom: `1px solid ${F.border}`, background: "#f5f6f7" }}>
+          <div className="px-3 py-2.5 flex-shrink-0" style={{ borderBottom: `1px solid ${F.border}`, background: "var(--app-subtle)" }}>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2" style={{ color: F.muted }} />
@@ -166,7 +166,7 @@ export function ValueHelpInput({
                   onClick={() => select(opt)}
                   className="w-full flex items-center gap-3 px-4 py-2.5 text-left transition-colors"
                   style={{
-                    background: idx === highlighted ? "#e8f2ff" : idx % 2 === 0 ? F.white : "#fafafa",
+                    background: idx === highlighted ? "var(--app-active)" : idx % 2 === 0 ? F.white : "var(--app-subtle)",
                     borderBottom: `1px solid ${F.border}`,
                   }}
                   onMouseEnter={() => setHighlighted(idx)}
@@ -192,7 +192,7 @@ export function ValueHelpInput({
           </div>
 
           {/* Footer hint */}
-          <div className="px-3 py-1.5 flex-shrink-0" style={{ borderTop: `1px solid ${F.border}`, background: "#f5f6f7" }}>
+          <div className="px-3 py-1.5 flex-shrink-0" style={{ borderTop: `1px solid ${F.border}`, background: "var(--app-subtle)" }}>
             <p className="text-xs" style={{ color: F.muted }}>↑↓ Navigate · Enter Select · Esc Close</p>
           </div>
         </div>
@@ -202,25 +202,5 @@ export function ValueHelpInput({
 }
 
 /* ─── Shared user/system data used across modules ─── */
-export const MOCK_SAP_USERS: VHOption[] = [
-  { value: "ALICE.SMITH",    label: "Alice Smith",    secondary: "Finance (FI) · PRD / Client 100",   badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "BOB.JONES",      label: "Bob Jones",      secondary: "Procurement (MM) · PRD / Client 100", badge: "Locked",  badgeColor: "#bb0000", badgeBg: "#fff2f2" },
-  { value: "CAROL.WHITE",    label: "Carol White",    secondary: "Sales (SD) · PRD / Client 100",     badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "DAVID.BROWN",    label: "David Brown",    secondary: "HR (HCM) · QAS / Client 200",       badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "EVE.TAYLOR",     label: "Eve Taylor",     secondary: "Basis · PRD / Client 100",          badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "FRANK.LEE",      label: "Frank Lee",      secondary: "Finance (FI) · PRD / Client 100",   badge: "Locked",  badgeColor: "#bb0000", badgeBg: "#fff2f2" },
-  { value: "GRACE.HO",       label: "Grace Ho",       secondary: "Sales (SD) · QAS / Client 200",     badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "HENRY.PARK",     label: "Henry Park",     secondary: "IT / Basis · DEV / Client 300",     badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "IRIS.CHEN",      label: "Iris Chen",      secondary: "Controlling (CO) · PRD / Client 100", badge: "Active", badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "JACK.MILLER",    label: "Jack Miller",    secondary: "Production Planning (PP) · PRD / Client 100", badge: "Active", badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "KAREN.DAVIS",    label: "Karen Davis",    secondary: "Quality Mgmt (QM) · PRD / Client 100", badge: "Active", badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "LIAM.WILSON",    label: "Liam Wilson",    secondary: "Materials Mgmt (MM) · PRD / Client 100", badge: "Active", badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "MONA.GARCIA",    label: "Mona Garcia",    secondary: "Sales & Distribution (SD) · PRD / Client 100", badge: "Active", badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "NICK.MARTIN",    label: "Nick Martin",    secondary: "Basis Admin · DEV / Client 300",    badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "OLIVIA.JOHNSON", label: "Olivia Johnson", secondary: "Finance (FI) · PRD / Client 100",   badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "PETER.NGUYEN",   label: "Peter Nguyen",   secondary: "Logistics (LE) · PRD / Client 100", badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "BASIS01",        label: "Basis Admin 01", secondary: "Basis / All Systems",               badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-  { value: "SVC_INTERFACE",  label: "Interface Service", secondary: "System User · PRD / Client 100", badge: "System",  badgeColor: "#74777a", badgeBg: "#f5f6f7" },
-  { value: "SVC_BATCH",      label: "Batch Service",  secondary: "System User · PRD / Client 100",   badge: "System",   badgeColor: "#74777a", badgeBg: "#f5f6f7" },
-  { value: "ADMIN",          label: "System Admin",   secondary: "Basis / All Systems",               badge: "Active",   badgeColor: "#107e3e", badgeBg: "#f1fdf6" },
-];
+export const MOCK_SAP_USERS: VHOption[] = [];
+

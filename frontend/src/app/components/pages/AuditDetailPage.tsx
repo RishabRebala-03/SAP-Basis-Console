@@ -350,7 +350,7 @@ export function AuditDetailPage({
         >
           <ArrowLeft size={14} />
 
-          Return to Audit Logs
+          Back to Audit Logs
         </button>
 
 
@@ -657,7 +657,7 @@ export function AuditDetailPage({
             >
 
               <div
-                className="grid grid-cols-1 sm:grid-cols-4 gap-3 mb-4"
+                className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4"
               >
 
                 <InfoCard
@@ -819,7 +819,6 @@ export function AuditDetailPage({
     </span>
   </div>
 </Section>
-
 
             {/* ==================================================
                 CHANGE DELTA

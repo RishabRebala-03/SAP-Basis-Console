@@ -252,9 +252,10 @@ export function UserDeletion({ variant, embedded = false }: { variant: "single" 
           <SystemSelector systems={systems} selectedId={selectedSystem} onChange={setSelectedSystem} />
 
           {!historyActive && (
-        <div className="rounded" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-          <div className="px-5 py-3" style={{ borderBottom: `1px solid ${F.border}`, background: "#fafafa" }}>
-            <h3 className="text-sm" style={{ color: F.text }}>Single User Deletion</h3>
+        <div className="rounded" style={{ background: F.white, border: `1px solid ${F.border}`}}>
+          <div className="px-5 py-3" style={{ borderBottom: `1px solid ${F.border}`,
+                background: "#25313f", }}>
+            <h3 className="text-sm" style={{ color: "white",fontSize:14,fontWeight:600 }}>Single User Deletion</h3>
           </div>
           {singleStatus === "success" && (
             <div className="m-5 mb-0 flex items-start gap-3 px-4 py-3.5 rounded" style={{ background: "#f1fdf6", border: `1px solid ${F.success}` }}>
@@ -394,8 +395,8 @@ export function UserDeletion({ variant, embedded = false }: { variant: "single" 
                       <button onClick={hf.clearAll} className="text-xs mt-1" style={{ color: F.primary }}>Clear all filters</button>
                     </div>
                   ) : (
-                    <div className="rounded" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-                      <div className="px-5 py-3 grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-4 text-xs font-medium" style={{ borderBottom: `1px solid ${F.border}`,  backgroundColor: "#1d2d3e", color: "white",fontWeight:700,fontSize:14 }}>
+                    <div className="rounded" style={{ background: F.white, border: `1px solid ${F.border}`, }}>
+                      <div className="px-5 py-3 grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-4 text-xs font-medium" style={{ borderBottom: `1px solid ${F.border}`, color: "white",background: "#25313f",fontSize:14}}>
                         <span>Username</span><span>System / Client</span><span>Action</span><span>Performed By</span><span>Timestamp</span><span>Status</span>
                       </div>
                       {hf.filtered.map((log, idx) => {
@@ -721,7 +722,7 @@ export function UserDeletion({ variant, embedded = false }: { variant: "single" 
                     </div>
                   ) : (
                     <div className="rounded" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-                      <div className="px-5 py-3 grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-4 text-xs font-medium" style={{ borderBottom: `1px solid ${F.border}`, backgroundColor: "#1d2d3e", color: "white",fontWeight:700,fontSize:14 }}>
+                      <div className="px-5 py-3 grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-4 text-xs font-medium" style={{ borderBottom: `1px solid ${F.border}`, color: "white",background: "#25313f",fontSize:14 }}>
                         <span>Username</span><span>System / Client</span><span>Action</span><span>Performed By</span><span>Timestamp</span><span>Status</span>
                       </div>
                       {bulkHf.filtered.map((log, idx) => {

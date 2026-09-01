@@ -1,4 +1,7 @@
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useEffect, ReactNode } from "react";
+import { createAuditLogApi, getAuditLogsApi } from "../../api/auditApi";
+import { getSystemsApi } from "../../api/sapApi";
+import { getCurrentUser } from "../../api/authApi";
 
 export interface SapSystem {
   id: string;
@@ -37,6 +40,8 @@ export interface AuditLog {
 
 interface AppContextValue {
   systems: SapSystem[];
+  systemsLoading: boolean;
+  refreshSystems: () => Promise<void>;
   addSystem: (s: Omit<SapSystem, "id" | "createdAt" | "createdBy">) => void;
   updateSystem: (id: string, s: Partial<SapSystem>) => void;
   deleteSystem: (id: string) => void;
@@ -47,45 +52,114 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 const SESSION_ID = "SES-" + Math.random().toString(36).slice(2, 10).toUpperCase();
-const ADMIN_USER = "ADMIN";
-const ADMIN_IP = "10.42.8.201";
 
-const INITIAL_SYSTEMS: SapSystem[] = [
-  { id: "sys-1", systemId: "PRD", systemName: "Production", client: "100", environment: "Production", host: "sap-prd.corp.local", description: "Live production environment — handle with care", status: "Active", createdAt: "2026-01-10T08:00:00Z", createdBy: "ADMIN" },
-  { id: "sys-2", systemId: "QAS", systemName: "Quality Assurance", client: "200", environment: "Quality", host: "sap-qas.corp.local", description: "Pre-production testing and UAT environment", status: "Active", createdAt: "2026-01-10T08:05:00Z", createdBy: "ADMIN" },
-  { id: "sys-3", systemId: "DEV", systemName: "Development", client: "300", environment: "Development", host: "sap-dev.corp.local", description: "Developer sandbox for customizations and transports", status: "Active", createdAt: "2026-01-10T08:10:00Z", createdBy: "ADMIN" },
-  { id: "sys-4", systemId: "SBX", systemName: "Sandbox", client: "400", environment: "Sandbox", host: "sap-sbx.corp.local", description: "Free-form exploration and training environment", status: "Inactive", createdAt: "2026-02-14T11:30:00Z", createdBy: "BASIS01" },
-  { id: "sys-5", systemId: "BW1", systemName: "BW Production", client: "100", environment: "Production", host: "sap-bw1.corp.local", description: "SAP BW/BI reporting production system", status: "Active", createdAt: "2026-03-01T09:00:00Z", createdBy: "ADMIN" },
-];
+const ACTION_LABELS: Record<string, { module: AuditModule; action: string }> = {
+  create_user:      { module: "Single User",    action: "Create User" },
+  delete_user:      { module: "Single User",    action: "Delete User" },
+  bulk_delete_user: { module: "Single User",    action: "Bulk Delete Users" },
+  bulk_create:      { module: "Bulk User",      action: "Bulk Import" },
+  reset_password:   { module: "Password Reset", action: "Reset Password" },
+  lock_user:        { module: "Lock/Unlock",    action: "Lock User" },
+  unlock_user:      { module: "Lock/Unlock",    action: "Unlock User" },
+  assign_roles:     { module: "Single User",    action: "Assign Roles" },
+  assign_profiles:  { module: "Single User",    action: "Assign Profiles" },
+  extend_validity:  { module: "Single User",    action: "Extend Validity" },
+};
 
-const INITIAL_LOGS: AuditLog[] = [
-  { id: "log-001", timestamp: "2026-07-22T09:15:42Z", module: "Single User", action: "Create User", targetObject: "ALICE.SMITH", system: "PRD", client: "100", performedBy: "ADMIN", status: "Success", ipAddress: "10.42.8.201", sessionId: SESSION_ID, durationMs: 1240, details: "User created with roles Z_FI_ACCOUNTANT. Valid 2026-01-01 to 2026-12-31.", changesAfter: "User ALICE.SMITH provisioned in PRD/100" },
-  { id: "log-002", timestamp: "2026-07-22T09:02:11Z", module: "Lock/Unlock", action: "Lock User", targetObject: "BOB.JONES", system: "PRD", client: "100", performedBy: "ADMIN", status: "Success", ipAddress: "10.42.8.201", sessionId: SESSION_ID, durationMs: 820, details: "User locked due to security policy violation.", changesBefore: "Status: Active", changesAfter: "Status: Locked" },
-  { id: "log-003", timestamp: "2026-07-22T08:47:05Z", module: "Bulk User", action: "Bulk Import", targetObject: "6 records", system: "QAS", client: "200", performedBy: "ADMIN", status: "Warning", ipAddress: "10.42.8.201", sessionId: SESSION_ID, durationMs: 4520, details: "4 users created, 2 failed. Failures: duplicate username (row 2), missing last name (row 6).", changesAfter: "4 users provisioned in QAS/200" },
-  { id: "log-004", timestamp: "2026-07-22T08:30:19Z", module: "Password Reset", action: "Reset Password", targetObject: "CAROL.WHITE", system: "PRD", client: "100", performedBy: "BASIS01", status: "Success", ipAddress: "10.42.9.88", sessionId: "SES-AB12CD34", durationMs: 1050, details: "Temporary password assigned. User must change on next login.", changesBefore: "Password: ****", changesAfter: "Temporary password set" },
-  { id: "log-005", timestamp: "2026-07-21T17:44:00Z", module: "Lock/Unlock", action: "Lock User", targetObject: "CAROL.WHITE", system: "PRD", client: "100", performedBy: "BASIS01", status: "Success", ipAddress: "10.42.9.88", sessionId: "SES-AB12CD34", durationMs: 790, details: "Account locked — multiple failed login attempts detected.", changesBefore: "Status: Active", changesAfter: "Status: Locked" },
-  { id: "log-006", timestamp: "2026-07-21T14:20:33Z", module: "Lock/Unlock", action: "Unlock User", targetObject: "DAVID.BROWN", system: "QAS", client: "200", performedBy: "ADMIN", status: "Success", ipAddress: "10.42.8.201", sessionId: "SES-EF56GH78", durationMs: 680, details: "Account unlocked after security review approval.", changesBefore: "Status: Locked", changesAfter: "Status: Active" },
-  { id: "log-007", timestamp: "2026-07-21T11:05:17Z", module: "Single User", action: "Create User", targetObject: "EVE.TAYLOR", system: "DEV", client: "300", performedBy: "ADMIN", status: "Failed", ipAddress: "10.42.8.201", sessionId: "SES-EF56GH78", durationMs: 350, details: "User creation failed — username already exists in target system.", errorCode: "RFC_SYSFAIL_USREXIST", changesBefore: undefined, changesAfter: undefined },
-  { id: "log-008", timestamp: "2026-07-21T09:30:00Z", module: "Data Management", action: "Add System", targetObject: "BW1", system: "—", client: "—", performedBy: "ADMIN", status: "Success", ipAddress: "10.42.8.201", sessionId: "SES-IJ90KL12", durationMs: 210, details: "New SAP BW Production system entry added to the system registry.", changesAfter: "System BW1 registered with host sap-bw1.corp.local" },
-  { id: "log-009", timestamp: "2026-07-20T16:12:44Z", module: "Bulk User", action: "Bulk Import", targetObject: "12 records", system: "PRD", client: "100", performedBy: "BASIS01", status: "Success", ipAddress: "10.42.9.88", sessionId: "SES-MN34OP56", durationMs: 8910, details: "All 12 records processed successfully. No validation errors.", changesAfter: "12 users provisioned in PRD/100" },
-  { id: "log-010", timestamp: "2026-07-20T10:00:00Z", module: "Password Reset", action: "Reset Password", targetObject: "FRANK.LEE", system: "PRD", client: "100", performedBy: "ADMIN", status: "Failed", ipAddress: "10.42.8.201", sessionId: "SES-MN34OP56", durationMs: 280, details: "User FRANK.LEE not found in system PRD/100.", errorCode: "BAPI_USER_NOT_FOUND" },
-  { id: "log-011", timestamp: "2026-07-19T14:55:22Z", module: "Data Management", action: "Edit System", targetObject: "SBX", system: "—", client: "—", performedBy: "ADMIN", status: "Success", ipAddress: "10.42.8.201", sessionId: "SES-QR78ST90", durationMs: 190, details: "System status changed from Active to Inactive.", changesBefore: "Status: Active", changesAfter: "Status: Inactive" },
-  { id: "log-012", timestamp: "2026-07-19T09:20:10Z", module: "Single User", action: "Create User", targetObject: "GRACE.HO", system: "QAS", client: "200", performedBy: "BASIS01", status: "Success", ipAddress: "10.42.9.88", sessionId: "SES-QR78ST90", durationMs: 1380, details: "User provisioned with roles Z_SD_SALES, Z_MM_PURCHASER.", changesAfter: "User GRACE.HO provisioned in QAS/200" },
-];
+/** Maps a raw backend system document (from /api/sap/systems) to the frontend SapSystem shape. */
+function mapSystem(raw: any): SapSystem {
+  // The original list_systems returns _normalized_system() format (system_id, name, description, client, environment, url)
+  const systemId = (raw.system_id || raw.systemId || "").toUpperCase();
+  return {
+    id:          raw._id || raw.id || `sys-${systemId.toLowerCase()}`,
+    systemId,
+    systemName:  raw.name || raw.system_name || raw.systemName || systemId,
+    client:      raw.client || "100",
+    environment: (raw.environment as SapSystem["environment"]) || "Development",
+    host:        raw.host || raw.url || "",
+    description: raw.description || `${systemId} Development`,
+    status:      (raw.status as SapSystem["status"]) || "Active",
+    createdAt:   raw.created_at || raw.createdAt || new Date().toISOString(),
+    createdBy:   raw.created_by || raw.createdBy || "System",
+  };
+}
+
+function mapAuditLog(raw: any): AuditLog {
+  const mapped = ACTION_LABELS[raw.action] || { module: raw.module || "System", action: raw.action || "System Action" };
+  const payload = raw.payload || {};
+  const response = raw.response || {};
+  const timestamp = raw.timestamp || new Date().toISOString();
+  return {
+    id:            raw.id || raw._id || `log-${timestamp}`,
+    timestamp,
+    module:        mapped.module as AuditModule,
+    action:        raw.displayAction || mapped.action,
+    targetObject:  raw.target_object || raw.targetObject || payload.targetObject || payload.username || payload.Username || "—",
+    system:        raw.sap_system || raw.system || "—",
+    client:        raw.client || payload.client || "100",
+    performedBy:   raw.username || raw.performedBy || "Unknown",
+    status:        raw.status === "Warning" ? "Warning" : raw.status === "Failed" ? "Failed" : "Success",
+    ipAddress:     raw.ip_address || raw.ipAddress || "Unavailable",
+    sessionId:     raw.session_id || raw.sessionId || "—",
+    durationMs:    raw.durationMs ?? Math.round(Number(raw.duration || 0) * 1000),
+    details:       raw.details || response.Message || response.message || response.error || "",
+    errorCode:     raw.error_code || raw.errorCode,
+    changesBefore: raw.changes_before || raw.changesBefore,
+    changesAfter:  raw.changes_after || raw.changesAfter,
+  };
+}
 
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [systems, setSystems] = useState<SapSystem[]>(INITIAL_SYSTEMS);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(INITIAL_LOGS);
+  const [systems, setSystems] = useState<SapSystem[]>([]);
+  const [systemsLoading, setSystemsLoading] = useState(false);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+
+  /* ── Audit Logs ── */
+  const refreshAuditLogs = useCallback(async () => {
+    if (!localStorage.getItem("token")) return;
+    try {
+      const data = await getAuditLogsApi();
+      setAuditLogs((data.logs || []).map(mapAuditLog));
+    } catch {
+      // Keep current view when audit service is temporarily unavailable.
+    }
+  }, []);
+
+  /* ── Systems — loaded from backend on mount, mutated locally thereafter ── */
+  const refreshSystems = useCallback(async () => {
+    if (!localStorage.getItem("token")) return;
+    setSystemsLoading(true);
+    try {
+      const data = await getSystemsApi();
+      setSystems(data.map(mapSystem));
+    } catch {
+      // Keep current state on failure.
+    } finally {
+      setSystemsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshAuditLogs();
+    void refreshSystems();
+    const handleAuthChanged = () => {
+      void refreshAuditLogs();
+      void refreshSystems();
+    };
+    window.addEventListener("auth:changed", handleAuthChanged);
+    return () => window.removeEventListener("auth:changed", handleAuthChanged);
+  }, [refreshAuditLogs, refreshSystems]);
+
+  /* ── Systems CRUD — local state only (no backend CRUD endpoints) ── */
 
   const addSystem = useCallback((s: Omit<SapSystem, "id" | "createdAt" | "createdBy">) => {
     const newSys: SapSystem = {
       ...s,
       id: "sys-" + Date.now(),
       createdAt: new Date().toISOString(),
-      createdBy: ADMIN_USER,
+      createdBy: getCurrentUser()?.username || "Unknown",
     };
     setSystems((prev) => [newSys, ...prev]);
-    return newSys;
   }, []);
 
   const updateSystem = useCallback((id: string, patch: Partial<SapSystem>) => {
@@ -96,20 +170,27 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSystems((prev) => prev.filter((s) => s.id !== id));
   }, []);
 
+  /* ── Audit Logging ── */
   const logAction = useCallback((entry: Omit<AuditLog, "id" | "timestamp" | "performedBy" | "ipAddress" | "sessionId">) => {
     const log: AuditLog = {
       ...entry,
-      id: "log-" + Date.now(),
-      timestamp: new Date().toISOString(),
-      performedBy: ADMIN_USER,
-      ipAddress: ADMIN_IP,
-      sessionId: SESSION_ID,
+      id:          "log-" + Date.now(),
+      timestamp:   new Date().toISOString(),
+      performedBy: getCurrentUser()?.username || "Unknown",
+      ipAddress:   "Unavailable",
+      sessionId:   SESSION_ID,
     };
     setAuditLogs((prev) => [log, ...prev]);
-  }, []);
+    const clientOnlyAction = entry.module === "Data Management" || entry.module === "System";
+    if (clientOnlyAction) {
+      void createAuditLogApi(entry).then(() => refreshAuditLogs()).catch(() => {});
+    } else {
+      void refreshAuditLogs();
+    }
+  }, [refreshAuditLogs]);
 
   return (
-    <AppContext.Provider value={{ systems, addSystem, updateSystem, deleteSystem, auditLogs, logAction }}>
+    <AppContext.Provider value={{ systems, systemsLoading, refreshSystems, addSystem, updateSystem, deleteSystem, auditLogs, logAction }}>
       {children}
     </AppContext.Provider>
   );

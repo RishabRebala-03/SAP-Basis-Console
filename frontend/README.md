@@ -1,20 +1,11 @@
-# SAP Basis Console — Frontend
 
-This directory contains the React 18, TypeScript, and Vite frontend application for the SAP Basis Console.
+  # Untitled
 
-## Development Setup
+  This is a code bundle for Untitled. The original project is available at https://www.figma.com/design/4FyeG1cPUdJKBYldssF9AQ/Untitled.
 
-Execute the following commands from the repository root or the `frontend/` directory:
+  ## Running the code
 
-```bash
-# Install dependencies
-npm install
+  Run `npm i` to install the dependencies.
 
-# Launch the development server
-npm run dev
-
-# Assemble production build
-npm run build
-```
-
-For full documentation regarding project capabilities, architecture, and deployment guidelines, please refer to the main [Root README](../README.md).
+  Run `npm run dev` to start the development server.
+  

@@ -16,16 +16,11 @@ import { lockUserApi, unlockUserApi } from "../../api/sapApi";
 import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 import type { TableDisplayPreferences } from "./pages/SettingsPage";
 
-/* =========================================================
-   COLORS
-========================================================= */
-
 const F = {
   primary: "#0070f2",
   success: "#107e3e",
   error: "#bb0000",
   warning: "#e9730c",
-
   text: "var(--app-text)",
   muted: "var(--app-muted)",
   border: "var(--app-border)",
@@ -48,9 +43,7 @@ function SystemSelector({
   selectedId: string;
   onChange: (id: string) => void;
 }) {
-  const active = systems.filter(
-    (s) => s.status === "Active"
-  );
+  const active = systems.filter((s) => s.status === "Active");
 
   return (
     <div
@@ -70,18 +63,14 @@ function SystemSelector({
 
       <label
         className="text-sm flex-shrink-0"
-        style={{
-          color: F.primary,
-        }}
+        style={{ color: F.primary }}
       >
         Target System:
       </label>
 
       <select
         value={selectedId}
-        onChange={(e) =>
-          onChange(e.target.value)
-        }
+        onChange={(e) => onChange(e.target.value)}
         className="flex-1 px-3 py-1.5 text-sm rounded outline-none"
         style={{
           border: `1px solid #0070f240`,
@@ -89,17 +78,11 @@ function SystemSelector({
           color: F.text,
         }}
       >
-        <option value="">
-          — Select SAP System —
-        </option>
+        <option value="">— Select SAP System —</option>
 
         {active.map((s) => (
-          <option
-            key={s.id}
-            value={s.id}
-          >
-            {s.systemId} – {s.systemName} (Client{" "}
-            {s.client})
+          <option key={s.id} value={s.id}>
+            {s.systemId} – {s.systemName} (Client {s.client})
           </option>
         ))}
       </select>
@@ -107,14 +90,10 @@ function SystemSelector({
       {selectedId &&
         (() => {
           const s = systems.find(
-            (x) =>
-              x.id === selectedId ||
-              x.systemId === selectedId
+            (x) => x.id === selectedId || x.systemId === selectedId
           );
 
-          if (!s) return null;
-
-          return (
+          return s ? (
             <span
               className="text-xs px-2 py-0.5 rounded flex-shrink-0"
               style={{
@@ -135,7 +114,7 @@ function SystemSelector({
             >
               {s.environment}
             </span>
-          );
+          ) : null;
         })()}
     </div>
   );
@@ -162,8 +141,7 @@ function ConfirmDialog({
 
   const isDark =
     typeof document !== "undefined" &&
-    document.documentElement.dataset.theme ===
-      "dark";
+    document.documentElement.dataset.theme === "dark";
 
   const panelBg = isDark
     ? isLock
@@ -198,7 +176,6 @@ function ConfirmDialog({
           background: F.white,
         }}
       >
-        {/* Header */}
         <div
           className="flex items-center justify-between px-5 py-4"
           style={{
@@ -209,37 +186,27 @@ function ConfirmDialog({
             <ShieldAlert
               size={18}
               style={{
-                color: isLock
-                  ? F.error
-                  : F.warning,
+                color: isLock ? F.error : F.warning,
               }}
             />
 
             <h3
               className="text-base font-semibold"
-              style={{
-                color: F.text,
-              }}
+              style={{ color: F.text }}
             >
-              Confirm{" "}
-              {isLock
-                ? "Lock User"
-                : "Unlock User"}
+              Confirm {isLock ? "Lock User" : "Unlock User"}
             </h3>
           </div>
 
           <button
             onClick={onCancel}
             className="p-1 rounded hover:bg-gray-100"
-            style={{
-              color: F.muted,
-            }}
+            style={{ color: F.muted }}
           >
             <X size={16} />
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-5 py-5">
           <div
             className="flex items-start gap-3 p-3 rounded mb-4"
@@ -270,36 +237,26 @@ function ConfirmDialog({
 
             <p
               className="text-sm"
-              style={{
-                color: panelText,
-              }}
+              style={{ color: panelText }}
             >
               {isLock
                 ? "You are about to lock"
                 : "You are about to unlock"}{" "}
-              user{" "}
-              <strong>
-                {username.toUpperCase()}
-              </strong>{" "}
-              in{" "}
+              user <strong>{username.toUpperCase()}</strong> in{" "}
               <strong>{system}</strong>.
             </p>
           </div>
 
           <p
             className="text-xs"
-            style={{
-              color: F.muted,
-            }}
+            style={{ color: F.muted }}
           >
-            This action will execute directly
-            against the live SAP OData Gateway
-            and will be recorded in the security
-            audit log.
+            This action will execute directly against the live SAP
+            OData Gateway and will be recorded in the security audit
+            log.
           </p>
         </div>
 
-        {/* Footer */}
         <div
           className="flex justify-end gap-3 px-5 py-4"
           style={{
@@ -323,14 +280,10 @@ function ConfirmDialog({
             onClick={onConfirm}
             className="px-4 py-2 text-sm rounded text-white font-medium"
             style={{
-              background: isLock
-                ? F.error
-                : F.success,
+              background: isLock ? F.error : F.success,
             }}
           >
-            {isLock
-              ? "Lock User"
-              : "Unlock User"}
+            {isLock ? "Lock User" : "Unlock User"}
           </button>
         </div>
       </div>
@@ -405,36 +358,24 @@ function SearchAutocomplete({
   performers: string[];
   placeholder?: string;
 }) {
-  const [open, setOpen] =
-    useState(false);
+  const [open, setOpen] = useState(false);
 
-  const containerRef =
-    useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onOutside = (
-      e: MouseEvent
-    ) => {
+    const onOutside = (e: MouseEvent) => {
       if (
         containerRef.current &&
-        !containerRef.current.contains(
-          e.target as Node
-        )
+        !containerRef.current.contains(e.target as Node)
       ) {
         setOpen(false);
       }
     };
 
-    document.addEventListener(
-      "mousedown",
-      onOutside
-    );
+    document.addEventListener("mousedown", onOutside);
 
     return () =>
-      document.removeEventListener(
-        "mousedown",
-        onOutside
-      );
+      document.removeEventListener("mousedown", onOutside);
   }, []);
 
   const groups = [
@@ -453,20 +394,13 @@ function SearchAutocomplete({
   ]
     .map((g) => ({
       ...g,
-
       visible: value
         ? g.values.filter((v) =>
-            v
-              .toLowerCase()
-              .includes(
-                value.toLowerCase()
-              )
+            v.toLowerCase().includes(value.toLowerCase())
           )
         : g.values.slice(0, 5),
     }))
-    .filter(
-      (g) => g.visible.length > 0
-    );
+    .filter((g) => g.visible.length > 0);
 
   return (
     <div
@@ -477,19 +411,13 @@ function SearchAutocomplete({
         <Search
           size={12}
           className="absolute left-2.5 top-1/2 -translate-y-1/2"
-          style={{
-            color: F.muted,
-          }}
+          style={{ color: F.muted }}
         />
 
         <input
           value={value}
-          onChange={(e) =>
-            onChange(e.target.value)
-          }
-          onFocus={() =>
-            setOpen(true)
-          }
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setOpen(true)}
           placeholder={
             placeholder ??
             "Search usernames, systems, performers…"
@@ -558,29 +486,17 @@ function SearchAutocomplete({
 
 /* =========================================================
    RECENT ACTIVITY
-   WITH SCROLLBAR
+   FIXED HEIGHT + SCROLLBAR
 ========================================================= */
 
 function HistoryTabMini() {
-  const { auditLogs } =
-    useAppContext();
+  const { auditLogs } = useAppContext();
 
   const lockLogs = useMemo(
     () =>
       auditLogs
-        .filter(
-          (l) =>
-            l.module === "Lock/Unlock"
-        )
-        .sort(
-          (a, b) =>
-            new Date(
-              b.timestamp
-            ).getTime() -
-            new Date(
-              a.timestamp
-            ).getTime()
-        ),
+        .filter((l) => l.module === "Lock/Unlock")
+        .slice(0, 20),
     [auditLogs]
   );
 
@@ -590,6 +506,10 @@ function HistoryTabMini() {
         className="p-4 text-xs text-center"
         style={{
           color: F.muted,
+          height: "420px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
         }}
       >
         No recent lock/unlock activity.
@@ -599,68 +519,64 @@ function HistoryTabMini() {
 
   return (
     <div
+      className="divide-y"
       style={{
-        maxHeight: "360px",
-        overflowY: "auto",
+        borderColor: F.border,
+
+        /* ==========================================
+           SCROLLBAR SETTINGS
+        ========================================== */
+
+        height: "420px",
+
+        /*
+          IMPORTANT:
+          scroll = scrollbar always visible
+          auto = scrollbar only when required
+        */
+        overflowY: "scroll",
+
         overflowX: "hidden",
+
+        scrollBehavior: "smooth",
 
         /* Firefox */
         scrollbarWidth: "thin",
-        scrollbarColor: `${F.border} transparent`,
+        scrollbarColor: "#8a8f98 #f1f3f5",
       }}
     >
-      <div
-        className="divide-y"
-        style={{
-          borderColor: F.border,
-        }}
-      >
-        {lockLogs.map((l) => (
-          <div
-            key={l.id}
-            className="p-3 text-xs"
+      {lockLogs.map((l) => (
+        <div
+          key={l.id}
+          className="p-3 text-xs"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span
+              className="font-semibold"
+              style={{
+                color: F.text,
+              }}
+            >
+              {l.targetObject}
+            </span>
+
+            <StatusBadge status={l.status} />
+          </div>
+
+          <p style={{ color: F.muted }}>
+            {l.action} in {l.system}
+          </p>
+
+          <p
+            className="text-[11px] mt-0.5"
             style={{
-              minHeight: "78px",
+              color: F.muted,
             }}
           >
-            <div className="flex items-center justify-between mb-1 gap-2">
-              <span
-                className="font-semibold truncate"
-                style={{
-                  color: F.text,
-                  maxWidth: "180px",
-                }}
-                title={l.targetObject}
-              >
-                {l.targetObject}
-              </span>
-
-              <StatusBadge
-                status={l.status}
-              />
-            </div>
-
-            <p
-              style={{
-                color: F.muted,
-              }}
-            >
-              {l.action} in {l.system}
-            </p>
-
-            <p
-              className="text-[11px] mt-0.5"
-              style={{
-                color: F.muted,
-              }}
-            >
-              {new Date(
-                l.timestamp
-              ).toLocaleTimeString()}
-            </p>
-          </div>
-        ))}
-      </div>
+            {new Date(l.timestamp).toLocaleTimeString()}
+          </p>
+        </div>
+      ))}
     </div>
   );
 }
@@ -674,38 +590,25 @@ function HistoryTab({
 }: {
   displayPreferences: TableDisplayPreferences;
 }) {
-  const { auditLogs } =
-    useAppContext();
+  const { auditLogs } = useAppContext();
 
   const lockLogs = useMemo(
     () =>
       auditLogs.filter(
-        (l) =>
-          l.module === "Lock/Unlock"
+        (l) => l.module === "Lock/Unlock"
       ),
     [auditLogs]
   );
 
-  const [search, setSearch] =
-    useState("");
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [systemFilter, setSystemFilter] = useState("All");
 
-  const [statusFilter, setStatusFilter] =
-    useState("All");
+  const [appliedSearch, setAppliedSearch] = useState("");
+  const [appliedStatus, setAppliedStatus] = useState("All");
+  const [appliedSystem, setAppliedSystem] = useState("All");
 
-  const [systemFilter, setSystemFilter] =
-    useState("All");
-
-  const [appliedSearch, setAppliedSearch] =
-    useState("");
-
-  const [appliedStatus, setAppliedStatus] =
-    useState("All");
-
-  const [appliedSystem, setAppliedSystem] =
-    useState("All");
-
-  const [hasSubmitted, setHasSubmitted] =
-    useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const uniqueSystems = useMemo(
     () =>
@@ -715,11 +618,7 @@ function HistoryTab({
           new Set(
             lockLogs
               .map((l) => l.system)
-              .filter(
-                (s) =>
-                  s &&
-                  s !== "—"
-              )
+              .filter((s) => s && s !== "—")
           )
         ),
       ].sort(),
@@ -729,39 +628,24 @@ function HistoryTab({
   const filtered = useMemo(() => {
     if (!hasSubmitted) return [];
 
-    const q =
-      appliedSearch
-        .trim()
-        .toLowerCase();
+    const q = appliedSearch.trim().toLowerCase();
 
     return lockLogs.filter((l) => {
       const matchSearch =
         !q ||
-        l.targetObject
-          .toLowerCase()
-          .includes(q) ||
-        l.system
-          .toLowerCase()
-          .includes(q) ||
-        l.performedBy
-          .toLowerCase()
-          .includes(q) ||
-        l.details
-          .toLowerCase()
-          .includes(q) ||
-        l.action
-          .toLowerCase()
-          .includes(q);
+        l.targetObject.toLowerCase().includes(q) ||
+        l.system.toLowerCase().includes(q) ||
+        l.performedBy.toLowerCase().includes(q) ||
+        l.details.toLowerCase().includes(q) ||
+        l.action.toLowerCase().includes(q);
 
       const matchStatus =
         appliedStatus === "All" ||
-        l.status ===
-          appliedStatus;
+        l.status === appliedStatus;
 
       const matchSystem =
         appliedSystem === "All" ||
-        l.system ===
-          appliedSystem;
+        l.system === appliedSystem;
 
       return (
         matchSearch &&
@@ -785,12 +669,8 @@ function HistoryTab({
 
   const submitFilters = () => {
     setAppliedSearch(search);
-    setAppliedStatus(
-      statusFilter
-    );
-    setAppliedSystem(
-      systemFilter
-    );
+    setAppliedStatus(statusFilter);
+    setAppliedSystem(systemFilter);
     setHasSubmitted(true);
   };
 
@@ -822,8 +702,7 @@ function HistoryTab({
         />
 
         <p className="text-sm">
-          No lock / unlock audit logs
-          recorded yet.
+          No lock / unlock audit logs recorded yet.
         </p>
       </div>
     );
@@ -837,13 +716,11 @@ function HistoryTab({
         border: `1px solid ${F.border}`,
       }}
     >
-      {/* Header */}
       <div
         className="px-5 py-4 flex items-center justify-between"
         style={{
           borderBottom: `1px solid ${F.border}`,
-          backgroundColor:
-            "#1d2d3e",
+          backgroundColor: "#1d2d3e",
           color: "white",
           fontWeight: 700,
           fontSize: 14,
@@ -851,9 +728,7 @@ function HistoryTab({
       >
         <h3
           className="text-sm font-semibold"
-          style={{
-            color: "white",
-          }}
+          style={{ color: "white" }}
         >
           Lock / Unlock Audit History
         </h3>
@@ -865,12 +740,10 @@ function HistoryTab({
             color: F.primary,
           }}
         >
-          {lockLogs.length} total
-          entries
+          {lockLogs.length} total entries
         </span>
       </div>
 
-      {/* Filters */}
       <div
         className="px-4 py-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-end"
         style={{
@@ -880,9 +753,7 @@ function HistoryTab({
         <div>
           <label
             className="block text-xs mb-1"
-            style={{
-              color: F.muted,
-            }}
+            style={{ color: F.muted }}
           >
             Search
           </label>
@@ -893,10 +764,7 @@ function HistoryTab({
             targets={Array.from(
               new Set(
                 lockLogs
-                  .map(
-                    (l) =>
-                      l.targetObject
-                  )
+                  .map((l) => l.targetObject)
                   .filter(Boolean)
               )
             )}
@@ -906,10 +774,7 @@ function HistoryTab({
             performers={Array.from(
               new Set(
                 lockLogs
-                  .map(
-                    (l) =>
-                      l.performedBy
-                  )
+                  .map((l) => l.performedBy)
                   .filter(Boolean)
               )
             )}
@@ -925,15 +790,10 @@ function HistoryTab({
               : systemFilter
           }
           onChange={(v) =>
-            setSystemFilter(
-              v || "All"
-            )
+            setSystemFilter(v || "All")
           }
           options={uniqueSystems.map(
-            (s) =>
-              s === "All"
-                ? ""
-                : s
+            (s) => (s === "All" ? "" : s)
           )}
           allLabel="All Systems"
           placeholder="Search system…"
@@ -947,9 +807,7 @@ function HistoryTab({
               : statusFilter
           }
           onChange={(v) =>
-            setStatusFilter(
-              v || "All"
-            )
+            setStatusFilter(v || "All")
           }
           options={[
             "",
@@ -962,7 +820,6 @@ function HistoryTab({
         />
       </div>
 
-      {/* Filter Buttons */}
       <div
         className="px-4 py-2.5 flex items-center gap-3"
         style={{
@@ -987,10 +844,9 @@ function HistoryTab({
             color: activeFilterCount
               ? F.error
               : F.muted,
-            background:
-              activeFilterCount
-                ? "#fff2f2"
-                : F.white,
+            background: activeFilterCount
+              ? "#fff2f2"
+              : F.white,
           }}
         >
           Clear All Filters
@@ -998,9 +854,7 @@ function HistoryTab({
 
         <span
           className="text-xs ml-auto"
-          style={{
-            color: F.muted,
-          }}
+          style={{ color: F.muted }}
         >
           {hasSubmitted
             ? `${filtered.length} entries shown`
@@ -1008,53 +862,34 @@ function HistoryTab({
         </span>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      <div
+        className="overflow-x-auto"
+        style={{
+          maxWidth: "100%",
+        }}
+      >
         <table className="w-full text-left text-xs">
           <thead>
             <tr
               style={{
                 borderBottom: `1px solid ${F.border}`,
-                backgroundColor:
-                  "#1d2d3e",
+                backgroundColor: "#1d2d3e",
                 color: "white",
                 fontWeight: 700,
                 fontSize: 14,
               }}
             >
               {displayPreferences.showRowNumbers && (
-                <th className="p-3">
-                  #
-                </th>
+                <th className="p-3">#</th>
               )}
 
-              <th className="p-3">
-                Time
-              </th>
-
-              <th className="p-3">
-                Username
-              </th>
-
-              <th className="p-3">
-                Action
-              </th>
-
-              <th className="p-3">
-                System
-              </th>
-
-              <th className="p-3">
-                Status
-              </th>
-
-              <th className="p-3">
-                Performed By
-              </th>
-
-              <th className="p-3">
-                Details
-              </th>
+              <th className="p-3">Time</th>
+              <th className="p-3">Username</th>
+              <th className="p-3">Action</th>
+              <th className="p-3">System</th>
+              <th className="p-3">Status</th>
+              <th className="p-3">Performed By</th>
+              <th className="p-3">Details</th>
             </tr>
           </thead>
 
@@ -1064,58 +899,55 @@ function HistoryTab({
               borderColor: F.border,
             }}
           >
-            {(hasSubmitted
-              ? filtered
-              : []
-            ).map((log, i) => (
-              <tr
-                key={log.id}
-                className="hover:bg-[var(--app-subtle)]"
-              >
-                {displayPreferences.showRowNumbers && (
-                  <td className="p-3 text-gray-500">
-                    {i + 1}
-                  </td>
-                )}
-
-                <td className="p-3 text-gray-500 whitespace-nowrap">
-                  {new Date(
-                    log.timestamp
-                  ).toLocaleString()}
-                </td>
-
-                <td
-                  className="p-3 font-semibold"
-                  style={{
-                    color: F.text,
-                  }}
+            {(hasSubmitted ? filtered : []).map(
+              (log, i) => (
+                <tr
+                  key={log.id}
+                  className="hover:bg-[var(--app-subtle)]"
                 >
-                  {log.targetObject}
-                </td>
+                  {displayPreferences.showRowNumbers && (
+                    <td className="p-3 text-gray-500">
+                      {i + 1}
+                    </td>
+                  )}
 
-                <td className="p-3">
-                  {log.action}
-                </td>
+                  <td className="p-3 text-gray-500 whitespace-nowrap">
+                    {new Date(
+                      log.timestamp
+                    ).toLocaleString()}
+                  </td>
 
-                <td className="p-3">
-                  {log.system}
-                </td>
+                  <td
+                    className="p-3 font-semibold"
+                    style={{ color: F.text }}
+                  >
+                    {log.targetObject}
+                  </td>
 
-                <td className="p-3">
-                  <StatusBadge
-                    status={log.status}
-                  />
-                </td>
+                  <td className="p-3">
+                    {log.action}
+                  </td>
 
-                <td className="p-3 text-gray-600">
-                  {log.performedBy}
-                </td>
+                  <td className="p-3">
+                    {log.system}
+                  </td>
 
-                <td className="p-3 text-gray-500">
-                  {log.details}
-                </td>
-              </tr>
-            ))}
+                  <td className="p-3">
+                    <StatusBadge
+                      status={log.status}
+                    />
+                  </td>
+
+                  <td className="p-3 text-gray-600">
+                    {log.performedBy}
+                  </td>
+
+                  <td className="p-3 text-gray-500">
+                    {log.details}
+                  </td>
+                </tr>
+              )
+            )}
           </tbody>
         </table>
       </div>
@@ -1145,9 +977,9 @@ export function LockUnlockUser({
     };
 
   const [activeTab, setActiveTab] =
-    useState<
-      "control" | "history"
-    >("control");
+    useState<"control" | "history">(
+      "control"
+    );
 
   const [selectedSystem, setSelectedSystem] =
     useState("");
@@ -1162,9 +994,7 @@ export function LockUnlockUser({
     useState("");
 
   const [errors, setErrors] =
-    useState<
-      Record<string, string>
-    >({});
+    useState<Record<string, string>>({});
 
   const [
     showConfirmDialog,
@@ -1190,15 +1020,12 @@ export function LockUnlockUser({
       verifiedAt?: string;
     } | null>(null);
 
-  /* =======================================================
+  /* =====================================================
      VALIDATION
-  ======================================================= */
+  ===================================================== */
 
   const validate = (): boolean => {
-    const e: Record<
-      string,
-      string
-    > = {};
+    const e: Record<string, string> = {};
 
     if (!selectedSystem) {
       e.system =
@@ -1212,14 +1039,12 @@ export function LockUnlockUser({
 
     setErrors(e);
 
-    return (
-      Object.keys(e).length === 0
-    );
+    return Object.keys(e).length === 0;
   };
 
-  /* =======================================================
+  /* =====================================================
      SUBMIT
-  ======================================================= */
+  ===================================================== */
 
   const handleSubmitClick = () => {
     if (validate()) {
@@ -1227,9 +1052,9 @@ export function LockUnlockUser({
     }
   };
 
-  /* =======================================================
+  /* =====================================================
      CONFIRM ACTION
-  ======================================================= */
+  ===================================================== */
 
   const handleConfirm = async () => {
     setShowConfirmDialog(false);
@@ -1252,9 +1077,7 @@ export function LockUnlockUser({
       .toUpperCase();
 
     const uname =
-      username
-        .trim()
-        .toUpperCase();
+      username.trim().toUpperCase();
 
     const defaultReason =
       action === "lock"
@@ -1269,18 +1092,14 @@ export function LockUnlockUser({
       const res =
         action === "lock"
           ? await lockUserApi({
-              system_id:
-                targetSystemId,
+              system_id: targetSystemId,
               username: uname,
-              reason:
-                finalReason,
+              reason: finalReason,
             })
           : await unlockUserApi({
-              system_id:
-                targetSystemId,
+              system_id: targetSystemId,
               username: uname,
-              reason:
-                finalReason,
+              reason: finalReason,
             });
 
       const verifiedTime =
@@ -1298,10 +1117,8 @@ export function LockUnlockUser({
       setLastAction({
         username: uname,
         action,
-        system:
-          targetSystemId,
-        verifiedAt:
-          verifiedTime,
+        system: targetSystemId,
+        verifiedAt: verifiedTime,
       });
 
       if (
@@ -1319,18 +1136,14 @@ export function LockUnlockUser({
       }
 
       logAction({
-        module:
-          "Lock/Unlock",
-
+        module: "Lock/Unlock",
         action:
           action === "lock"
             ? "Lock User"
             : "Unlock User",
 
         targetObject: uname,
-
-        system:
-          targetSystemId,
+        system: targetSystemId,
 
         client:
           sys?.client ?? "100",
@@ -1373,8 +1186,7 @@ export function LockUnlockUser({
       );
 
       logAction({
-        module:
-          "Lock/Unlock",
+        module: "Lock/Unlock",
 
         action:
           action === "lock"
@@ -1382,9 +1194,7 @@ export function LockUnlockUser({
             : "Unlock User",
 
         targetObject: uname,
-
-        system:
-          targetSystemId,
+        system: targetSystemId,
 
         client:
           sys?.client ?? "100",
@@ -1407,9 +1217,9 @@ export function LockUnlockUser({
     }
   };
 
-  /* =======================================================
+  /* =====================================================
      RESET
-  ======================================================= */
+  ===================================================== */
 
   const handleReset = () => {
     setUsername("");
@@ -1422,23 +1232,11 @@ export function LockUnlockUser({
     setLastAction(null);
   };
 
-  /* =======================================================
-     SELECTED SYSTEM
-  ======================================================= */
-
   const sys = systems.find(
-    (s) =>
-      s.id === selectedSystem ||
-      s.systemId === selectedSystem
+    (s) => s.id === selectedSystem
   );
 
-  /* =======================================================
-     TAB BUTTON
-  ======================================================= */
-
-  const tabBtn = (
-    active: boolean
-  ) =>
+  const tabBtn = (active: boolean) =>
     ({
       color: active
         ? F.primary
@@ -1454,20 +1252,17 @@ export function LockUnlockUser({
 
       marginBottom: "-2px",
 
-      background:
-        "transparent",
+      background: "transparent",
 
       outline: "none",
     } as React.CSSProperties);
 
-  /* =======================================================
-     RETURN
-  ======================================================= */
-
   return (
     <div className="max-w-6xl mx-auto">
 
-      {/* CONFIRM DIALOG */}
+      {/* =================================================
+          CONFIRM DIALOG
+      ================================================= */}
 
       {showConfirmDialog && (
         <ConfirmDialog
@@ -1478,18 +1273,16 @@ export function LockUnlockUser({
               ? `${sys.systemId} / Client ${sys.client}`
               : "—"
           }
-          onConfirm={
-            handleConfirm
-          }
+          onConfirm={handleConfirm}
           onCancel={() =>
-            setShowConfirmDialog(
-              false
-            )
+            setShowConfirmDialog(false)
           }
         />
       )}
 
-      {/* PAGE TITLE */}
+      {/* =================================================
+          PAGE TITLE
+      ================================================= */}
 
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-1">
@@ -1509,32 +1302,31 @@ export function LockUnlockUser({
             color: F.muted,
           }}
         >
-          Directly enter the SAP username
-          to execute lock or unlock
-          actions against live SAP OData
-          Gateway.
+          Directly enter the SAP username to
+          execute lock or unlock actions against
+          live SAP OData Gateway.
         </p>
       </div>
 
-      {/* TABS */}
+      {/* =================================================
+          TABS
+      ================================================= */}
 
       <div
         className="flex gap-0 mb-6"
         style={{
-          borderBottom: `2px solid ${F.border}`,
+          borderBottom:
+            `2px solid ${F.border}`,
         }}
       >
         <button
           id="tab-lock-control"
           onClick={() =>
-            setActiveTab(
-              "control"
-            )
+            setActiveTab("control")
           }
           className="flex items-center gap-2 px-5 py-2.5 text-sm transition-all"
           style={tabBtn(
-            activeTab ===
-              "control"
+            activeTab === "control"
           )}
         >
           <Lock size={15} />
@@ -1544,14 +1336,11 @@ export function LockUnlockUser({
         <button
           id="tab-lock-history"
           onClick={() =>
-            setActiveTab(
-              "history"
-            )
+            setActiveTab("history")
           }
           className="flex items-center gap-2 px-5 py-2.5 text-sm transition-all"
           style={tabBtn(
-            activeTab ===
-              "history"
+            activeTab === "history"
           )}
         >
           <History size={15} />
@@ -1559,9 +1348,9 @@ export function LockUnlockUser({
         </button>
       </div>
 
-      {/* ===================================================
+      {/* =================================================
           CONTROL TAB
-      =================================================== */}
+      ================================================= */}
 
       {activeTab === "control" && (
         <>
@@ -1572,19 +1361,17 @@ export function LockUnlockUser({
               <div
                 className="mb-5 flex items-start gap-3 px-4 py-3.5 rounded"
                 style={{
-                  background:
-                    "#f1fdf6",
-                  border: `1px solid ${F.success}`,
+                  background: "#f1fdf6",
+                  border:
+                    `1px solid ${F.success}`,
                 }}
               >
                 <CheckCircle2
                   size={18}
                   style={{
-                    color:
-                      F.success,
+                    color: F.success,
                     flexShrink: 0,
-                    marginTop:
-                      "2px",
+                    marginTop: "2px",
                   }}
                 />
 
@@ -1592,15 +1379,12 @@ export function LockUnlockUser({
                   <p
                     className="text-sm"
                     style={{
-                      color:
-                        F.success,
+                      color: F.success,
                     }}
                   >
                     User{" "}
                     <strong>
-                      {
-                        lastAction.username
-                      }
+                      {lastAction.username}
                     </strong>{" "}
                     successfully{" "}
                     <strong>
@@ -1611,9 +1395,7 @@ export function LockUnlockUser({
                     </strong>{" "}
                     in{" "}
                     <strong>
-                      {
-                        lastAction.system
-                      }
+                      {lastAction.system}
                     </strong>
                     .
                   </p>
@@ -1621,14 +1403,12 @@ export function LockUnlockUser({
                   <p
                     className="text-xs mt-0.5"
                     style={{
-                      color:
-                        F.muted,
+                      color: F.muted,
                     }}
                   >
-                    Executed in SAP
-                    system and
-                    recorded in audit
-                    log at{" "}
+                    Executed in SAP system
+                    and recorded in audit log
+                    at{" "}
                     {lastAction.verifiedAt ||
                       new Date().toLocaleTimeString()}
                     .
@@ -1643,9 +1423,9 @@ export function LockUnlockUser({
             <div
               className="mb-5 flex items-start gap-3 px-4 py-3 rounded"
               style={{
-                background:
-                  "#fff2f2",
-                border: `1px solid ${F.error}`,
+                background: "#fff2f2",
+                border:
+                  `1px solid ${F.error}`,
               }}
             >
               <AlertCircle
@@ -1653,8 +1433,7 @@ export function LockUnlockUser({
                 style={{
                   color: F.error,
                   flexShrink: 0,
-                  marginTop:
-                    "2px",
+                  marginTop: "2px",
                 }}
               />
 
@@ -1662,8 +1441,7 @@ export function LockUnlockUser({
                 <p
                   className="text-sm font-medium"
                   style={{
-                    color:
-                      F.error,
+                    color: F.error,
                   }}
                 >
                   {errorMessage ||
@@ -1677,16 +1455,12 @@ export function LockUnlockUser({
 
           <SystemSelector
             systems={systems}
-            selectedId={
-              selectedSystem
-            }
+            selectedId={selectedSystem}
             onChange={(id) => {
               setSelectedSystem(id);
               setStatus("idle");
             }}
           />
-
-          {/* SYSTEM ERROR */}
 
           {errors.system && (
             <p
@@ -1700,25 +1474,25 @@ export function LockUnlockUser({
             </p>
           )}
 
-          {/* MAIN GRID */}
+          {/* =================================================
+              MAIN GRID
+          ================================================= */}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            {/* LEFT SIDE */}
+            {/* =================================================
+                LEFT - LOCK / UNLOCK
+            ================================================= */}
 
             <div className="lg:col-span-2">
               <div
                 className="rounded"
                 style={{
-                  background:
-                    F.white,
-                  border: `1px solid ${F.border}`,
-                  overflow:
-                    "hidden",
+                  background: F.white,
+                  border:
+                    `1px solid ${F.border}`,
                 }}
               >
-                {/* HEADER */}
-
                 <div
                   className="px-5 py-3"
                   style={{
@@ -1732,16 +1506,12 @@ export function LockUnlockUser({
                   <h3
                     className="text-sm font-semibold"
                     style={{
-                      color:
-                        "white",
+                      color: "white",
                     }}
                   >
-                    User Account
-                    Control
+                    User Account Control
                   </h3>
                 </div>
-
-                {/* FORM */}
 
                 <div className="p-5">
 
@@ -1751,15 +1521,13 @@ export function LockUnlockUser({
                     <label
                       className="block text-sm mb-1"
                       style={{
-                        color:
-                          F.muted,
+                        color: F.muted,
                       }}
                     >
                       SAP Username{" "}
                       <span
                         style={{
-                          color:
-                            F.error,
+                          color: F.error,
                         }}
                       >
                         *
@@ -1768,30 +1536,22 @@ export function LockUnlockUser({
 
                     <input
                       type="text"
-                      value={
-                        username
-                      }
+                      value={username}
                       onChange={(e) => {
                         setUsername(
-                          e.target
-                            .value
+                          e.target.value
                         );
 
-                        setStatus(
-                          "idle"
-                        );
+                        setStatus("idle");
 
                         if (
                           errors.username
                         ) {
                           setErrors(
-                            (
-                              errs
-                            ) => {
-                              const n =
-                                {
-                                  ...errs,
-                                };
+                            (errs) => {
+                              const n = {
+                                ...errs,
+                              };
 
                               delete n.username;
 
@@ -1803,15 +1563,15 @@ export function LockUnlockUser({
                       placeholder="Enter SAP Username (e.g. JDOE)"
                       className="w-full px-3 py-2 text-sm rounded outline-none"
                       style={{
-                        border: `1px solid ${
-                          errors.username
-                            ? F.error
-                            : F.border
-                        }`,
+                        border:
+                          `1px solid ${
+                            errors.username
+                              ? F.error
+                              : F.border
+                          }`,
                         background:
                           F.white,
-                        color:
-                          F.text,
+                        color: F.text,
                       }}
                     />
 
@@ -1819,17 +1579,14 @@ export function LockUnlockUser({
                       <p
                         className="flex items-center gap-1 mt-1 text-xs"
                         style={{
-                          color:
-                            F.error,
+                          color: F.error,
                         }}
                       >
                         <AlertCircle
                           size={11}
                         />
 
-                        {
-                          errors.username
-                        }
+                        {errors.username}
                       </p>
                     )}
                   </div>
@@ -1840,15 +1597,13 @@ export function LockUnlockUser({
                     <label
                       className="block text-sm mb-2"
                       style={{
-                        color:
-                          F.muted,
+                        color: F.muted,
                       }}
                     >
                       Action{" "}
                       <span
                         style={{
-                          color:
-                            F.error,
+                          color: F.error,
                         }}
                       >
                         *
@@ -1868,12 +1623,13 @@ export function LockUnlockUser({
                         }
                         className="flex items-center gap-3 p-4 rounded text-left transition-all"
                         style={{
-                          border: `2px solid ${
-                            action ===
-                            "unlock"
-                              ? F.success
-                              : F.border
-                          }`,
+                          border:
+                            `2px solid ${
+                              action ===
+                              "unlock"
+                                ? F.success
+                                : F.border
+                            }`,
                           background:
                             action ===
                             "unlock"
@@ -1920,8 +1676,7 @@ export function LockUnlockUser({
                           <p
                             className="text-xs mt-0.5"
                             style={{
-                              color:
-                                F.muted,
+                              color: F.muted,
                             }}
                           >
                             Unlocks user
@@ -1936,21 +1691,19 @@ export function LockUnlockUser({
                       <button
                         type="button"
                         onClick={() =>
-                          setAction(
-                            "lock"
-                          )
+                          setAction("lock")
                         }
                         className="flex items-center gap-3 p-4 rounded text-left transition-all"
                         style={{
-                          border: `2px solid ${
-                            action ===
-                            "lock"
-                              ? F.error
-                              : F.border
-                          }`,
+                          border:
+                            `2px solid ${
+                              action ===
+                              "lock"
+                                ? F.error
+                                : F.border
+                            }`,
                           background:
-                            action ===
-                            "lock"
+                            action === "lock"
                               ? "#fff2f2"
                               : F.white,
                         }}
@@ -1959,8 +1712,7 @@ export function LockUnlockUser({
                           className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
                           style={{
                             background:
-                              action ===
-                              "lock"
+                              action === "lock"
                                 ? F.error
                                 : "#f5f6f7",
                           }}
@@ -1969,8 +1721,7 @@ export function LockUnlockUser({
                             size={16}
                             style={{
                               color:
-                                action ===
-                                "lock"
+                                action === "lock"
                                   ? "#fff"
                                   : F.muted,
                             }}
@@ -1982,8 +1733,7 @@ export function LockUnlockUser({
                             className="text-sm font-semibold"
                             style={{
                               color:
-                                action ===
-                                "lock"
+                                action === "lock"
                                   ? F.error
                                   : F.text,
                             }}
@@ -1994,8 +1744,7 @@ export function LockUnlockUser({
                           <p
                             className="text-xs mt-0.5"
                             style={{
-                              color:
-                                F.muted,
+                              color: F.muted,
                             }}
                           >
                             Locks user
@@ -2013,12 +1762,10 @@ export function LockUnlockUser({
                     <label
                       className="block text-sm mb-1"
                       style={{
-                        color:
-                          F.muted,
+                        color: F.muted,
                       }}
                     >
-                      Reason
-                      (Optional)
+                      Reason (Optional)
                     </label>
 
                     <input
@@ -2026,23 +1773,21 @@ export function LockUnlockUser({
                       value={reason}
                       onChange={(e) =>
                         setReason(
-                          e.target
-                            .value
+                          e.target.value
                         )
                       }
                       placeholder={
-                        action ===
-                        "lock"
+                        action === "lock"
                           ? "Locked via BASIS Console"
                           : "Wrong Password Attempts"
                       }
                       className="w-full px-3 py-2 text-sm rounded outline-none"
                       style={{
-                        border: `1px solid ${F.border}`,
+                        border:
+                          `1px solid ${F.border}`,
                         background:
                           F.white,
-                        color:
-                          F.text,
+                        color: F.text,
                       }}
                     />
                   </div>
@@ -2053,23 +1798,20 @@ export function LockUnlockUser({
                 <div
                   className="px-5 py-4 flex items-center justify-between"
                   style={{
-                    borderTop: `1px solid ${F.border}`,
-                    background:
-                      "#fafafa",
+                    borderTop:
+                      `1px solid ${F.border}`,
+                    background: "#fafafa",
                   }}
                 >
                   <button
                     type="button"
-                    onClick={
-                      handleReset
-                    }
+                    onClick={handleReset}
                     className="px-4 py-2 text-sm rounded font-medium"
                     style={{
-                      border: `1px solid ${F.border}`,
-                      background:
-                        F.white,
-                      color:
-                        F.text,
+                      border:
+                        `1px solid ${F.border}`,
+                      background: F.white,
+                      color: F.text,
                     }}
                   >
                     Clear
@@ -2092,8 +1834,7 @@ export function LockUnlockUser({
                         !selectedSystem ||
                         !username.trim()
                           ? "#a0c4f8"
-                          : action ===
-                            "lock"
+                          : action === "lock"
                           ? F.error
                           : F.success,
                     }}
@@ -2101,23 +1842,16 @@ export function LockUnlockUser({
                     {loading ? (
                       <>
                         <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-3.5 h-3.5" />
-
-                        Applying in
-                        SAP...
+                        Applying in SAP...
                       </>
-                    ) : action ===
-                      "lock" ? (
+                    ) : action === "lock" ? (
                       <>
-                        <Lock
-                          size={14}
-                        />
+                        <Lock size={14} />
                         Lock User
                       </>
                     ) : (
                       <>
-                        <Unlock
-                          size={14}
-                        />
+                        <Unlock size={14} />
                         Unlock User
                       </>
                     )}
@@ -2127,21 +1861,20 @@ export function LockUnlockUser({
             </div>
 
             {/* =================================================
-                RIGHT SIDE - RECENT ACTIVITY
+                RIGHT - RECENT ACTIVITY
             ================================================= */}
 
             <div>
               <div
                 className="rounded"
                 style={{
-                  background:
-                    F.white,
-                  border: `1px solid ${F.border}`,
-                  overflow:
-                    "hidden",
+                  background: F.white,
+                  border:
+                    `1px solid ${F.border}`,
+                  overflow: "hidden",
                 }}
               >
-                {/* RECENT ACTIVITY HEADER */}
+                {/* HEADER */}
 
                 <div
                   className="px-4 py-3"
@@ -2156,15 +1889,16 @@ export function LockUnlockUser({
                   <h3
                     className="text-sm font-semibold"
                     style={{
-                      color:
-                        "white",
+                      color: "white",
                     }}
                   >
                     Recent Activity
                   </h3>
                 </div>
 
-                {/* SCROLLABLE RECENT ACTIVITY */}
+                {/* =================================================
+                    SCROLLABLE RECENT ACTIVITY
+                ================================================= */}
 
                 <HistoryTabMini />
               </div>
@@ -2173,15 +1907,13 @@ export function LockUnlockUser({
         </>
       )}
 
-      {/* ===================================================
+      {/* =================================================
           HISTORY TAB
-      =================================================== */}
+      ================================================= */}
 
       {activeTab === "history" && (
         <HistoryTab
-          displayPreferences={
-            prefs
-          }
+          displayPreferences={prefs}
         />
       )}
     </div>

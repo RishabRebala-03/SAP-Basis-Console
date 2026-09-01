@@ -371,7 +371,7 @@ function HistoryTab() {
         </div>
       ) : (
         <div className="rounded" style={{ background: F.white, border: `1px solid ${F.border}` }}>
-          <div className="px-5 py-3 grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-4 text-xs font-medium" style={{ borderBottom: `1px solid ${F.border}`, backgroundColor: "#1d2d3e", color: "white",fontWeight:700,fontSize:14 }}>
+          <div className="px-5 py-3 grid grid-cols-[1fr_1fr_1fr_1fr_1fr_auto] gap-4 text-xs font-medium" style={{ borderBottom: `1px solid ${F.border}`,color: "#ffffff",background: "#1d2d3e",fontSize:14}}>
             <span>Username</span><span>System / Client</span><span>Action</span><span>Performed By</span><span>Timestamp</span><span>Status</span>
           </div>
           {filtered.map((log, idx) => {
@@ -418,18 +418,7 @@ export function SingleUserCreation({ embedded = false }: { embedded?: boolean })
     if (!selectedSystem) e.system = "Please select a target SAP system";
     if (!form.username.trim()) e.username = "Username is required";
     else if (!/^[A-Z0-9_.]{3,12}$/.test(form.username)) e.username = "3–12 chars, uppercase letters/numbers/dots only";
-    if (!form.lastName.trim()) {
-  e.lastName = "Last name is required";
-}
-
-/* Email validation */
-if (form.email.trim()) {
-  const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-
-  if (!emailRegex.test(form.email.trim())) {
-    e.email = "Enter a valid email address (example: user@company.com)";
-  }
-}
+    if (!form.lastName.trim()) e.lastName = "Last name is required";
     if (!form.tempPassword) e.tempPassword = "Temporary password is required";
     else if (form.tempPassword.length < 8) e.tempPassword = "Minimum 8 characters";
     if (!form.validFrom) e.validFrom = "Valid From date is required";
@@ -501,7 +490,7 @@ if (form.email.trim()) {
       {!embedded && (
         <div className="mb-6 flex items-start justify-between">
           <div>
-            <div className="flex items-center gap-2 mb-1"><UserPlus size={20} style={{ color: F.primary }} /><h1 className="text-xl" style={{ color: F.text,font }}>Single User Creation</h1></div>
+            <div className="flex items-center gap-2 mb-1"><UserPlus size={20} style={{ color: F.primary }} /><h1 className="text-xl" style={{ color: F.text }}>Single User Creation</h1></div>
             <p className="text-sm" style={{ color: F.muted }}>Create a new SAP user account with roles and validity periods.</p>
           </div>
         </div>

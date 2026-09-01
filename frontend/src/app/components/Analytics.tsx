@@ -41,7 +41,7 @@ import { SearchableFilterDropdown } from "./SearchableFilterDropdown";
 
 /* =========================================================
    COLORS
-   ========================================================= */
+========================================================= */
 
 const F = {
   primary: "#0070f2",
@@ -59,11 +59,14 @@ const F = {
 
 /* =========================================================
    MODULE META
-   ========================================================= */
+========================================================= */
 
 const MODULE_META: Record<
   AuditModule,
-  { color: string; bg: string }
+  {
+    color: string;
+    bg: string;
+  }
 > = {
   "Single User": {
     color: "#0070f2",
@@ -98,11 +101,13 @@ const MODULE_META: Record<
 
 /* =========================================================
    STATUS META
-   ========================================================= */
+========================================================= */
 
 const STATUS_META: Record<
   AuditStatus,
-  { color: string }
+  {
+    color: string;
+  }
 > = {
   Success: {
     color: "#107e3e",
@@ -119,20 +124,13 @@ const STATUS_META: Record<
 
 /* =========================================================
    TIME RANGES
-   =========================================================
-   
-   ORDER:
-   1. Last 30 days
-   2. Last 7 days
-   3. Last 24 hours
-   4. All Time
-   ========================================================= */
+========================================================= */
 
 const TIME_RANGES = [
   {
-    id: "30d",
-    label: "Last 30 days",
-    days: 30,
+    id: "24h",
+    label: "Last 24 hours",
+    hours: 24,
   },
 
   {
@@ -142,37 +140,109 @@ const TIME_RANGES = [
   },
 
   {
-    id: "24h",
-    label: "Last 24 hours",
-    days: 1,
+    id: "14d",
+    label: "Last 14 days",
+    days: 14,
   },
 
   {
-    id: "all",
-    label: "All Time",
-    days: null,
+    id: "30d",
+    label: "Last 30 days",
+    days: 30,
   },
 ];
 
 /* =========================================================
-   NORMALIZE FILTER
-   ========================================================= */
-
-function normalizeFilterValue(value: string) {
-  return value.trim().toLowerCase();
-}
-
-/* =========================================================
-   PROPS
-   ========================================================= */
+   TYPES
+========================================================= */
 
 interface Props {
   onNavigate: (view: DashNav) => void;
 }
 
 /* =========================================================
+   FILTER NORMALIZER
+========================================================= */
+
+function normalizeFilterValue(value: string) {
+  return value.trim().toLowerCase();
+}
+
+/* =========================================================
+   LOCAL DATE KEY
+========================================================= */
+
+function getLocalDateKey(
+  dateInput: string | number | Date
+) {
+  const date = new Date(dateInput);
+
+  const year = date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}`;
+}
+
+/* =========================================================
+   LOCAL HOUR KEY
+========================================================= */
+
+function getLocalHourKey(
+  dateInput: string | number | Date
+) {
+  const date = new Date(dateInput);
+
+  const year = date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
+
+  const hour = String(
+    date.getHours()
+  ).padStart(2, "0");
+
+  return `${year}-${month}-${day}-${hour}`;
+}
+
+/* =========================================================
+   START OF DAY
+========================================================= */
+
+function startOfDay(date: Date) {
+  const result = new Date(date);
+
+  result.setHours(0, 0, 0, 0);
+
+  return result;
+}
+
+/* =========================================================
+   START OF HOUR
+========================================================= */
+
+function startOfHour(date: Date) {
+  const result = new Date(date);
+
+  result.setMinutes(0, 0, 0);
+
+  return result;
+}
+
+/* =========================================================
    PANEL
-   ========================================================= */
+========================================================= */
 
 function Panel({
   title,
@@ -196,23 +266,13 @@ function Panel({
       }}
     >
       <div
-        className="
-          flex
-          items-center
-          gap-2
-          px-5
-          py-3
-        "
+        className="flex items-center gap-2 px-5 py-3"
         style={{
           borderBottom: `1px solid ${F.border}`,
           background: "#fafafa",
         }}
       >
-        <span
-          style={{
-            color: F.muted,
-          }}
-        >
+        <span style={{ color: F.muted }}>
           {icon}
         </span>
 
@@ -221,7 +281,6 @@ function Panel({
             className="text-sm"
             style={{
               color: F.text,
-              fontWeight: 600,
             }}
           >
             {title}
@@ -253,7 +312,7 @@ function Panel({
 
 /* =========================================================
    CHART TOOLTIP
-   ========================================================= */
+========================================================= */
 
 function ChartTooltip({
   active,
@@ -266,12 +325,7 @@ function ChartTooltip({
 
   return (
     <div
-      className="
-        rounded
-        shadow-lg
-        px-3
-        py-2
-      "
+      className="rounded shadow-lg px-3 py-2"
       style={{
         background: F.white,
         border: `1px solid ${F.border}`,
@@ -279,10 +333,7 @@ function ChartTooltip({
     >
       {label !== undefined && (
         <p
-          className="
-            text-xs
-            mb-1
-          "
+          className="text-xs mb-1"
           style={{
             color: F.muted,
           }}
@@ -291,33 +342,36 @@ function ChartTooltip({
         </p>
       )}
 
-      {payload.map((p: any, i: number) => (
-        <p
-          key={i}
-          className="text-sm"
-          style={{
-            color: p.color || p.fill || F.text,
-          }}
-        >
-          {p.name}:{" "}
-
-          <span
+      {payload.map(
+        (p: any, i: number) => (
+          <p
+            key={i}
+            className="text-sm"
             style={{
-              color: F.text,
-              fontWeight: 600,
+              color:
+                p.color ||
+                p.fill ||
+                F.text,
             }}
           >
-            {p.value}
-          </span>
-        </p>
-      ))}
+            {p.name}:{" "}
+            <span
+              style={{
+                color: F.text,
+              }}
+            >
+              {p.value}
+            </span>
+          </p>
+        )
+      )}
     </div>
   );
 }
 
 /* =========================================================
    ANALYTICS
-   ========================================================= */
+========================================================= */
 
 export function Analytics({
   onNavigate,
@@ -333,177 +387,217 @@ export function Analytics({
   );
 
   /* =======================================================
-     FILTER PANEL
+     FILTERS
      CLOSED BY DEFAULT
-     ======================================================= */
+  ======================================================= */
 
-  const [
-    showFilters,
-    setShowFilters,
-  ] = useState(false);
+  const [showFilters, setShowFilters] =
+    useState(false);
 
-  /* =======================================================
-     DEFAULT TIME RANGE
-     LAST 30 DAYS
-     ======================================================= */
+  const [range, setRange] =
+    useState("30d");
 
-  const [
-    range,
-    setRange,
-  ] = useState("30d");
+  const [systemFilter, setSystemFilter] =
+    useState("All");
 
-  const [
-    systemFilter,
-    setSystemFilter,
-  ] = useState("All");
-
-  const [
-    statusFilter,
-    setStatusFilter,
-  ] = useState("All");
-
-  /* =======================================================
-     UNIQUE SYSTEMS
-     ======================================================= */
-
-  const uniqueSystems = useMemo(
-    () => {
-      const systemsList = Array.from(
-        new Set(
-          auditLogs
-            .map((l) => l.system)
-            .filter(
-              (s) =>
-                s &&
-                s !== "—"
-            )
-        )
-      ).sort((a, b) =>
-        a.localeCompare(b)
-      );
-
-      return [
-        "All",
-        ...systemsList,
-      ];
-    },
-    [auditLogs]
-  );
-
-  /* =======================================================
-     CURRENT RANGE
-     ======================================================= */
-
-  const selectedRange =
-    TIME_RANGES.find(
-      (r) => r.id === range
-    ) || TIME_RANGES[0];
-
-  const rangeDays =
-    selectedRange.days;
+  const [statusFilter, setStatusFilter] =
+    useState("All");
 
   /* =======================================================
      CURRENT TIME
-     ======================================================= */
+  ======================================================= */
 
   const now = Date.now();
 
   /* =======================================================
-     FILTER LOGS
-     ======================================================= */
+     UNIQUE SYSTEMS
+  ======================================================= */
 
-  const logs = useMemo(
-    () => {
-      return auditLogs.filter(
-        (l) => {
-          const logTime =
-            new Date(
-              l.timestamp
-            ).getTime();
-
-          const ageMs =
-            now - logTime;
-
-          let inRange = false;
-
-          /* ---------------------------------------------
-             ALL TIME
-             --------------------------------------------- */
-
-          if (range === "all") {
-            inRange = true;
-          }
-
-          /* ---------------------------------------------
-             LAST 24 HOURS
-             --------------------------------------------- */
-
-          else if (
-            range === "24h"
-          ) {
-            inRange =
-              ageMs <=
-              24 *
-                60 *
-                60 *
-                1000;
-          }
-
-          /* ---------------------------------------------
-             LAST 7 / 30 DAYS
-             --------------------------------------------- */
-
-          else {
-            inRange =
-              ageMs <=
-              (rangeDays ?? 0) *
-                24 *
-                60 *
-                60 *
-                1000;
-          }
-
-          const inSystem =
-            systemFilter ===
-              "All" ||
-            normalizeFilterValue(
-              l.system
-            ) ===
-              normalizeFilterValue(
-                systemFilter
-              );
-
-          const inStatus =
-            statusFilter ===
-              "All" ||
-            normalizeFilterValue(
-              l.status
-            ) ===
-              normalizeFilterValue(
-                statusFilter
-              );
-
-          return (
-            inRange &&
-            inSystem &&
-            inStatus
-          );
-        }
-      );
-    },
-    [
-      auditLogs,
-      range,
-      rangeDays,
-      systemFilter,
-      statusFilter,
-      now,
-    ]
+  const uniqueSystems = useMemo(
+    () =>
+      [
+        "All",
+        ...Array.from(
+          new Set(
+            auditLogs
+              .map((l) => l.system)
+              .filter(
+                (s) =>
+                  s &&
+                  s !== "—"
+              )
+          )
+        ),
+      ].sort((a, b) =>
+        a.localeCompare(b)
+      ),
+    [auditLogs]
   );
 
   /* =======================================================
-     FILTER STATUS
-     ======================================================= */
+     SELECTED RANGE
+  ======================================================= */
+
+  const selectedRange = useMemo(
+    () =>
+      TIME_RANGES.find(
+        (r) => r.id === range
+      ) || TIME_RANGES[3],
+    [range]
+  );
+
+  /* =======================================================
+     FILTERED LOGS
+  ======================================================= */
+
+  const logs = useMemo(() => {
+    const currentDate =
+      new Date(now);
+
+    const today =
+      startOfDay(currentDate);
+
+    return auditLogs.filter((l) => {
+      const timestamp =
+        new Date(
+          l.timestamp
+        ).getTime();
+
+      if (
+        Number.isNaN(timestamp)
+      ) {
+        return false;
+      }
+
+      let inRange = true;
+
+      /* -----------------------------------------------
+         LAST 24 HOURS
+      ----------------------------------------------- */
+
+      if (range === "24h") {
+        const last24Hours =
+          now -
+          24 *
+            60 *
+            60 *
+            1000;
+
+        inRange =
+          timestamp >=
+            last24Hours &&
+          timestamp <= now;
+      }
+
+      /* -----------------------------------------------
+         LAST 7 DAYS
+      ----------------------------------------------- */
+
+      if (range === "7d") {
+        const startDate =
+          new Date(today);
+
+        startDate.setDate(
+          startDate.getDate() - 6
+        );
+
+        const logDate =
+          startOfDay(
+            new Date(timestamp)
+          );
+
+        inRange =
+          logDate >= startDate &&
+          logDate <= today;
+      }
+
+      /* -----------------------------------------------
+         LAST 14 DAYS
+      ----------------------------------------------- */
+
+      if (range === "14d") {
+        const startDate =
+          new Date(today);
+
+        startDate.setDate(
+          startDate.getDate() - 13
+        );
+
+        const logDate =
+          startOfDay(
+            new Date(timestamp)
+          );
+
+        inRange =
+          logDate >= startDate &&
+          logDate <= today;
+      }
+
+      /* -----------------------------------------------
+         LAST 30 DAYS
+      ----------------------------------------------- */
+
+      if (range === "30d") {
+        const startDate =
+          new Date(today);
+
+        startDate.setDate(
+          startDate.getDate() - 29
+        );
+
+        const logDate =
+          startOfDay(
+            new Date(timestamp)
+          );
+
+        inRange =
+          logDate >= startDate &&
+          logDate <= today;
+      }
+
+      /* -----------------------------------------------
+         SYSTEM FILTER
+      ----------------------------------------------- */
+
+      const inSys =
+        systemFilter === "All" ||
+        normalizeFilterValue(
+          l.system
+        ) ===
+          normalizeFilterValue(
+            systemFilter
+          );
+
+      /* -----------------------------------------------
+         STATUS FILTER
+      ----------------------------------------------- */
+
+      const inStatus =
+        statusFilter === "All" ||
+        normalizeFilterValue(
+          l.status
+        ) ===
+          normalizeFilterValue(
+            statusFilter
+          );
+
+      return (
+        inRange &&
+        inSys &&
+        inStatus
+      );
+    });
+  }, [
+    auditLogs,
+    range,
+    systemFilter,
+    statusFilter,
+    now,
+  ]);
+
+  /* =======================================================
+     FILTER ACTIVE
+  ======================================================= */
 
   const filtersActive =
     range !== "30d" ||
@@ -512,7 +606,7 @@ export function Analytics({
 
   /* =======================================================
      CLEAR FILTERS
-     ======================================================= */
+  ======================================================= */
 
   const clearFilters = () => {
     setRange("30d");
@@ -520,231 +614,20 @@ export function Analytics({
     setStatusFilter("All");
   };
 
-  /* =========================================================
+  /* =======================================================
      OPERATIONS OVER TIME
-     ========================================================= */
+  ======================================================= */
 
-  const trendData = useMemo(
-    () => {
-      /* ================================================
-         LAST 24 HOURS
-         ================================================ */
+  const trendData = useMemo(() => {
+    /* =====================================================
+       24 HOURS
+    ===================================================== */
 
-      if (range === "24h") {
-        const buckets: {
-          date: string;
-          label: string;
-          Success: number;
-          Failed: number;
-          Warning: number;
-        }[] = [];
-
-        for (
-          let i = 23;
-          i >= 0;
-          i--
-        ) {
-          const d = new Date(
-            now -
-              i *
-                60 *
-                60 *
-                1000
-          );
-
-          buckets.push({
-            date: d.toISOString(),
-
-            label:
-              d.toLocaleTimeString(
-                "en-US",
-                {
-                  hour: "numeric",
-                  minute: "2-digit",
-                }
-              ),
-
-            Success: 0,
-            Failed: 0,
-            Warning: 0,
-          });
-        }
-
-        logs.forEach(
-          (log) => {
-            const logDate =
-              new Date(
-                log.timestamp
-              );
-
-            const logHour =
-              new Date(
-                logDate.getFullYear(),
-                logDate.getMonth(),
-                logDate.getDate(),
-                logDate.getHours()
-              ).getTime();
-
-            const bucket =
-              buckets.find(
-                (b) => {
-                  const bDate =
-                    new Date(
-                      b.date
-                    );
-
-                  const bucketHour =
-                    new Date(
-                      bDate.getFullYear(),
-                      bDate.getMonth(),
-                      bDate.getDate(),
-                      bDate.getHours()
-                    ).getTime();
-
-                  return (
-                    bucketHour ===
-                    logHour
-                  );
-                }
-              );
-
-            if (bucket) {
-              bucket[
-                log.status
-              ] += 1;
-            }
-          }
+    if (range === "24h") {
+      const currentHour =
+        startOfHour(
+          new Date(now)
         );
-
-        return buckets;
-      }
-
-      /* ================================================
-         ALL TIME
-         
-         Create daily buckets from the oldest
-         log date to today.
-         ================================================ */
-
-      if (range === "all") {
-        if (logs.length === 0) {
-          return [];
-        }
-
-        const dates =
-          logs
-            .map((log) =>
-              new Date(
-                log.timestamp
-              ).getTime()
-            )
-            .filter(
-              (time) =>
-                !Number.isNaN(time)
-            );
-
-        if (dates.length === 0) {
-          return [];
-        }
-
-        const oldestDate =
-          new Date(
-            Math.min(...dates)
-          );
-
-        const start = new Date(
-          oldestDate.getFullYear(),
-          oldestDate.getMonth(),
-          oldestDate.getDate()
-        );
-
-        const end = new Date(
-          now
-        );
-
-        const buckets: {
-          date: string;
-          label: string;
-          Success: number;
-          Failed: number;
-          Warning: number;
-        }[] = [];
-
-        const current =
-          new Date(start);
-
-        while (
-          current <= end
-        ) {
-          const key =
-            `${current.getFullYear()}-${String(
-              current.getMonth() + 1
-            ).padStart(2, "0")}-${String(
-              current.getDate()
-            ).padStart(2, "0")}`;
-
-          buckets.push({
-            date: key,
-
-            label:
-              current.toLocaleDateString(
-                "en-US",
-                {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                }
-              ),
-
-            Success: 0,
-            Failed: 0,
-            Warning: 0,
-          });
-
-          current.setDate(
-            current.getDate() + 1
-          );
-        }
-
-        logs.forEach(
-          (log) => {
-            const d =
-              new Date(
-                log.timestamp
-              );
-
-            const key =
-              `${d.getFullYear()}-${String(
-                d.getMonth() + 1
-              ).padStart(2, "0")}-${String(
-                d.getDate()
-              ).padStart(2, "0")}`;
-
-            const bucket =
-              buckets.find(
-                (b) =>
-                  b.date === key
-              );
-
-            if (bucket) {
-              bucket[
-                log.status
-              ] += 1;
-            }
-          }
-        );
-
-        return buckets;
-      }
-
-      /* ================================================
-         LAST 30 DAYS / LAST 7 DAYS
-         ================================================ */
-
-      const numberOfDays =
-        range === "30d"
-          ? 30
-          : 7;
 
       const buckets: {
         date: string;
@@ -755,35 +638,32 @@ export function Analytics({
       }[] = [];
 
       for (
-        let i =
-          numberOfDays - 1;
+        let i = 23;
         i >= 0;
         i--
       ) {
-        const d = new Date(
-          now -
-            i *
-              24 *
-              60 *
-              60 *
-              1000
+        const hour =
+          new Date(
+            currentHour
+          );
+
+        hour.setHours(
+          hour.getHours() - i
         );
 
         const key =
-          d.toISOString().slice(
-            0,
-            10
-          );
+          getLocalHourKey(hour);
 
         buckets.push({
           date: key,
 
           label:
-            d.toLocaleDateString(
-              "en-US",
+            hour.toLocaleTimeString(
+              "en-GB",
               {
-                day: "numeric",
-                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
               }
             ),
 
@@ -793,232 +673,327 @@ export function Analytics({
         });
       }
 
-      logs.forEach(
-        (log) => {
-          const key =
-            new Date(
-              log.timestamp
-            )
-              .toISOString()
-              .slice(
-                0,
-                10
-              );
+      logs.forEach((log) => {
+        const key =
+          getLocalHourKey(
+            log.timestamp
+          );
 
-          const bucket =
-            buckets.find(
-              (b) =>
-                b.date === key
-            );
+        const bucket =
+          buckets.find(
+            (item) =>
+              item.date === key
+          );
 
-          if (bucket) {
-            bucket[
-              log.status
-            ] += 1;
-          }
+        if (!bucket) {
+          return;
         }
-      );
+
+        if (
+          log.status ===
+          "Success"
+        ) {
+          bucket.Success += 1;
+        }
+
+        if (
+          log.status ===
+          "Failed"
+        ) {
+          bucket.Failed += 1;
+        }
+
+        if (
+          log.status ===
+          "Warning"
+        ) {
+          bucket.Warning += 1;
+        }
+      });
 
       return buckets;
-    },
-    [
-      logs,
-      range,
-      now,
-    ]
-  );
+    }
 
-  /* =========================================================
-     MODULE DATA
-     ========================================================= */
+    /* =====================================================
+       DAILY RANGES
+    ===================================================== */
 
-  const moduleData =
-    useMemo(
-      () => {
-        const m: Record<
-          string,
-          number
-        > = {};
+    const numberOfDays =
+      range === "7d"
+        ? 7
+        : range === "14d"
+        ? 14
+        : 30;
 
-        logs.forEach(
-          (l) => {
-            m[l.module] =
-              (m[l.module] ??
-                0) + 1;
-          }
-        );
+    const today =
+      startOfDay(
+        new Date(now)
+      );
 
-        return (
-          Object.keys(
-            MODULE_META
-          ) as AuditModule[]
-        )
-          .map(
-            (mod) => ({
-              name: mod,
-              value:
-                m[mod] ??
-                0,
+    const buckets: {
+      date: string;
+      label: string;
+      Success: number;
+      Failed: number;
+      Warning: number;
+    }[] = [];
 
-              color:
-                MODULE_META[
-                  mod
-                ].color,
-            })
-          )
-          .filter(
-            (x) =>
-              x.value > 0
-          );
-      },
-      [logs]
-    );
+    for (
+      let i = numberOfDays - 1;
+      i >= 0;
+      i--
+    ) {
+      const date =
+        new Date(today);
 
-  /* =========================================================
-     STATUS DATA
-     ========================================================= */
+      date.setDate(
+        date.getDate() - i
+      );
 
-  const statusData =
-    useMemo(
-      () => {
-        const s: Record<
-          string,
-          number
-        > = {};
+      const key =
+        getLocalDateKey(date);
 
-        logs.forEach(
-          (l) => {
-            s[l.status] =
-              (s[l.status] ??
-                0) + 1;
-          }
-        );
+      buckets.push({
+        date: key,
 
-        return (
-          Object.keys(
-            STATUS_META
-          ) as AuditStatus[]
-        )
-          .map(
-            (st) => ({
-              name: st,
-              value:
-                s[st] ??
-                0,
-
-              color:
-                STATUS_META[
-                  st
-                ].color,
-            })
-          )
-          .filter(
-            (x) =>
-              x.value > 0
-          );
-      },
-      [logs]
-    );
-
-  /* =========================================================
-     OPERATOR DATA
-     ========================================================= */
-
-  const performerData =
-    useMemo(
-      () => {
-        const p: Record<
-          string,
-          number
-        > = {};
-
-        logs.forEach(
-          (l) => {
-            p[
-              l.performedBy
-            ] =
-              (p[
-                l.performedBy
-              ] ?? 0) + 1;
-          }
-        );
-
-        return Object.entries(
-          p
-        )
-          .map(
-            ([
-              name,
-              value,
-            ]) => ({
-              name,
-              value,
-            })
-          )
-          .sort(
-            (a, b) =>
-              b.value -
-              a.value
-          );
-      },
-      [logs]
-    );
-
-  /* =========================================================
-     SYSTEM DATA
-     ========================================================= */
-
-  const systemData =
-    useMemo(
-      () => {
-        const s: Record<
-          string,
-          number
-        > = {};
-
-        logs.forEach(
-          (l) => {
-            if (
-              l.system !==
-              "—"
-            ) {
-              s[
-                l.system
-              ] =
-                (s[
-                  l.system
-                ] ?? 0) + 1;
+        label:
+          date.toLocaleDateString(
+            "en-GB",
+            {
+              day: "numeric",
+              month: "short",
             }
-          }
+          ),
+
+        Success: 0,
+        Failed: 0,
+        Warning: 0,
+      });
+    }
+
+    logs.forEach((log) => {
+      const key =
+        getLocalDateKey(
+          log.timestamp
         );
 
-        return Object.entries(
-          s
-        )
-          .map(
-            ([
-              name,
-              value,
-            ]) => ({
-              name,
-              value,
-            })
-          )
-          .sort(
-            (a, b) =>
-              b.value -
-              a.value
-          );
-      },
-      [logs]
-    );
+      const bucket =
+        buckets.find(
+          (item) =>
+            item.date === key
+        );
 
-  /* =========================================================
-     KPI
-     ========================================================= */
+      if (!bucket) {
+        return;
+      }
 
-  const total =
-    logs.length;
+      if (
+        log.status ===
+        "Success"
+      ) {
+        bucket.Success += 1;
+      }
+
+      if (
+        log.status ===
+        "Failed"
+      ) {
+        bucket.Failed += 1;
+      }
+
+      if (
+        log.status ===
+        "Warning"
+      ) {
+        bucket.Warning += 1;
+      }
+    });
+
+    return buckets;
+  }, [
+    logs,
+    range,
+    now,
+  ]);
+
+  /* =======================================================
+     GRAPH DISPLAY SETTINGS
+  ======================================================= */
+
+  const trendLabelInterval =
+    range === "24h"
+      ? 1
+      : 0;
+
+  const isDailyGraph =
+    range === "7d" ||
+    range === "14d" ||
+    range === "30d";
+
+  /* =======================================================
+     TREND SUBTITLE
+  ======================================================= */
+
+  const trendSubtitle =
+    range === "24h"
+      ? "Hourly activity · Last 24 hours"
+      : range === "7d"
+      ? "Daily activity · Last 7 days"
+      : range === "14d"
+      ? "Daily activity · Last 14 days"
+      : "Daily activity · Last 30 days";
+
+  /* =======================================================
+     MODULE DATA
+  ======================================================= */
+
+  const moduleData = useMemo(() => {
+    const moduleCounts: Record<
+      string,
+      number
+    > = {};
+
+    logs.forEach((l) => {
+      moduleCounts[l.module] =
+        (moduleCounts[l.module] ??
+          0) + 1;
+    });
+
+    return (
+      Object.keys(
+        MODULE_META
+      ) as AuditModule[]
+    )
+      .map((mod) => ({
+        name: mod,
+
+        value:
+          moduleCounts[mod] ??
+          0,
+
+        color:
+          MODULE_META[mod]
+            .color,
+      }))
+      .filter(
+        (x) => x.value > 0
+      );
+  }, [logs]);
+
+  /* =======================================================
+     STATUS DATA
+  ======================================================= */
+
+  const statusData = useMemo(() => {
+    const statusCounts: Record<
+      string,
+      number
+    > = {};
+
+    logs.forEach((l) => {
+      statusCounts[l.status] =
+        (statusCounts[l.status] ??
+          0) + 1;
+    });
+
+    return (
+      Object.keys(
+        STATUS_META
+      ) as AuditStatus[]
+    )
+      .map((status) => ({
+        name: status,
+
+        value:
+          statusCounts[
+            status
+          ] ?? 0,
+
+        color:
+          STATUS_META[status]
+            .color,
+      }))
+      .filter(
+        (x) => x.value > 0
+      );
+  }, [logs]);
+
+  /* =======================================================
+     PERFORMER DATA
+  ======================================================= */
+
+  const performerData = useMemo(() => {
+    const performerCounts: Record<
+      string,
+      number
+    > = {};
+
+    logs.forEach((l) => {
+      performerCounts[
+        l.performedBy
+      ] =
+        (performerCounts[
+          l.performedBy
+        ] ?? 0) + 1;
+    });
+
+    return Object.entries(
+      performerCounts
+    )
+      .map(
+        ([name, value]) => ({
+          name,
+          value,
+        })
+      )
+      .sort(
+        (a, b) =>
+          b.value - a.value
+      );
+  }, [logs]);
+
+  /* =======================================================
+     SYSTEM DATA
+  ======================================================= */
+
+  const systemData = useMemo(() => {
+    const systemCounts: Record<
+      string,
+      number
+    > = {};
+
+    logs.forEach((l) => {
+      if (
+        l.system === "—"
+      ) {
+        return;
+      }
+
+      systemCounts[l.system] =
+        (systemCounts[l.system] ??
+          0) + 1;
+    });
+
+    return Object.entries(
+      systemCounts
+    )
+      .map(
+        ([name, value]) => ({
+          name,
+          value,
+        })
+      )
+      .sort(
+        (a, b) =>
+          b.value - a.value
+      );
+  }, [logs]);
+
+  /* =======================================================
+     SUMMARY VALUES
+  ======================================================= */
+
+  const total = logs.length;
 
   const success =
     logs.filter(
@@ -1055,154 +1030,97 @@ export function Analytics({
         "Active"
     ).length;
 
-  /* =========================================================
+  /* =======================================================
      SUMMARY CARDS
-     ========================================================= */
+  ======================================================= */
 
   const summary = [
     {
-      label:
-        "Total Operations",
-
-      value:
-        total,
-
-      icon:
-        Activity,
-
-      color:
-        F.primary,
-
-      bg:
-        "#e8f2ff",
-
-      nav:
-        "audit-logs" as DashNav,
+      label: "Total Operations",
+      value: total,
+      icon: Activity,
+      color: F.primary,
+      bg: "#e8f2ff",
+      nav: "audit-logs" as DashNav,
     },
 
     {
-      label:
-        "Success Rate",
-
-      value:
-        `${successRate}%`,
-
-      icon:
-        TrendingUp,
-
-      color:
-        F.success,
-
-      bg:
-        "#f1fdf6",
-
-      nav:
-        "audit-logs" as DashNav,
+      label: "Success Rate",
+      value: `${successRate}%`,
+      icon: TrendingUp,
+      color: F.success,
+      bg: "#f1fdf6",
+      nav: "audit-logs" as DashNav,
     },
 
     {
-      label:
-        "Avg Duration",
-
-      value:
-        `${avgDuration}ms`,
-
-      icon:
-        Calendar,
-
-      color:
-        F.purple,
-
-      bg:
-        "#f3e5f5",
-
-      nav:
-        "audit-logs" as DashNav,
+      label: "Avg Duration",
+      value: `${avgDuration}ms`,
+      icon: Calendar,
+      color: F.purple,
+      bg: "#f3e5f5",
+      nav: "audit-logs" as DashNav,
     },
 
     {
-      label:
-        "Active Systems",
-
-      value:
-        activeSystems,
-
-      icon:
-        Server,
-
-      color:
-        F.warning,
-
-      bg:
-        "#fff8f0",
-
-      nav:
-        "data-management" as DashNav,
+      label: "Active Systems",
+      value: activeSystems,
+      icon: Server,
+      color: F.warning,
+      bg: "#fff8f0",
+      nav: "data-management" as DashNav,
     },
   ];
+
+  /* =======================================================
+     MAX PERFORMER
+  ======================================================= */
 
   const maxPerformer =
     Math.max(
       1,
       ...performerData.map(
-        (p) =>
-          p.value
+        (p) => p.value
       )
     );
 
-  /* =========================================================
-     RETURN
-     ========================================================= */
+  /* =======================================================
+     RENDER
+  ======================================================= */
 
   return (
-    <div
-      className="
-        flex
-        flex-col
-        gap-5
-      "
-    >
-      {/* =====================================================
-          HEADER
-          ===================================================== */}
+    <div className="flex flex-col gap-5">
 
-      <div
-        className="
-          flex
-          flex-wrap
-          items-center
-          justify-between
-          gap-3
-        "
-      >
+      {/* =================================================
+          HEADER
+      ================================================= */}
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1
             style={{
-              color:
-                F.text,
-              fontWeight:
-                550,
+              color: F.text,
+
+              /*
+               * BOLD ANALYTICS HEADING
+               * Same visual emphasis as Dashboard
+               */
+              fontWeight: 700,
             }}
           >
             Analytics
           </h1>
 
           <p
-            className="
-              text-sm
-              mt-0.5
-            "
+            className="text-sm mt-0.5"
             style={{
-              color:
-                F.muted,
+              color: F.muted,
             }}
           >
-            Provisioning
-            activity
+            Provisioning activity
             insights ·{" "}
             {
-              selectedRange
-                .label
+              selectedRange.label
             }
           </p>
         </div>
@@ -1213,20 +1131,11 @@ export function Analytics({
               "audit-logs"
             )
           }
-          className="
-            flex
-            items-center
-            gap-2
-            px-4
-            py-2
-            rounded
-            text-sm
-          "
+          className="flex items-center gap-2 px-4 py-2 rounded text-sm transition-colors"
           style={{
             background:
               F.primary,
-            color:
-              "#fff",
+            color: "#fff",
           }}
         >
           Open Audit Logs
@@ -1237,42 +1146,27 @@ export function Analytics({
         </button>
       </div>
 
-      {/* =====================================================
-          FILTERS
-          ===================================================== */}
+      {/* =================================================
+          COLLAPSIBLE FILTERS
+          CLOSED BY DEFAULT
+      ================================================= */}
 
       <div
-        className="
-          rounded-lg
-          overflow-visible
-          relative
-          z-20
-        "
+        className="rounded-lg overflow-visible relative z-20"
         style={{
-          background:
-            F.white,
-          border:
-            `1px solid ${F.border}`,
+          background: F.white,
+          border: `1px solid ${F.border}`,
         }}
       >
-        {/* FILTER HEADER */}
-
         <button
           type="button"
           onClick={() =>
             setShowFilters(
-              (s) => !s
+              (current) =>
+                !current
             )
           }
-          className="
-            w-full
-            flex
-            items-center
-            gap-2
-            px-5
-            py-3
-            text-left
-          "
+          className="w-full flex items-center gap-2 px-5 py-3 text-left"
           style={{
             background:
               "#fafafa",
@@ -1289,10 +1183,8 @@ export function Analytics({
           <span
             className="text-sm"
             style={{
-              color:
-                F.text,
-              fontWeight:
-                500,
+              color: F.text,
+              
             }}
           >
             Filters
@@ -1300,13 +1192,7 @@ export function Analytics({
 
           {filtersActive && (
             <span
-              className="
-                px-2
-                py-0.5
-                rounded-full
-                text-xs
-                text-white
-              "
+              className="px-2 py-0.5 rounded-full text-xs text-white"
               style={{
                 background:
                   F.primary,
@@ -1335,69 +1221,39 @@ export function Analytics({
           />
         </button>
 
-        {/* FILTER BODY */}
-
         {showFilters && (
           <div
-            className="
-              px-5
-              py-4
-              flex
-              flex-wrap
-              items-end
-              gap-5
-            "
+            className="px-5 py-4 flex flex-wrap items-end gap-5 relative z-30"
             style={{
-              borderTop:
-                `1px solid ${F.border}`,
+              borderTop: `1px solid ${F.border}`,
             }}
           >
-            {/* =============================================
-                TIME RANGE
-                ============================================= */}
+            {/* TIME RANGE */}
 
-            <div
-              className="
-                flex
-                flex-col
-                gap-1.5
-              "
-            >
+            <div className="flex flex-col gap-1.5">
               <label
                 className="text-xs"
                 style={{
                   color:
                     F.muted,
-                  fontWeight:
-                    600,
+                  fontWeight: 600,
                 }}
               >
                 Time Range
               </label>
 
-              <div
-                className="
-                  flex
-                  flex-wrap
-                  gap-1
-                "
-              >
+              <div className="flex gap-1 flex-wrap">
                 {TIME_RANGES.map(
                   (r) => (
                     <button
-                      type="button"
                       key={r.id}
+                      type="button"
                       onClick={() =>
                         setRange(
                           r.id
                         )
                       }
-                      className="
-                        px-3
-                        py-1.5
-                        rounded
-                        text-xs
-                      "
+                      className="px-3 py-1.5 rounded text-xs transition-colors"
                       style={{
                         background:
                           range ===
@@ -1411,13 +1267,12 @@ export function Analytics({
                             ? "#fff"
                             : F.text,
 
-                        border:
-                          `1px solid ${
-                            range ===
-                            r.id
-                              ? F.primary
-                              : F.border
-                          }`,
+                        border: `1px solid ${
+                          range ===
+                          r.id
+                            ? F.primary
+                            : F.border
+                        }`,
 
                         fontWeight:
                           range ===
@@ -1426,22 +1281,18 @@ export function Analytics({
                             : 400,
                       }}
                     >
-                      {r.label}
+                      {
+                        r.label
+                      }
                     </button>
                   )
                 )}
               </div>
             </div>
 
-            {/* =============================================
-                SYSTEM
-                ============================================= */}
+            {/* SYSTEM */}
 
-            <div
-              className="
-                min-w-[150px]
-              "
-            >
+            <div className="flex flex-col gap-1.5 min-w-[150px]">
               <SearchableFilterDropdown
                 label="System"
                 value={
@@ -1450,32 +1301,27 @@ export function Analytics({
                     ? ""
                     : systemFilter
                 }
-                onChange={(v) =>
+                onChange={(value) =>
                   setSystemFilter(
-                    v || "All"
+                    value ||
+                      "All"
                   )
                 }
                 options={uniqueSystems.map(
-                  (s) =>
-                    s ===
+                  (system) =>
+                    system ===
                     "All"
                       ? ""
-                      : s
+                      : system
                 )}
                 allLabel="All Systems"
                 placeholder="Search system…"
               />
             </div>
 
-            {/* =============================================
-                STATUS
-                ============================================= */}
+            {/* STATUS */}
 
-            <div
-              className="
-                min-w-[150px]
-              "
-            >
+            <div className="flex flex-col gap-1.5 min-w-[150px]">
               <SearchableFilterDropdown
                 label="Status"
                 value={
@@ -1484,9 +1330,10 @@ export function Analytics({
                     ? ""
                     : statusFilter
                 }
-                onChange={(v) =>
+                onChange={(value) =>
                   setStatusFilter(
-                    v || "All"
+                    value ||
+                      "All"
                   )
                 }
                 options={[
@@ -1500,31 +1347,20 @@ export function Analytics({
               />
             </div>
 
-            {/* =============================================
-                CLEAR
-                ============================================= */}
+            {/* CLEAR */}
 
             <button
               type="button"
               onClick={
                 clearFilters
               }
-              className="
-                flex
-                items-center
-                gap-1.5
-                px-3
-                py-1.5
-                rounded
-                text-xs
-              "
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs transition-colors"
               style={{
-                border:
-                  `1px solid ${
-                    filtersActive
-                      ? "#bb000030"
-                      : F.border
-                  }`,
+                border: `1px solid ${
+                  filtersActive
+                    ? "#bb000030"
+                    : F.border
+                }`,
 
                 background:
                   filtersActive
@@ -1535,6 +1371,8 @@ export function Analytics({
                   filtersActive
                     ? F.error
                     : F.muted,
+
+                fontWeight: 600,
               }}
             >
               <X size={12} />
@@ -1545,42 +1383,27 @@ export function Analytics({
         )}
       </div>
 
-      {/* =====================================================
-          KPI CARDS
-          ===================================================== */}
+      {/* =================================================
+          SUMMARY CARDS
+      ================================================= */}
 
-      <div
-        className="
-          grid
-          grid-cols-2
-          lg:grid-cols-4
-          gap-4
-        "
-      >
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {summary.map(
           (s) => (
             <button
               key={s.label}
+              type="button"
               onClick={() =>
                 onNavigate(
                   s.nav
                 )
               }
-              className="
-                rounded-lg
-                p-4
-                text-left
-                flex
-                items-center
-                gap-3
-                transition-all
-              "
+              className="rounded-lg p-4 text-left transition-all flex items-center gap-3"
               style={{
                 background:
                   F.white,
 
-                border:
-                  `1px solid ${F.border}`,
+                border: `1px solid ${F.border}`,
               }}
               onMouseEnter={(
                 e
@@ -1602,15 +1425,7 @@ export function Analytics({
               }}
             >
               <div
-                className="
-                  w-11
-                  h-11
-                  rounded-lg
-                  flex
-                  items-center
-                  justify-center
-                  flex-shrink-0
-                "
+                className="w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0"
                 style={{
                   background:
                     s.bg,
@@ -1626,25 +1441,26 @@ export function Analytics({
               </div>
 
               <div>
+                {/* BOLD NUMBER */}
+
                 <p
                   style={{
                     fontSize:
                       "24px",
 
-                    fontWeight:
-                      700,
+                    /*
+                     * BOLD SUMMARY VALUE
+                     */
+                    fontWeight: 700,
 
                     color:
                       F.text,
-
-                    lineHeight:
-                      1.2,
-
-                    margin: 0,
                   }}
                 >
                   {s.value}
                 </p>
+
+                {/* BOLD LABEL */}
 
                 <p
                   className="text-xs"
@@ -1652,17 +1468,10 @@ export function Analytics({
                     color:
                       F.muted,
 
-                    fontWeight:
-                      700,
-
-                    lineHeight:
-                      1.4,
-
-                    marginTop:
-                      "4px",
-
-                    marginBottom:
-                      0,
+                    /*
+                     * BOLD SUMMARY LABEL
+                     */
+                    fontWeight: 700,
                   }}
                 >
                   {s.label}
@@ -1673,35 +1482,22 @@ export function Analytics({
         )}
       </div>
 
-      {/* =====================================================
+      {/* =================================================
           OPERATIONS OVER TIME
-          ===================================================== */}
+      ================================================= */}
 
       <Panel
         title="Operations Over Time"
-        subtitle={
-          range === "24h"
-            ? "Hourly activity · Last 24 hours"
-            : range === "30d"
-              ? "Daily activity · Last 30 days"
-              : range === "7d"
-                ? "Daily activity · Last 7 days"
-                : "Daily activity · All Time"
-        }
+        subtitle={trendSubtitle}
         icon={
           <TrendingUp
             size={14}
           />
         }
       >
-        {trendData.length ===
-        0 ? (
+        {total === 0 ? (
           <p
-            className="
-              text-sm
-              text-center
-              py-16
-            "
+            className="text-sm text-center py-16"
             style={{
               color:
                 F.muted,
@@ -1713,19 +1509,22 @@ export function Analytics({
         ) : (
           <ResponsiveContainer
             width="100%"
-            height={320}
+            height={
+              isDailyGraph
+                ? 330
+                : 300
+            }
           >
             <AreaChart
-              data={
-                trendData
-              }
+              data={trendData}
               margin={{
                 top: 8,
-                right: 20,
+                right: 8,
                 left: -16,
-                bottom: range === "all"
-                  ? 55
-                  : 35,
+                bottom:
+                  isDailyGraph
+                    ? 25
+                    : 0,
               }}
               onClick={() =>
                 onNavigate(
@@ -1832,50 +1631,35 @@ export function Analytics({
 
               <XAxis
                 dataKey="label"
+                interval={
+                  trendLabelInterval
+                }
                 tick={{
                   fontSize:
-                    range ===
-                    "30d"
-                      ? 9
-                      : range ===
-                          "all"
-                        ? 8
-                        : 11,
-
-                  fill:
-                    F.muted,
+                    isDailyGraph
+                      ? 10
+                      : 11,
+                  fill: F.muted,
                 }}
                 axisLine={{
                   stroke:
                     F.border,
                 }}
-                tickLine={false}
-                interval={
-                  range === "all"
-                    ? "preserveStartEnd"
-                    : 0
+                tickLine={
+                  false
                 }
                 angle={
-                  range ===
-                    "30d" ||
-                  range ===
-                    "all"
+                  isDailyGraph
                     ? -45
                     : 0
                 }
                 textAnchor={
-                  range ===
-                    "30d" ||
-                  range ===
-                    "all"
+                  isDailyGraph
                     ? "end"
                     : "middle"
                 }
                 height={
-                  range ===
-                    "30d" ||
-                  range ===
-                    "all"
+                  isDailyGraph
                     ? 65
                     : 30
                 }
@@ -1884,11 +1668,14 @@ export function Analytics({
               <YAxis
                 tick={{
                   fontSize: 11,
-                  fill:
-                    F.muted,
+                  fill: F.muted,
                 }}
-                axisLine={false}
-                tickLine={false}
+                axisLine={
+                  false
+                }
+                tickLine={
+                  false
+                }
                 allowDecimals={
                   false
                 }
@@ -1915,7 +1702,9 @@ export function Analytics({
                   F.success
                 }
                 fill={`url(#${uid}gSuccess)`}
-                strokeWidth={2}
+                strokeWidth={
+                  2
+                }
               />
 
               <Area
@@ -1926,7 +1715,9 @@ export function Analytics({
                   F.warning
                 }
                 fill={`url(#${uid}gWarning)`}
-                strokeWidth={2}
+                strokeWidth={
+                  2
+                }
               />
 
               <Area
@@ -1937,32 +1728,24 @@ export function Analytics({
                   F.error
                 }
                 fill={`url(#${uid}gFailed)`}
-                strokeWidth={2}
+                strokeWidth={
+                  2
+                }
               />
             </AreaChart>
           </ResponsiveContainer>
         )}
       </Panel>
 
-      {/* =====================================================
+      {/* =================================================
           MODULE + STATUS
-          ===================================================== */}
+      ================================================= */}
 
-      <div
-        className="
-          grid
-          grid-cols-1
-          lg:grid-cols-5
-          gap-5
-        "
-      >
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+
         {/* MODULE */}
 
-        <div
-          className="
-            lg:col-span-3
-          "
-        >
+        <div className="lg:col-span-3">
           <Panel
             title="Activity by Module"
             subtitle="Click a bar to open Audit Logs"
@@ -1975,11 +1758,7 @@ export function Analytics({
             {moduleData.length ===
             0 ? (
               <p
-                className="
-                  text-sm
-                  text-center
-                  py-16
-                "
+                className="text-sm text-center py-16"
                 style={{
                   color:
                     F.muted,
@@ -2006,22 +1785,27 @@ export function Analytics({
                   <CartesianGrid
                     strokeDasharray="3 3"
                     stroke="var(--app-border)"
-                    vertical={false}
-                    opacity={0.45}
+                    vertical={
+                      false
+                    }
+                    opacity={
+                      0.45
+                    }
                   />
 
                   <XAxis
                     dataKey="name"
                     tick={{
                       fontSize: 10,
-                      fill:
-                        F.muted,
+                      fill: F.muted,
                     }}
                     axisLine={{
                       stroke:
                         F.border,
                     }}
-                    tickLine={false}
+                    tickLine={
+                      false
+                    }
                     interval={0}
                     angle={-12}
                     textAnchor="end"
@@ -2031,11 +1815,14 @@ export function Analytics({
                   <YAxis
                     tick={{
                       fontSize: 11,
-                      fill:
-                        F.muted,
+                      fill: F.muted,
                     }}
-                    axisLine={false}
-                    tickLine={false}
+                    axisLine={
+                      false
+                    }
+                    tickLine={
+                      false
+                    }
                     allowDecimals={
                       false
                     }
@@ -2045,6 +1832,9 @@ export function Analytics({
                     content={
                       <ChartTooltip />
                     }
+                    cursor={{
+                      fill: "rgba(0,112,242,0.06)",
+                    }}
                   />
 
                   <Bar
@@ -2082,11 +1872,7 @@ export function Analytics({
 
         {/* STATUS */}
 
-        <div
-          className="
-            lg:col-span-2
-          "
-        >
+        <div className="lg:col-span-2">
           <Panel
             title="Status Distribution"
             subtitle="Outcome breakdown"
@@ -2099,11 +1885,7 @@ export function Analytics({
             {statusData.length ===
             0 ? (
               <p
-                className="
-                  text-sm
-                  text-center
-                  py-16
-                "
+                className="text-sm text-center py-16"
                 style={{
                   color:
                     F.muted,
@@ -2126,9 +1908,15 @@ export function Analytics({
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={3}
+                      innerRadius={
+                        50
+                      }
+                      outerRadius={
+                        80
+                      }
+                      paddingAngle={
+                        3
+                      }
                       cursor="pointer"
                       onClick={() =>
                         onNavigate(
@@ -2156,37 +1944,18 @@ export function Analytics({
                   </PieChart>
                 </ResponsiveContainer>
 
-                <div
-                  className="
-                    flex
-                    flex-col
-                    gap-2
-                    mt-3
-                  "
-                >
+                <div className="flex flex-col gap-2 mt-3">
                   {statusData.map(
                     (d) => (
                       <div
-                        key={d.name}
-                        className="
-                          flex
-                          items-center
-                          justify-between
-                        "
+                        key={
+                          d.name
+                        }
+                        className="flex items-center justify-between"
                       >
-                        <div
-                          className="
-                            flex
-                            items-center
-                            gap-2
-                          "
-                        >
+                        <div className="flex items-center gap-2">
                           <span
-                            className="
-                              w-2.5
-                              h-2.5
-                              rounded-full
-                            "
+                            className="w-2.5 h-2.5 rounded-full"
                             style={{
                               background:
                                 d.color,
@@ -2200,7 +1969,9 @@ export function Analytics({
                                 F.text,
                             }}
                           >
-                            {d.name}
+                            {
+                              d.name
+                            }
                           </span>
                         </div>
 
@@ -2211,8 +1982,7 @@ export function Analytics({
                               F.muted,
                           }}
                         >
-                          {d.value}
-                          {" · "}
+                          {d.value} ·{" "}
                           {Math.round(
                             (d.value /
                               total) *
@@ -2230,18 +2000,12 @@ export function Analytics({
         </div>
       </div>
 
-      {/* =====================================================
+      {/* =================================================
           OPERATOR + SYSTEM
-          ===================================================== */}
+      ================================================= */}
 
-      <div
-        className="
-          grid
-          grid-cols-1
-          lg:grid-cols-2
-          gap-5
-        "
-      >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
         {/* OPERATOR */}
 
         <Panel
@@ -2256,11 +2020,7 @@ export function Analytics({
           {performerData.length ===
           0 ? (
             <p
-              className="
-                text-sm
-                text-center
-                py-8
-              "
+              className="text-sm text-center py-8"
               style={{
                 color:
                   F.muted,
@@ -2269,35 +2029,17 @@ export function Analytics({
               No data.
             </p>
           ) : (
-            <div
-              className="
-                flex
-                flex-col
-                gap-3.5
-              "
-            >
+            <div className="flex flex-col gap-3.5">
               {performerData.map(
                 (p) => (
                   <div
-                    key={p.name}
-                    className="
-                      flex
-                      items-center
-                      gap-3
-                    "
+                    key={
+                      p.name
+                    }
+                    className="flex items-center gap-3"
                   >
                     <div
-                      className="
-                        w-8
-                        h-8
-                        rounded-full
-                        flex
-                        items-center
-                        justify-center
-                        text-white
-                        text-xs
-                        flex-shrink-0
-                      "
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs flex-shrink-0"
                       style={{
                         background:
                           F.primary,
@@ -2309,20 +2051,8 @@ export function Analytics({
                       )}
                     </div>
 
-                    <div
-                      className="
-                        flex-1
-                        min-w-0
-                      "
-                    >
-                      <div
-                        className="
-                          flex
-                          items-center
-                          justify-between
-                          mb-1
-                        "
-                      >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
                         <span
                           className="text-xs"
                           style={{
@@ -2330,7 +2060,9 @@ export function Analytics({
                               F.text,
                           }}
                         >
-                          {p.name}
+                          {
+                            p.name
+                          }
                         </span>
 
                         <span
@@ -2340,34 +2072,27 @@ export function Analytics({
                               F.muted,
                           }}
                         >
-                          {p.value}
+                          {
+                            p.value
+                          }
                         </span>
                       </div>
 
                       <div
-                        className="
-                          h-2
-                          rounded-full
-                          overflow-hidden
-                        "
+                        className="h-2 rounded-full overflow-hidden"
                         style={{
                           background:
                             F.bg,
                         }}
                       >
                         <div
-                          className="
-                            h-full
-                            rounded-full
-                          "
+                          className="h-full rounded-full"
                           style={{
-                            width:
-                              `${
-                                (p.value /
-                                  maxPerformer) *
-                                100
-                              }%`,
-
+                            width: `${
+                              (p.value /
+                                maxPerformer) *
+                              100
+                            }%`,
                             background:
                               F.primary,
                           }}
@@ -2395,11 +2120,7 @@ export function Analytics({
           {systemData.length ===
           0 ? (
             <p
-              className="
-                text-sm
-                text-center
-                py-8
-              "
+              className="text-sm text-center py-8"
               style={{
                 color:
                   F.muted,
@@ -2432,7 +2153,9 @@ export function Analytics({
                 <CartesianGrid
                   strokeDasharray="3 3"
                   stroke="var(--app-border)"
-                  horizontal={false}
+                  horizontal={
+                    false
+                  }
                   opacity={0.45}
                 />
 
@@ -2440,11 +2163,14 @@ export function Analytics({
                   type="number"
                   tick={{
                     fontSize: 11,
-                    fill:
-                      F.muted,
+                    fill: F.muted,
                   }}
-                  axisLine={false}
-                  tickLine={false}
+                  axisLine={
+                    false
+                  }
+                  tickLine={
+                    false
+                  }
                   allowDecimals={
                     false
                   }
@@ -2455,11 +2181,14 @@ export function Analytics({
                   dataKey="name"
                   tick={{
                     fontSize: 11,
-                    fill:
-                      F.text,
+                    fill: F.text,
                   }}
-                  axisLine={false}
-                  tickLine={false}
+                  axisLine={
+                    false
+                  }
+                  tickLine={
+                    false
+                  }
                   width={48}
                 />
 
@@ -2467,6 +2196,9 @@ export function Analytics({
                   content={
                     <ChartTooltip />
                   }
+                  cursor={{
+                    fill: "rgba(0,112,242,0.06)",
+                  }}
                 />
 
                 <Bar
