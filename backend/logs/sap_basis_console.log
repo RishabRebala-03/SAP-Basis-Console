@@ -153,3 +153,33 @@
 [2026-08-31 19:00:08,715] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: [33mPress CTRL+C to quit[0m
 [2026-08-31 19:00:46,277] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [31/Aug/2026 19:00:46] "GET /api/sap/systems HTTP/1.1" 200 -
 [2026-08-31 19:00:46,287] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [31/Aug/2026 19:00:46] "GET /api/audit?limit=5000 HTTP/1.1" 200 -
+[2026-09-01 15:43:43,715] INFO in custom_logger [E:\SAP-Basis-Console\backend\app\utils\custom_logger.py:43]: Application logging initialized.
+[2026-09-01 15:43:43,761] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[2026-09-01 15:43:43,762] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: [33mPress CTRL+C to quit[0m
+[2026-09-01 15:44:11,900] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 15:44:11] "GET /api/audit?limit=5000 HTTP/1.1" 200 -
+[2026-09-01 15:44:11,906] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 15:44:11] "GET /api/sap/systems HTTP/1.1" 200 -
+[2026-09-01 15:44:11,940] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 15:44:11] "GET /api/sap/systems HTTP/1.1" 200 -
+[2026-09-01 15:44:11,946] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 15:44:11] "GET /api/audit?limit=5000 HTTP/1.1" 200 -
+[2026-09-01 15:44:16,890] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 15:44:16] "GET /api/sap/systems HTTP/1.1" 200 -
+[2026-09-01 15:44:16,895] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 15:44:16] "GET /api/audit?limit=5000 HTTP/1.1" 200 -
+[2026-09-01 15:51:53,309] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 15:51:53] "[33mGET / HTTP/1.1[0m" 404 -
+[2026-09-01 15:51:53,368] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 15:51:53] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+[2026-09-01 15:51:58,148] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 15:51:58] "[33mGET /docs HTTP/1.1[0m" 404 -
+[2026-09-01 15:52:05,232] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 15:52:05] "[33mGET /health HTTP/1.1[0m" 404 -
+[2026-09-01 15:52:08,524] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 15:52:08] "[33mGET /health HTTP/1.1[0m" 404 -
+[2026-09-01 16:00:14,408] INFO in custom_logger [E:\SAP-Basis-Console\backend\app\utils\custom_logger.py:43]: Application logging initialized.
+[2026-09-01 16:00:14,425] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5000
+[2026-09-01 16:00:14,426] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: [33mPress CTRL+C to quit[0m
+[2026-09-01 16:00:45,482] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 16:00:45] "GET /api/sap/systems HTTP/1.1" 200 -
+[2026-09-01 16:00:45,489] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 16:00:45] "GET /api/audit?limit=5000 HTTP/1.1" 200 -
+[2026-09-01 16:46:32,638] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 16:46:32] "[33mGET / HTTP/1.1[0m" 404 -
+[2026-09-01 16:47:37,280] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 16:47:37] "[31m[1mGET /api/audit?limit=5000 HTTP/1.1[0m" 401 -
+[2026-09-01 16:47:37,283] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 16:47:37] "[31m[1mGET /api/sap/systems HTTP/1.1[0m" 401 -
+[2026-09-01 16:47:37,320] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 16:47:37] "POST /api/auth/refresh HTTP/1.1" 200 -
+[2026-09-01 16:47:37,321] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 16:47:37] "POST /api/auth/refresh HTTP/1.1" 200 -
+[2026-09-01 16:47:37,343] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 16:47:37] "GET /api/sap/systems HTTP/1.1" 200 -
+[2026-09-01 16:47:37,356] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 16:47:37] "GET /api/audit?limit=5000 HTTP/1.1" 200 -
+[2026-09-01 17:17:31,677] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 17:17:31] "GET /api/sap/systems HTTP/1.1" 200 -
+[2026-09-01 17:17:31,684] INFO in _internal [C:\Users\pavan\AppData\Roaming\Python\Python314\site-packages\werkzeug\_internal.py:97]: 127.0.0.1 - - [01/Sep/2026 17:17:31] "GET /api/audit?limit=5000 HTTP/1.1" 200 -
